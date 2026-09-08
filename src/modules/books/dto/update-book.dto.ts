@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 import type { BookStatus } from '../../../entities/book.entity';
 
@@ -35,4 +35,13 @@ export class UpdateBookDto {
   @IsOptional()
   @IsIn(['draft', 'ongoing', 'completed'])
   status?: BookStatus;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Saklar publikasi level Book (terpisah dari status draft/ongoing/completed di atas, dan dari status publish per-Chapter). true = publish Book (isi published_at = now()), false = batalkan publish (published_at jadi null). Book baru tampil di /public/* kalau ini true DAN punya >=1 Chapter published.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
 }

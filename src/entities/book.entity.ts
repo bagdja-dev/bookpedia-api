@@ -55,6 +55,15 @@ export class Book {
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: BookStatus;
 
+  /**
+   * Saklar publikasi level Book — terpisah dari `status` (label progres
+   * narasi) dan dari `chapters.status` per-chapter. `null` = belum
+   * dipublish. Book tampil di `/public/*` HANYA kalau kolom ini terisi
+   * DAN punya >=1 Chapter published (lihat PublicService).
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  published_at: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

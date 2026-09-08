@@ -16,6 +16,14 @@ import { ChapterDetailDto } from './dto/chapter-detail.dto';
 const HAS_PUBLISHED_CHAPTER_SQL =
   "EXISTS (SELECT 1 FROM chapters c WHERE c.book_id = book.id AND c.status = 'published')";
 
+/**
+ * Book "discoverable" publik butuh DUA syarat sekaligus: saklar publikasi
+ * level Book aktif (`published_at IS NOT NULL`) DAN minimal 1 Chapter
+ * published. Revisi 9 Sep 2026 — sebelumnya hanya syarat kedua, Book
+ * otomatis "hidup" begitu 1 chapter dipublish tanpa momen rilis eksplisit.
+ */
+const IS_BOOK_PUBLISHED_SQL = 'book.published_at IS NOT NULL';
+
 @Injectable()
 export class PublicService {
   constructor(
@@ -40,7 +48,8 @@ export class PublicService {
     const qb = this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
-      .where(HAS_PUBLISHED_CHAPTER_SQL);
+      .where(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
 
     const search = query.search?.trim();
     if (search) {
@@ -103,6 +112,7 @@ export class PublicService {
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
       .where('book.library_id = :libraryId', { libraryId: library.id })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
       .orderBy('book.created_at', 'DESC')
       .getMany();
@@ -126,7 +136,7 @@ export class PublicService {
    */
   async getBookBySlug(slug: string): Promise<BookDetailDto> {
     const book = await this.bookRepo.findOne({ where: { slug }, relations: ['genre'] });
-    if (!book) {
+    if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
     }
 
@@ -171,7 +181,7 @@ export class PublicService {
    */
   async getChapterByOrderIndex(bookSlug: string, orderIndex: number): Promise<ChapterDetailDto> {
     const book = await this.bookRepo.findOne({ where: { slug: bookSlug } });
-    if (!book) {
+    if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
     }
 

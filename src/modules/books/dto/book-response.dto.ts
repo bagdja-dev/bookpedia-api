@@ -28,6 +28,13 @@ export class BookResponseDto {
   @ApiProperty({ example: 'draft', enum: ['draft', 'ongoing', 'completed'] })
   status: BookStatus;
 
+  @ApiPropertyOptional({
+    example: null,
+    nullable: true,
+    description: 'Waktu Book dipublish (saklar level Book, terpisah dari status di atas) — null kalau belum dipublish.',
+  })
+  publishedAt: Date | null;
+
   @ApiProperty()
   createdAt: Date;
 

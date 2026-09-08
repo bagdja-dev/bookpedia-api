@@ -120,6 +120,9 @@ export class BooksService {
     }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
     if (dto.status !== undefined) book.status = dto.status;
+    if (dto.published !== undefined) {
+      book.published_at = dto.published ? new Date() : null;
+    }
 
     await this.bookRepo.save(book);
     return this.findOneForOwner(ownerUserId, bookId);
@@ -140,6 +143,7 @@ export class BooksService {
       genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
+      publishedAt: book.published_at,
       createdAt: book.created_at,
       updatedAt: book.updated_at,
     };
