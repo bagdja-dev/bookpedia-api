@@ -201,7 +201,7 @@ export class PublicService {
       konten: chapter.konten,
       orderIndex: chapter.order_index,
       publishedAt: chapter.published_at,
-      book: { judul: book.judul, slug: book.slug },
+      book: { id: book.id, judul: book.judul, slug: book.slug },
       prevOrderIndex: prev?.order_index ?? null,
       nextOrderIndex: next?.order_index ?? null,
     };

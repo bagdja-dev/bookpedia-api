@@ -11,6 +11,8 @@ import { LibrariesModule } from './modules/libraries/libraries.module';
 import { BooksModule } from './modules/books/books.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { PublicModule } from './modules/public/public.module';
+import { ReadingProgressModule } from './modules/reading-progress/reading-progress.module';
+import { HighlightsModule } from './modules/highlights/highlights.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { PublicModule } from './modules/public/public.module';
     BooksModule,
     ChaptersModule,
     PublicModule,
+    ReadingProgressModule,
+    HighlightsModule,
   ],
 })
 export class AppModule {}
