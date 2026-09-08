@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
 
 export class CreateBookDto {
   @ApiProperty({ example: 'Kisah di Ujung Senja', description: 'Judul Book' })
@@ -26,11 +26,13 @@ export class CreateBookDto {
   @IsString()
   sinopsis?: string;
 
-  @ApiPropertyOptional({ example: 'Fantasi' })
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: 'ID genre dari GET /public/genres. 400 kalau tidak match genre manapun.',
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  genre?: string;
+  @IsUUID()
+  genreId?: string;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg' })
   @IsOptional()

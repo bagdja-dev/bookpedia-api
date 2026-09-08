@@ -8,6 +8,7 @@ import { AuthModule } from './common/auth';
 import { UserModule } from './modules/user/user.module';
 import { HealthModule } from './modules/health/health.module';
 import { LibrariesModule } from './modules/libraries/libraries.module';
+import { GenresModule } from './modules/genres/genres.module';
 import { BooksModule } from './modules/books/books.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { PublicModule } from './modules/public/public.module';
@@ -69,6 +70,7 @@ import { HighlightsModule } from './modules/highlights/highlights.module';
     AuthModule,
     HealthModule,
     LibrariesModule,
+    GenresModule,
     BooksModule,
     ChaptersModule,
     PublicModule,

@@ -1,9 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Book } from '../../entities/book.entity';
 import { LibrariesService } from '../libraries/libraries.service';
+import { GenresService } from '../genres/genres.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookResponseDto } from './dto/book-response.dto';
@@ -14,7 +15,25 @@ export class BooksService {
     @InjectRepository(Book)
     private readonly bookRepo: Repository<Book>,
     private readonly librariesService: LibrariesService,
+    private readonly genresService: GenresService,
   ) {}
+
+  /**
+   * Validasi `genreId` (kalau dikirim) match row `genres` manapun — 400
+   * kalau tidak, JANGAN diam-diam null-kan. `null`/`undefined` diteruskan
+   * apa adanya (undefined = field tidak dikirim, null = sengaja dikosongkan
+   * saat update).
+   */
+  private async resolveGenreId(genreId: string | null | undefined): Promise<string | null | undefined> {
+    if (genreId === undefined || genreId === null) {
+      return genreId;
+    }
+    const exists = await this.genresService.existsById(genreId);
+    if (!exists) {
+      throw new BadRequestException(`genreId "${genreId}" tidak ditemukan — lihat GET /public/genres`);
+    }
+    return genreId;
+  }
 
   /**
    * Resolve `library_id` milik user login — dipakai semua operasi Book di
@@ -41,22 +60,29 @@ export class BooksService {
       throw new ConflictException('A book with this slug already exists');
     }
 
+    const genreId = await this.resolveGenreId(dto.genreId);
+
     const book = this.bookRepo.create({
       library_id: libraryId,
       judul: dto.judul,
       slug: dto.slug,
       sinopsis: dto.sinopsis ?? null,
-      genre: dto.genre ?? null,
+      genre_id: genreId ?? null,
       cover_url: dto.coverUrl ?? null,
       status: 'draft',
     });
 
-    return this.bookRepo.save(book);
+    const saved = await this.bookRepo.save(book);
+    return this.findOneForOwner(ownerUserId, saved.id);
   }
 
   async findAllForOwner(ownerUserId: string): Promise<Book[]> {
     const libraryId = await this.getLibraryIdForOwner(ownerUserId);
-    return this.bookRepo.find({ where: { library_id: libraryId }, order: { created_at: 'DESC' } });
+    return this.bookRepo.find({
+      where: { library_id: libraryId },
+      relations: ['genre'],
+      order: { created_at: 'DESC' },
+    });
   }
 
   /**
@@ -66,7 +92,10 @@ export class BooksService {
    */
   async findOneForOwner(ownerUserId: string, bookId: string): Promise<Book> {
     const libraryId = await this.getLibraryIdForOwner(ownerUserId);
-    const book = await this.bookRepo.findOne({ where: { id: bookId, library_id: libraryId } });
+    const book = await this.bookRepo.findOne({
+      where: { id: bookId, library_id: libraryId },
+      relations: ['genre'],
+    });
     if (!book) {
       throw new NotFoundException('Book not found');
     }
@@ -78,11 +107,14 @@ export class BooksService {
 
     if (dto.judul !== undefined) book.judul = dto.judul;
     if (dto.sinopsis !== undefined) book.sinopsis = dto.sinopsis;
-    if (dto.genre !== undefined) book.genre = dto.genre;
+    if (dto.genreId !== undefined) {
+      book.genre_id = await this.resolveGenreId(dto.genreId);
+    }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
     if (dto.status !== undefined) book.status = dto.status;
 
-    return this.bookRepo.save(book);
+    await this.bookRepo.save(book);
+    return this.findOneForOwner(ownerUserId, bookId);
   }
 
   async remove(ownerUserId: string, bookId: string): Promise<void> {
@@ -97,7 +129,7 @@ export class BooksService {
       judul: book.judul,
       slug: book.slug,
       sinopsis: book.sinopsis,
-      genre: book.genre,
+      genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
       createdAt: book.created_at,

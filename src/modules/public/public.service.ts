@@ -37,16 +37,19 @@ export class PublicService {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 50);
 
-    const qb = this.bookRepo.createQueryBuilder('book').where(HAS_PUBLISHED_CHAPTER_SQL);
+    const qb = this.bookRepo
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.genre', 'genre')
+      .where(HAS_PUBLISHED_CHAPTER_SQL);
 
     const search = query.search?.trim();
     if (search) {
       qb.andWhere('book.judul ILIKE :search', { search: `%${search}%` });
     }
 
-    const genre = query.genre?.trim();
-    if (genre) {
-      qb.andWhere('book.genre = :genre', { genre });
+    const genreSlug = query.genre?.trim();
+    if (genreSlug) {
+      qb.andWhere('genre.slug = :genreSlug', { genreSlug });
     }
 
     qb.orderBy('book.created_at', 'DESC')
@@ -78,7 +81,7 @@ export class PublicService {
       judul: book.judul,
       slug: book.slug,
       sinopsis: book.sinopsis,
-      genre: book.genre,
+      genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
@@ -98,6 +101,7 @@ export class PublicService {
 
     const books = await this.bookRepo
       .createQueryBuilder('book')
+      .leftJoinAndSelect('book.genre', 'genre')
       .where('book.library_id = :libraryId', { libraryId: library.id })
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
       .orderBy('book.created_at', 'DESC')
@@ -121,7 +125,7 @@ export class PublicService {
    * order_index ASC.
    */
   async getBookBySlug(slug: string): Promise<BookDetailDto> {
-    const book = await this.bookRepo.findOne({ where: { slug } });
+    const book = await this.bookRepo.findOne({ where: { slug }, relations: ['genre'] });
     if (!book) {
       throw new NotFoundException('Book not found');
     }
@@ -142,7 +146,7 @@ export class PublicService {
       judul: book.judul,
       slug: book.slug,
       sinopsis: book.sinopsis,
-      genre: book.genre,
+      genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },

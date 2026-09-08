@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 import type { BookStatus } from '../../../entities/book.entity';
 
@@ -15,11 +15,15 @@ export class UpdateBookDto {
   @IsString()
   sinopsis?: string;
 
-  @ApiPropertyOptional({ example: 'Fantasi' })
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description:
+      'ID genre dari GET /public/genres. Kirim null untuk mengosongkan genre Book. 400 kalau tidak match genre manapun.',
+    nullable: true,
+  })
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  genre?: string;
+  @IsUUID()
+  genreId?: string | null;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover-2.jpg' })
   @IsOptional()

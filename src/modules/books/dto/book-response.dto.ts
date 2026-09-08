@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { BookStatus } from '../../../entities/book.entity';
+import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 
 export class BookResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -18,8 +19,8 @@ export class BookResponseDto {
   @ApiPropertyOptional({ example: 'Sebuah kisah tentang penulis yang mengejar mimpinya.', nullable: true })
   sinopsis: string | null;
 
-  @ApiPropertyOptional({ example: 'Fantasi', nullable: true })
-  genre: string | null;
+  @ApiPropertyOptional({ type: GenreResponseDto, nullable: true })
+  genre: GenreResponseDto | null;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg', nullable: true })
   coverUrl: string | null;

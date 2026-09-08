@@ -8,7 +8,10 @@ export class CatalogQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ example: 'Fantasi', description: 'Filter genre (exact match)' })
+  @ApiPropertyOptional({
+    example: 'fantasi',
+    description: 'Filter genre by slug (dari GET /public/genres, exact match) — BUKAN free text lagi',
+  })
   @IsOptional()
   @IsString()
   genre?: string;

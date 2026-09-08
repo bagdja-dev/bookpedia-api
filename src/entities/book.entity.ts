@@ -3,9 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   Index,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { Genre } from './genre.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
 
@@ -34,8 +38,16 @@ export class Book {
   sinopsis: string | null;
 
   @Index()
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  genre: string | null;
+  @Column({ type: 'uuid', nullable: true })
+  genre_id: string | null;
+
+  /**
+   * Relasi ke lookup table `genres` — nullable, ON DELETE SET NULL (Book
+   * tanpa genre tetap valid). Lihat plan/novelo/schema.dbml Table genres.
+   */
+  @ManyToOne(() => Genre, { nullable: true })
+  @JoinColumn({ name: 'genre_id' })
+  genre?: Genre | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   cover_url: string | null;
