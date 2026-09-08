@@ -1,0 +1,50 @@
+# Konfigurasi Supabase lokal untuk bagdja-novelo-api.
+# Referensi lengkap: https://supabase.com/docs/guides/local-development/cli/config
+#
+# Nomor port di-offset agar tidak bentrok dengan Supabase project lain di
+# local dev: bagdja-payment-service (54320-54329), shipping-services
+# (54330-54339), bagdja-website-api (54340-54344). Blok ini (54350-54354)
+# dipilih setelah dicek `lsof`/`docker ps` — belum dipakai instance manapun.
+project_id = "novelo"
+
+[api]
+enabled = true
+port = 54351
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54352
+shadow_port = 54350
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54353
+api_url = "http://127.0.0.1"
+
+[inbucket]
+enabled = true
+port = 54354
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

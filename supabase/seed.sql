@@ -1,0 +1,3 @@
+-- Seed data lokal untuk bagdja-novelo-api.
+-- Fase 0 belum butuh seed data — file ini sengaja kosong (dirujuk dari
+-- supabase/config.toml [db.seed] supaya `supabase db reset` tidak error).
