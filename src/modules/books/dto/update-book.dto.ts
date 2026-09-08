@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
-import type { BookStatus } from '../../../entities/book.entity';
+import type { BookStatus, BookType } from '../../../entities/book.entity';
 
 export class UpdateBookDto {
   @ApiPropertyOptional({ example: 'Kisah di Ujung Senja (Revisi)' })
@@ -44,4 +44,23 @@ export class UpdateBookDto {
   @IsOptional()
   @IsBoolean()
   published?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'translation',
+    enum: ['original', 'translation', 'adaptation'],
+    description: 'original / translation / adaptation — Book terjemahan/adaptasi karya orang lain.',
+  })
+  @IsOptional()
+  @IsIn(['original', 'translation', 'adaptation'])
+  bookType?: BookType;
+
+  @ApiPropertyOptional({
+    example: 'Jane Doe',
+    description: 'Nama penulis asli. Kirim string kosong untuk mengosongkan.',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  originalAuthor?: string | null;
 }

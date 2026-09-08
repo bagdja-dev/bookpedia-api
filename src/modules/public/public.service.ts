@@ -93,6 +93,8 @@ export class PublicService {
       genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
+      bookType: book.book_type,
+      originalAuthor: book.original_author,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
     };
   }
@@ -159,6 +161,8 @@ export class PublicService {
       genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
+      bookType: book.book_type,
+      originalAuthor: book.original_author,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
       chapters: chapters.map((chapter) => ({
         id: chapter.id,

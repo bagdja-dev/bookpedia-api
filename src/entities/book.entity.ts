@@ -12,6 +12,7 @@ import {
 import { Genre } from './genre.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
+export type BookType = 'original' | 'translation' | 'adaptation';
 
 /**
  * Satu Book = satu karya (novel/cerita berseri) milik satu Library
@@ -54,6 +55,17 @@ export class Book {
 
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: BookStatus;
+
+  /**
+   * original/translation/adaptation — memfasilitasi penulis yang
+   * menerjemahkan/mengadaptasi karya orang lain (Library = penerbit/
+   * penerjemah, bukan penulis asli). Dipasangkan dengan `original_author`.
+   */
+  @Column({ type: 'enum', enum: ['original', 'translation', 'adaptation'], enumName: 'book_type', default: 'original' })
+  book_type: BookType;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  original_author: string | null;
 
   /**
    * Saklar publikasi level Book — terpisah dari `status` (label progres

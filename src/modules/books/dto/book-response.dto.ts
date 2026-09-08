@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import type { BookStatus } from '../../../entities/book.entity';
+import type { BookStatus, BookType } from '../../../entities/book.entity';
 import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 
 export class BookResponseDto {
@@ -27,6 +27,12 @@ export class BookResponseDto {
 
   @ApiProperty({ example: 'draft', enum: ['draft', 'ongoing', 'completed'] })
   status: BookStatus;
+
+  @ApiProperty({ example: 'original', enum: ['original', 'translation', 'adaptation'] })
+  bookType: BookType;
+
+  @ApiPropertyOptional({ example: null, nullable: true, description: 'Nama penulis asli, relevan kalau bookType bukan "original".' })
+  originalAuthor: string | null;
 
   @ApiPropertyOptional({
     example: null,

@@ -70,6 +70,8 @@ export class BooksService {
       genre_id: genreId ?? null,
       cover_url: dto.coverUrl ?? null,
       status: 'draft',
+      book_type: dto.bookType ?? 'original',
+      original_author: dto.originalAuthor ?? null,
     });
 
     const saved = await this.bookRepo.save(book);
@@ -123,6 +125,8 @@ export class BooksService {
     if (dto.published !== undefined) {
       book.published_at = dto.published ? new Date() : null;
     }
+    if (dto.bookType !== undefined) book.book_type = dto.bookType;
+    if (dto.originalAuthor !== undefined) book.original_author = dto.originalAuthor || null;
 
     await this.bookRepo.save(book);
     return this.findOneForOwner(ownerUserId, bookId);
@@ -143,6 +147,8 @@ export class BooksService {
       genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
       coverUrl: book.cover_url,
       status: book.status,
+      bookType: book.book_type,
+      originalAuthor: book.original_author,
       publishedAt: book.published_at,
       createdAt: book.created_at,
       updatedAt: book.updated_at,
