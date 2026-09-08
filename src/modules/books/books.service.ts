@@ -109,6 +109,14 @@ export class BooksService {
     if (dto.sinopsis !== undefined) book.sinopsis = dto.sinopsis;
     if (dto.genreId !== undefined) {
       book.genre_id = await this.resolveGenreId(dto.genreId);
+      // `book` di-load dengan `relations: ['genre']` (findOneForOwner) —
+      // objek relasi `genre` yang sudah ter-load jadi BASI begitu kita ubah
+      // `genre_id` mentah. TypeORM saat save() memprioritaskan objek relasi
+      // yang ter-load di atas kolom FK mentah, jadi tanpa baris ini
+      // `genre_id` baru (termasuk null) DIABAIKAN diam-diam — genre lama
+      // tetap tersimpan. Set `undefined` (bukan null) supaya TypeORM
+      // menganggap relasi "tidak diketahui", lalu mengikuti `genre_id`.
+      book.genre = undefined;
     }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
     if (dto.status !== undefined) book.status = dto.status;
