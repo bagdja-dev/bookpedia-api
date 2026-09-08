@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
 import { LibrariesService } from './libraries.service';
@@ -29,11 +30,18 @@ export class LibrariesController {
   @ApiOperation({
     summary: 'Library milik user login',
     description:
-      'Dipakai novelo-studio untuk cek status onboarding. KONTRAK PENTING: kalau user belum punya Library, response 200 dengan body null (BUKAN 404) — jangan diubah, frontend bergantung pada shape ini.',
+      'Dipakai novelo-studio untuk cek status onboarding. KONTRAK PENTING: kalau user belum punya Library, response 200 dengan body literal null (BUKAN 404, BUKAN body kosong) — jangan diubah, frontend bergantung pada shape ini.',
   })
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library milik user, atau null kalau belum onboarding' })
-  async findMine(@CurrentUser() user: AuthUser): Promise<LibraryResponseDto | null> {
+  async findMine(@CurrentUser() user: AuthUser, @Res() res: Response): Promise<void> {
+    // Nest's default Express reply() menganggap return value `null` SAMA
+    // dengan `undefined` (lihat isNil() di @nestjs/common/utils/shared.utils)
+    // dan memanggil response.send() TANPA body sama sekali (Content-Length 0),
+    // bukan literal JSON "null" — merusak kontrak di atas (klien coba
+    // JSON.parse body kosong -> "Unexpected end of JSON input"). @Res()
+    // dipakai supaya kita kontrol body-nya sendiri, res.json(null) memang
+    // mengirim teks "null" 4-byte yang valid di-parse JSON.
     const library = await this.librariesService.findLibraryByOwner(user.userId);
-    return library ? this.librariesService.toResponseDto(library) : null;
+    res.status(HttpStatus.OK).json(library ? this.librariesService.toResponseDto(library) : null);
   }
 }
