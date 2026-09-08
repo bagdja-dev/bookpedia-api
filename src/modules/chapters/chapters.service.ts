@@ -132,6 +132,17 @@ export class ChaptersService {
     return this.chapterRepo.find({ where: { book_id: book.id }, order: { order_index: 'ASC' } });
   }
 
+  /**
+   * Scoped sama seperti operasi lain (bookId harus milik user login,
+   * chapterId harus milik bookId itu). TIDAK ada renormalisasi
+   * `order_index` Chapter lain sisanya — gap boleh, list tetap urut benar
+   * (ORDER BY order_index ASC), reorder existing tetap bisa jalan.
+   */
+  async remove(ownerUserId: string, bookId: string, chapterId: string): Promise<void> {
+    const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId);
+    await this.chapterRepo.remove(chapter);
+  }
+
   toResponseDto(chapter: Chapter): ChapterResponseDto {
     return {
       id: chapter.id,

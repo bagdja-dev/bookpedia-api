@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
 import { ChaptersService } from './chapters.service';
@@ -85,5 +85,21 @@ export class ChaptersController {
   ): Promise<ChapterResponseDto> {
     const chapter = await this.chaptersService.update(user.userId, bookId, chapterId, dto);
     return this.chaptersService.toResponseDto(chapter);
+  }
+
+  @Delete(':chapterId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Hapus Chapter',
+    description:
+      '404 kalau Chapter bukan milik Book ini ATAU Book bukan milik Library user login. reading_progress/chapter_highlights yang menunjuk ke Chapter ini ikut terhapus (ON DELETE CASCADE).',
+  })
+  @ApiNoContentResponse({ description: 'Chapter berhasil dihapus' })
+  async remove(
+    @CurrentUser() user: AuthUser,
+    @Param('bookId') bookId: string,
+    @Param('chapterId') chapterId: string,
+  ): Promise<void> {
+    await this.chaptersService.remove(user.userId, bookId, chapterId);
   }
 }
