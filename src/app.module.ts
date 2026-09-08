@@ -10,6 +10,7 @@ import { HealthModule } from './modules/health/health.module';
 import { LibrariesModule } from './modules/libraries/libraries.module';
 import { BooksModule } from './modules/books/books.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
+import { PublicModule } from './modules/public/public.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ChaptersModule } from './modules/chapters/chapters.module';
     LibrariesModule,
     BooksModule,
     ChaptersModule,
+    PublicModule,
   ],
 })
 export class AppModule {}
