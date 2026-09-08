@@ -13,7 +13,6 @@ import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTa
 import { JwtAuthGuard } from '../../common/auth';
 import { UploadsService } from './uploads.service';
 import { UploadImageResponseDto } from './dto/upload-image-response.dto';
-import type { UploadedMulterFile } from './uploaded-multer-file.type';
 
 /** Batas ukuran gambar cover Library/Book — sama dengan yang dipakai frontend (novelo-studio). */
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
@@ -63,7 +62,7 @@ export class UploadsController {
     }),
   )
   async uploadImage(
-    @UploadedFile() file: UploadedMulterFile,
+    @UploadedFile() file: Express.Multer.File,
     @Body('folder') folder?: string,
   ): Promise<UploadImageResponseDto> {
     if (!file) {
@@ -75,7 +74,7 @@ export class UploadsController {
     return this.uploadsService.uploadImage(file, folder || 'libraries');
   }
 
-  private assertIsImage(file: UploadedMulterFile): void {
+  private assertIsImage(file: Express.Multer.File): void {
     if (!IMAGE_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(
         `Tipe file tidak didukung (mime: '${file.mimetype}', nama: '${file.originalname}'). ` +
