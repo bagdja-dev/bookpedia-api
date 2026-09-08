@@ -1,12 +1,25 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+export type CatalogSearchBy = 'judul' | 'library' | 'originalAuthor';
 
 export class CatalogQueryDto {
-  @ApiPropertyOptional({ example: 'senja', description: 'Filter judul Book (ILIKE, case-insensitive)' })
+  @ApiPropertyOptional({ example: 'senja', description: 'Teks pencarian (ILIKE, case-insensitive) — field yang dicocokkan ditentukan `searchBy`' })
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    example: 'judul',
+    enum: ['judul', 'library', 'originalAuthor'],
+    default: 'judul',
+    description:
+      'Field yang dicocokkan `search`: judul (default) / library (nama Library-penulis) / originalAuthor (nama penulis asli, relevan utk terjemahan/adaptasi)',
+  })
+  @IsOptional()
+  @IsIn(['judul', 'library', 'originalAuthor'])
+  searchBy?: CatalogSearchBy;
 
   @ApiPropertyOptional({
     example: 'fantasi',

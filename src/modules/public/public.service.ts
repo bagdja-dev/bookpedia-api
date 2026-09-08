@@ -53,7 +53,19 @@ export class PublicService {
 
     const search = query.search?.trim();
     if (search) {
-      qb.andWhere('book.judul ILIKE :search', { search: `%${search}%` });
+      const searchBy = query.searchBy ?? 'judul';
+      if (searchBy === 'library') {
+        // Nama Library tidak di-join di query builder ini (di-batch-fetch
+        // terpisah di toCatalogDtos, lihat komentar method itu) — pakai
+        // EXISTS subquery, konsisten pola HAS_PUBLISHED_CHAPTER_SQL di atas.
+        qb.andWhere('EXISTS (SELECT 1 FROM libraries l WHERE l.id = book.library_id AND l.nama ILIKE :search)', {
+          search: `%${search}%`,
+        });
+      } else if (searchBy === 'originalAuthor') {
+        qb.andWhere('book.original_author ILIKE :search', { search: `%${search}%` });
+      } else {
+        qb.andWhere('book.judul ILIKE :search', { search: `%${search}%` });
+      }
     }
 
     const genreSlug = query.genre?.trim();
