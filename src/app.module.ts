@@ -16,6 +16,7 @@ import { ReadingProgressModule } from './modules/reading-progress/reading-progre
 import { HighlightsModule } from './modules/highlights/highlights.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { PlatformConfigModule } from './modules/platform-config/platform-config.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     HighlightsModule,
     StorageModule,
     UploadsModule,
+    PlatformConfigModule,
   ],
 })
 export class AppModule {}

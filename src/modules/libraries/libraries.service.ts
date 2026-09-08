@@ -1,8 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Library } from '../../entities/library.entity';
+import { PlatformConfigService } from '../platform-config/platform-config.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
 
@@ -11,6 +12,7 @@ export class LibrariesService {
   constructor(
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
+    private readonly platformConfig: PlatformConfigService,
   ) {}
 
   /**
@@ -24,6 +26,18 @@ export class LibrariesService {
   }
 
   async create(ownerUserId: string, dto: CreateLibraryDto): Promise<Library> {
+    // lockStudio (platform_config, disepakati 9 Sep 2026): kalau true, TIDAK
+    // ADA jalur lewat API untuk bikin Library baru — satu-satunya cara
+    // adalah insert manual langsung ke DB oleh tim Bagdja. Sengaja TIDAK ada
+    // pengecualian/allowlist di sini (dikonfirmasi eksplisit user, bukan
+    // "daftar user yang di-approve lalu tetap boleh lewat form").
+    const locked = await this.platformConfig.getValue<boolean>('lockStudio', false);
+    if (locked) {
+      throw new ForbiddenException(
+        'Pendaftaran penulis baru sedang ditutup sementara. Hubungi admin platform.',
+      );
+    }
+
     // MVP: satu Library = satu penulis (solo), lihat overview.md §3 & §4.1 —
     // user yang sudah punya Library tidak boleh membuat lagi.
     const existingForOwner = await this.findLibraryByOwner(ownerUserId);
