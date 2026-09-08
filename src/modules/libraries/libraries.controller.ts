@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 
 import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
 import { LibrariesService } from './libraries.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
+import { UpdateLibraryDto } from './dto/update-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
 
 @ApiTags('Libraries')
@@ -43,5 +44,19 @@ export class LibrariesController {
     // mengirim teks "null" 4-byte yang valid di-parse JSON.
     const library = await this.librariesService.findLibraryByOwner(user.userId);
     res.status(HttpStatus.OK).json(library ? this.librariesService.toResponseDto(library) : null);
+  }
+
+  @Patch('me')
+  @ApiOperation({
+    summary: 'Update Library milik user login (halaman Pengaturan Studio)',
+    description: 'Semua field body opsional. Slug TIDAK bisa diubah lewat endpoint ini (dipakai di URL publik, hanya ditentukan saat create).',
+  })
+  @ApiOkResponse({ type: LibraryResponseDto, description: 'Library terbaru setelah diupdate' })
+  async updateMine(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: UpdateLibraryDto,
+  ): Promise<LibraryResponseDto> {
+    const library = await this.librariesService.update(user.userId, dto);
+    return this.librariesService.toResponseDto(library);
   }
 }

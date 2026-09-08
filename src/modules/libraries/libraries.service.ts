@@ -1,10 +1,11 @@
-import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Library } from '../../entities/library.entity';
 import { PlatformConfigService } from '../platform-config/platform-config.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
+import { UpdateLibraryDto } from './dto/update-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
 
 @Injectable()
@@ -57,6 +58,19 @@ export class LibrariesService {
       deskripsi: dto.deskripsi ?? null,
       cover_url: dto.coverUrl ?? null,
     });
+
+    return this.libraryRepo.save(library);
+  }
+
+  async update(ownerUserId: string, dto: UpdateLibraryDto): Promise<Library> {
+    const library = await this.findLibraryByOwner(ownerUserId);
+    if (!library) {
+      throw new NotFoundException('User belum punya Library');
+    }
+
+    if (dto.nama !== undefined) library.nama = dto.nama;
+    if (dto.deskripsi !== undefined) library.deskripsi = dto.deskripsi;
+    if (dto.coverUrl !== undefined) library.cover_url = dto.coverUrl;
 
     return this.libraryRepo.save(library);
   }
