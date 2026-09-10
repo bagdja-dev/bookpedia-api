@@ -5,12 +5,16 @@ import { In, Repository } from 'typeorm';
 import { Book } from '../../entities/book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
+import { Platform } from '../../entities/platform.entity';
+import { PlatformsService } from '../platforms/platforms.service';
 import { BookCatalogDto } from './dto/book-catalog.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
+import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
+import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 
 /** SQL fragment: Book ini "discoverable" publik kalau punya minimal 1 Chapter published. */
 const HAS_PUBLISHED_CHAPTER_SQL =
@@ -24,6 +28,15 @@ const HAS_PUBLISHED_CHAPTER_SQL =
  */
 const IS_BOOK_PUBLISHED_SQL = 'book.published_at IS NOT NULL';
 
+/**
+ * Fase 4 (§4.1, 10 Sep 2026): semua method di bawah sekarang butuh
+ * `platformId` — resolusi Platform dilakukan sekali di
+ * `resolvePlatformBySlugOrThrow()` (dipanggil PublicController dari path
+ * param `:platformSlug`), lalu diteruskan ke tiap method di sini supaya
+ * query Book/Library selalu ter-scope `WHERE platform_id = ...` — cegah
+ * data "bocor" lintas Platform. Keputusan resolusi lewat path param
+ * eksplisit (bukan Host header), lihat plan/novelo/execution-plan.md §4.1.
+ */
 @Injectable()
 export class PublicService {
   constructor(
@@ -33,22 +46,59 @@ export class PublicService {
     private readonly chapterRepo: Repository<Chapter>,
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
+    private readonly platformsService: PlatformsService,
   ) {}
 
+  async resolvePlatformBySlugOrThrow(platformSlug: string): Promise<Platform> {
+    const platform = await this.platformsService.findBySlug(platformSlug);
+    if (!platform || !platform.is_active) {
+      throw new NotFoundException('Platform not found or inactive');
+    }
+    return platform;
+  }
+
   /**
-   * Katalog pusat lintas semua Library — HANYA Book dengan minimal 1
-   * Chapter `published` (EXISTS subquery, bukan JOIN — supaya tidak ada
-   * baris ganda per Book & tidak butuh DISTINCT). Library nama/slug
-   * di-batch-fetch sekali per page (bukan N+1 per Book).
+   * Resolusi Platform dari custom domain (dipanggil middleware novelo-app,
+   * analog `resolve-domain` di bagdja-auction-market) — subdomain wildcard
+   * `{slug}.novelo.bagdja.com` di-parse langsung dari hostname di sisi
+   * frontend, TIDAK lewat endpoint ini (cuma untuk domain custom yang sudah
+   * lolos verifikasi DNS TXT).
    */
-  async getCatalog(query: CatalogQueryDto): Promise<CatalogResponseDto> {
+  async resolveByHost(host: string): Promise<PlatformResolveResponseDto> {
+    const platform = await this.platformsService.findByVerifiedDomain(host);
+    if (!platform || !platform.is_active) {
+      throw new NotFoundException('Domain not found');
+    }
+    return { slug: platform.slug };
+  }
+
+  toPublicProfileDto(platform: Platform): PlatformPublicProfileDto {
+    return {
+      nama: platform.nama,
+      slug: platform.slug,
+      logoUrl: platform.logo_url,
+      faviconUrl: platform.favicon_url,
+      colors: platform.colors,
+      lockStudio: platform.lock_studio,
+      rendererKey: platform.renderer_key,
+    };
+  }
+
+  /**
+   * Katalog pusat lintas semua Library MILIK SATU PLATFORM — HANYA Book
+   * dengan minimal 1 Chapter `published` (EXISTS subquery, bukan JOIN —
+   * supaya tidak ada baris ganda per Book & tidak butuh DISTINCT). Library
+   * nama/slug di-batch-fetch sekali per page (bukan N+1 per Book).
+   */
+  async getCatalog(platformId: string, query: CatalogQueryDto): Promise<CatalogResponseDto> {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 50);
 
     const qb = this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
-      .where(IS_BOOK_PUBLISHED_SQL)
+      .where('book.platform_id = :platformId', { platformId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
 
     const search = query.search?.trim();
@@ -102,7 +152,9 @@ export class PublicService {
       judul: book.judul,
       slug: book.slug,
       sinopsis: book.sinopsis,
-      genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
+      genre: book.genre
+        ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
+        : null,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
@@ -112,12 +164,12 @@ export class PublicService {
   }
 
   /**
-   * Profil publik Library by slug — `books` HANYA yang punya minimal 1
-   * Chapter published (aturan sama seperti katalog). 404 kalau slug tidak
-   * ditemukan.
+   * Profil publik Library by slug (di-scope ke satu Platform) — `books`
+   * HANYA yang punya minimal 1 Chapter published (aturan sama seperti
+   * katalog). 404 kalau slug tidak ditemukan di Platform ini.
    */
-  async getLibraryBySlug(slug: string): Promise<LibraryProfileDto> {
-    const library = await this.libraryRepo.findOne({ where: { slug } });
+  async getLibraryBySlug(platformId: string, librarySlug: string): Promise<LibraryProfileDto> {
+    const library = await this.libraryRepo.findOne({ where: { slug: librarySlug, platform_id: platformId } });
     if (!library) {
       throw new NotFoundException('Library not found');
     }
@@ -143,13 +195,16 @@ export class PublicService {
   }
 
   /**
-   * Detail Book publik by slug — 404 kalau slug tidak ditemukan ATAU Book
-   * itu tidak punya Chapter published sama sekali (tidak "discoverable"
-   * publik, meski row-nya ada di DB). `chapters` HANYA yang published, urut
-   * order_index ASC.
+   * Detail Book publik by slug (di-scope ke satu Platform) — 404 kalau slug
+   * tidak ditemukan di Platform ini ATAU Book itu tidak punya Chapter
+   * published sama sekali (tidak "discoverable" publik, meski row-nya ada
+   * di DB). `chapters` HANYA yang published, urut order_index ASC.
    */
-  async getBookBySlug(slug: string): Promise<BookDetailDto> {
-    const book = await this.bookRepo.findOne({ where: { slug }, relations: ['genre'] });
+  async getBookBySlug(platformId: string, bookSlug: string): Promise<BookDetailDto> {
+    const book = await this.bookRepo.findOne({
+      where: { slug: bookSlug, platform_id: platformId },
+      relations: ['genre'],
+    });
     if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
     }
@@ -170,7 +225,9 @@ export class PublicService {
       judul: book.judul,
       slug: book.slug,
       sinopsis: book.sinopsis,
-      genre: book.genre ? { id: book.genre.id, nama: book.genre.nama, slug: book.genre.slug } : null,
+      genre: book.genre
+        ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
+        : null,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
@@ -186,17 +243,22 @@ export class PublicService {
   }
 
   /**
-   * Konten 1 Chapter publik by (bookSlug, orderIndex). 404 kalau Book tidak
-   * ditemukan ATAU tidak ada Chapter di order_index tsb ATAU statusnya bukan
-   * `published` (draft harus 404, jangan bocor lewat URL tebakan).
+   * Konten 1 Chapter publik by (platformId, bookSlug, orderIndex). 404
+   * kalau Book tidak ditemukan di Platform ini ATAU tidak ada Chapter di
+   * order_index tsb ATAU statusnya bukan `published` (draft harus 404,
+   * jangan bocor lewat URL tebakan).
    *
    * prev/nextOrderIndex dihitung dari Chapter published TERDEKAT di Book
    * yang sama (order_index terdekat di bawah/atas yang juga published —
    * melompati Chapter draft di antaranya), supaya reader app bisa render
    * tombol next/prev tanpa fetch daftar chapter terpisah.
    */
-  async getChapterByOrderIndex(bookSlug: string, orderIndex: number): Promise<ChapterDetailDto> {
-    const book = await this.bookRepo.findOne({ where: { slug: bookSlug } });
+  async getChapterByOrderIndex(
+    platformId: string,
+    bookSlug: string,
+    orderIndex: number,
+  ): Promise<ChapterDetailDto> {
+    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platformId } });
     if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
     }

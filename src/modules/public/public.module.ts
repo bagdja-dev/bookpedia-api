@@ -4,11 +4,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Book } from '../../entities/book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
+import { PlatformsModule } from '../platforms/platforms.module';
 import { PublicController } from './public.controller';
 import { PublicService } from './public.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book, Chapter, Library])],
+  imports: [TypeOrmModule.forFeature([Book, Chapter, Library]), PlatformsModule],
   controllers: [PublicController],
   providers: [PublicService],
 })

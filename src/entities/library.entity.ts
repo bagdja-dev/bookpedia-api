@@ -2,9 +2,14 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { Platform } from './platform.entity';
 
 /**
  * Satu Library = satu tenant/penulis (MVP: solo, tanpa multi-staff/co-author —
@@ -12,9 +17,24 @@ import {
  * `library_id` milik Library ini.
  */
 @Entity('libraries')
+@Index(['platform_id', 'slug'], { unique: true })
 export class Library {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  /**
+   * Ditambahkan Fase 4 (§4.1, 10 Sep 2026) — nullable SENGAJA (lihat
+   * migration 20260910010000). Instance existing di-backfill di §4.4;
+   * kode aplikasi (LibrariesService.create()) sudah mewajibkan field ini
+   * diisi untuk Library BARU sejak §4.1 merge.
+   */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  platform_id: string | null;
+
+  @ManyToOne(() => Platform, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'platform_id' })
+  platform?: Platform | null;
 
   /**
    * ID user dari bagdja-auth (SSO) yang memiliki Library ini — TIDAK ada FK

@@ -16,7 +16,9 @@ import { ReadingProgressModule } from './modules/reading-progress/reading-progre
 import { HighlightsModule } from './modules/highlights/highlights.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
-import { PlatformConfigModule } from './modules/platform-config/platform-config.module';
+import { PlatformsModule } from './modules/platforms/platforms.module';
+import { PlatformStaffModule } from './modules/platform-staff/platform-staff.module';
+import { PlatformDomainsModule } from './modules/platform-domains/platform-domains.module';
 
 @Module({
   imports: [
@@ -81,7 +83,9 @@ import { PlatformConfigModule } from './modules/platform-config/platform-config.
     HighlightsModule,
     StorageModule,
     UploadsModule,
-    PlatformConfigModule,
+    PlatformsModule,
+    PlatformStaffModule,
+    PlatformDomainsModule,
   ],
 })
 export class AppModule {}

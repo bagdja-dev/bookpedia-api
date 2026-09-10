@@ -1,5 +1,8 @@
 export { Library } from './library.entity';
 export { Genre } from './genre.entity';
+export { Platform } from './platform.entity';
+export { PlatformStaff } from './platform-staff.entity';
+export { PlatformStaffInvitation } from './platform-staff-invitation.entity';
 export { Book, type BookStatus } from './book.entity';
 export { Chapter, type ChapterStatus } from './chapter.entity';
 export { ReadingProgress } from './reading-progress.entity';

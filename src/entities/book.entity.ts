@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 
 import { Genre } from './genre.entity';
+import { Platform } from './platform.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
 export type BookType = 'original' | 'translation' | 'adaptation';
@@ -19,8 +20,18 @@ export type BookType = 'original' | 'translation' | 'adaptation';
  * (`library_id`). Fase 1 — lihat execution-plan.md & plan/novelo/schema.dbml.
  * `slug` UNIK GLOBAL lintas platform (bukan per-library) — dipakai di URL
  * publik `/book/{slug}` mulai Fase 2.
+ *
+ * Fase 4 (§4.1, 10 Sep 2026): `platform_id` DENORMALISASI dari
+ * `library.platform_id` (bukan cuma bisa di-derive lewat JOIN) — supaya
+ * unique slug per-Platform tidak butuh JOIN, dan query katalog publik
+ * cukup `WHERE platform_id = X`. WAJIB diisi sama dengan
+ * `libraries.platform_id` milik Book itu, dijaga di service layer
+ * (BooksService.create()), TIDAK PERNAH diterima sebagai input client.
+ * Nullable SENGAJA di kolom DB (lihat migration 20260910010000) —
+ * instance existing di-backfill di §4.4.
  */
 @Entity('books')
+@Index(['platform_id', 'slug'], { unique: true })
 export class Book {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -28,6 +39,14 @@ export class Book {
   @Index()
   @Column({ type: 'uuid' })
   library_id: string;
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  platform_id: string | null;
+
+  @ManyToOne(() => Platform, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'platform_id' })
+  platform?: Platform | null;
 
   @Column({ type: 'varchar', length: 255 })
   judul: string;

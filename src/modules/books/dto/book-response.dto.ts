@@ -7,6 +7,9 @@ export class BookResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   id: string;
 
+  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Platform pemilik Book ini (Fase 4, denormalisasi dari Library). Nullable untuk Book lama sebelum backfill §4.4.', nullable: true })
+  platformId: string | null;
+
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Library pemilik Book ini' })
   libraryId: string;
 

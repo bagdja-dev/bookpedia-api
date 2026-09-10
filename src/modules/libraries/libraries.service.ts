@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Library } from '../../entities/library.entity';
-import { PlatformConfigService } from '../platform-config/platform-config.service';
+import { PlatformsService } from '../platforms/platforms.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { UpdateLibraryDto } from './dto/update-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
@@ -13,7 +13,7 @@ export class LibrariesService {
   constructor(
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
-    private readonly platformConfig: PlatformConfigService,
+    private readonly platformsService: PlatformsService,
   ) {}
 
   /**
@@ -27,13 +27,21 @@ export class LibrariesService {
   }
 
   async create(ownerUserId: string, dto: CreateLibraryDto): Promise<Library> {
-    // lockStudio (platform_config, disepakati 9 Sep 2026): kalau true, TIDAK
-    // ADA jalur lewat API untuk bikin Library baru — satu-satunya cara
-    // adalah insert manual langsung ke DB oleh tim Bagdja. Sengaja TIDAK ada
-    // pengecualian/allowlist di sini (dikonfirmasi eksplisit user, bukan
-    // "daftar user yang di-approve lalu tetap boleh lewat form").
-    const locked = await this.platformConfig.getValue<boolean>('lockStudio', false);
-    if (locked) {
+    // Fase 4 (§4.1, 10 Sep 2026; koreksi §4.2, 11 Sep 2026): platformSlug
+    // sekarang wajib dari client, resolusi via body eksplisit (BUKAN Host
+    // header) — lihat plan/novelo/execution-plan.md §4.1/§4.2 (keputusan
+    // resolusi Platform). Slug, bukan UUID — lihat doc-comment
+    // CreateLibraryDto.platformSlug untuk alasan lengkap.
+    const platform = await this.platformsService.getActivePlatformBySlugOrThrow(dto.platformSlug);
+
+    // lockStudio (gantinya platform_config.lockStudio lama, sekarang
+    // platforms.lock_studio milik Platform ini): kalau true, TIDAK ADA
+    // jalur lewat API untuk bikin Library baru di Platform ini —
+    // satu-satunya cara adalah insert manual langsung ke DB oleh tim
+    // Bagdja. Sengaja TIDAK ada pengecualian/allowlist di sini (dikonfirmasi
+    // eksplisit user, bukan "daftar user yang di-approve lalu tetap boleh
+    // lewat form").
+    if (platform.lock_studio) {
       throw new ForbiddenException(
         'Pendaftaran penulis baru sedang ditutup sementara. Hubungi admin platform.',
       );
@@ -46,12 +54,17 @@ export class LibrariesService {
       throw new ConflictException('User already owns a Library');
     }
 
+    // Cek slug GLOBAL (bukan per-platform) — constraint UNIQUE(slug) lama di
+    // DB masih hidup sampai §4.4 (lihat migration 20260910010000), jadi slug
+    // masih harus unik lintas-Platform untuk sekarang walau index composite
+    // baru sudah ada.
     const existingSlug = await this.libraryRepo.findOne({ where: { slug: dto.slug } });
     if (existingSlug) {
       throw new ConflictException('A library with this slug already exists');
     }
 
     const library = this.libraryRepo.create({
+      platform_id: platform.id,
       owner_user_id: ownerUserId,
       nama: dto.nama,
       slug: dto.slug,
@@ -78,6 +91,7 @@ export class LibrariesService {
   toResponseDto(library: Library): LibraryResponseDto {
     return {
       id: library.id,
+      platformId: library.platform_id,
       ownerUserId: library.owner_user_id,
       nama: library.nama,
       slug: library.slug,

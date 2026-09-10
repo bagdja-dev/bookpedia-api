@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Bentuk genre yang diekspos publik — dipakai baik sebagai item daftar
@@ -9,6 +9,9 @@ import { ApiProperty } from '@nestjs/swagger';
 export class GenreResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   id: string;
+
+  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Platform pemilik genre ini (Fase 4). Nullable untuk genre lama sebelum backfill §4.4.', nullable: true })
+  platformId: string | null;
 
   @ApiProperty({ example: 'Fantasi' })
   nama: string;

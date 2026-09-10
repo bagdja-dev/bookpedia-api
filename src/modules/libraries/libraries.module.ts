@@ -3,12 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Library } from '../../entities/library.entity';
 import { AuthModule } from '../../common/auth';
-import { PlatformConfigModule } from '../platform-config/platform-config.module';
+import { PlatformsModule } from '../platforms/platforms.module';
 import { LibrariesController } from './libraries.controller';
 import { LibrariesService } from './libraries.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Library]), AuthModule, PlatformConfigModule],
+  imports: [TypeOrmModule.forFeature([Library]), AuthModule, PlatformsModule],
   controllers: [LibrariesController],
   providers: [LibrariesService],
   exports: [LibrariesService],

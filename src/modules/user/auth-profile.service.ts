@@ -123,7 +123,13 @@ export class AuthProfileService {
     }
   }
 
-  private async getClientToken(): Promise<string | null> {
+  /**
+   * Public sejak Fase 4 (§4.1, 10 Sep 2026) — dipakai ulang oleh
+   * PlatformAccessGuard (langkah 1 validasi ownership Platform, lihat
+   * platform-access.guard.ts) supaya cache token client-credential ini
+   * tidak diduplikasi di kelas lain.
+   */
+  async getClientToken(): Promise<string | null> {
     if (this.clientToken && this.clientTokenExpiry && new Date() < this.clientTokenExpiry) {
       return this.clientToken;
     }

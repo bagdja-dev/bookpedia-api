@@ -7,63 +7,108 @@ import { CatalogResponseDto } from './dto/catalog-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
+import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
+import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 
 /**
- * Endpoint publik Fase 2 — TANPA autentikasi sama sekali (tidak ada
- * @UseGuards di controller ini, genuinely public). Prefix `/public/...`
- * supaya tidak ambigu/bentrok dengan `/libraries`, `/books` yang tetap
- * butuh auth untuk kebutuhan penulis (Studio). Dipakai reader app
- * (novelo-app) untuk katalog pusat & baca Chapter tanpa login.
+ * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
+ * controller ini, genuinely public). Prefix `/public/...` supaya tidak
+ * ambigu/bentrok dengan `/libraries`, `/books` yang tetap butuh auth untuk
+ * kebutuhan penulis (Studio). Dipakai reader app (novelo-app) untuk katalog
+ * pusat & baca Chapter tanpa login.
+ *
+ * Fase 4 (§4.1, 10 Sep 2026): semua route Book/Library/Chapter di bawah
+ * pindah ke bawah `platforms/:platformSlug/...` (resolusi Platform via path
+ * param eksplisit, BUKAN Host header — lihat plan/novelo/execution-plan.md
+ * §4.1). `platforms/resolve` (custom domain) dan `platforms/:platformSlug`
+ * (profil publik, pengganti `GET /public/config` lama) HARUS didaftarkan
+ * SEBELUM `platforms/:platformSlug/...` supaya "resolve" tidak ketelan jadi
+ * value `:platformSlug`.
  */
 @ApiTags('Public (No Auth)')
 @Controller('public')
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
-  @Get('catalog')
+  @Get('platforms/resolve')
   @ApiOperation({
-    summary: 'Katalog pusat Book lintas semua Library',
+    summary: 'Resolusi Platform dari custom domain',
+    description: 'Dipanggil middleware novelo-app untuk custom domain (BUKAN subdomain wildcard {slug}.novelo.bagdja.com — itu di-parse langsung dari hostname di frontend). 404 kalau domain tidak ditemukan/belum lolos verifikasi.',
+  })
+  @ApiOkResponse({ type: PlatformResolveResponseDto })
+  async resolvePlatform(@Query('host') host: string): Promise<PlatformResolveResponseDto> {
+    return this.publicService.resolveByHost(host);
+  }
+
+  @Get('platforms/:platformSlug')
+  @ApiOperation({
+    summary: 'Profil publik Platform by slug',
+    description: 'Pengganti langsung GET /public/config lama (Fase 4) — branding (nama/logo/favicon/colors) + lockStudio + rendererKey, di-scope per-Platform.',
+  })
+  @ApiOkResponse({ type: PlatformPublicProfileDto })
+  async getPlatformProfile(@Param('platformSlug') platformSlug: string): Promise<PlatformPublicProfileDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.toPublicProfileDto(platform);
+  }
+
+  @Get('platforms/:platformSlug/catalog')
+  @ApiOperation({
+    summary: 'Katalog pusat Book lintas semua Library milik satu Platform',
     description:
-      'HANYA Book dengan minimal 1 Chapter berstatus published yang muncul. search filter judul (ILIKE), genre filter by slug genre (exact match, dari GET /public/genres — bukan free text lagi). page default 1, limit default 20 (max 50).',
+      'HANYA Book dengan minimal 1 Chapter berstatus published yang muncul. search filter judul (ILIKE), genre filter by slug genre (exact match, dari GET /public/platforms/:platformSlug/genres — bukan free text lagi). page default 1, limit default 20 (max 50).',
   })
   @ApiOkResponse({ type: CatalogResponseDto, description: 'Daftar Book publik (paginated)' })
-  async getCatalog(@Query() query: CatalogQueryDto): Promise<CatalogResponseDto> {
-    return this.publicService.getCatalog(query);
+  async getCatalog(
+    @Param('platformSlug') platformSlug: string,
+    @Query() query: CatalogQueryDto,
+  ): Promise<CatalogResponseDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getCatalog(platform.id, query);
   }
 
-  @Get('libraries/:slug')
+  @Get('platforms/:platformSlug/libraries/:librarySlug')
   @ApiOperation({
-    summary: 'Profil publik Library by slug',
+    summary: 'Profil publik Library by slug (di-scope ke satu Platform)',
     description:
-      '404 kalau slug tidak ditemukan. `books` HANYA Book dengan minimal 1 Chapter published (aturan sama seperti /public/catalog).',
+      '404 kalau slug tidak ditemukan di Platform ini. `books` HANYA Book dengan minimal 1 Chapter published (aturan sama seperti /public/platforms/:platformSlug/catalog).',
   })
   @ApiOkResponse({ type: LibraryProfileDto, description: 'Profil Library + daftar Book publiknya' })
-  async getLibrary(@Param('slug') slug: string): Promise<LibraryProfileDto> {
-    return this.publicService.getLibraryBySlug(slug);
+  async getLibrary(
+    @Param('platformSlug') platformSlug: string,
+    @Param('librarySlug') librarySlug: string,
+  ): Promise<LibraryProfileDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getLibraryBySlug(platform.id, librarySlug);
   }
 
-  @Get('books/:slug')
+  @Get('platforms/:platformSlug/books/:bookSlug')
   @ApiOperation({
-    summary: 'Detail publik Book by slug',
+    summary: 'Detail publik Book by slug (di-scope ke satu Platform)',
     description:
-      '404 kalau slug tidak ditemukan ATAU Book tidak punya Chapter published sama sekali (tidak "discoverable" publik). `chapters` HANYA yang published, urut orderIndex ASC.',
+      '404 kalau slug tidak ditemukan di Platform ini ATAU Book tidak punya Chapter published sama sekali (tidak "discoverable" publik). `chapters` HANYA yang published, urut orderIndex ASC.',
   })
   @ApiOkResponse({ type: BookDetailDto, description: 'Detail Book + daftar Chapter published' })
-  async getBook(@Param('slug') slug: string): Promise<BookDetailDto> {
-    return this.publicService.getBookBySlug(slug);
+  async getBook(
+    @Param('platformSlug') platformSlug: string,
+    @Param('bookSlug') bookSlug: string,
+  ): Promise<BookDetailDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getBookBySlug(platform.id, bookSlug);
   }
 
-  @Get('books/:slug/chapters/:orderIndex')
+  @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex')
   @ApiOperation({
-    summary: 'Konten 1 Chapter publik by order_index (bukan chapter id)',
+    summary: 'Konten 1 Chapter publik by order_index (bukan chapter id), di-scope ke satu Platform',
     description:
-      'orderIndex adalah angka order_index (bukan UUID) supaya URL publik /book/{slug}/chapter/{n} enak dibaca. 404 kalau Book tidak ditemukan ATAU tidak ada Chapter di orderIndex tsb ATAU statusnya bukan published (draft tidak boleh bocor). prevOrderIndex/nextOrderIndex melompati Chapter draft di antaranya.',
+      'orderIndex adalah angka order_index (bukan UUID) supaya URL publik /book/{slug}/chapter/{n} enak dibaca. 404 kalau Book tidak ditemukan di Platform ini ATAU tidak ada Chapter di orderIndex tsb ATAU statusnya bukan published (draft tidak boleh bocor). prevOrderIndex/nextOrderIndex melompati Chapter draft di antaranya.',
   })
   @ApiOkResponse({ type: ChapterDetailDto, description: 'Konten Chapter + navigasi next/prev' })
   async getChapter(
-    @Param('slug') slug: string,
+    @Param('platformSlug') platformSlug: string,
+    @Param('bookSlug') bookSlug: string,
     @Param('orderIndex', ParseIntPipe) orderIndex: number,
   ): Promise<ChapterDetailDto> {
-    return this.publicService.getChapterByOrderIndex(slug, orderIndex);
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getChapterByOrderIndex(platform.id, bookSlug, orderIndex);
   }
 }

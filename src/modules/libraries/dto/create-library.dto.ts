@@ -2,6 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 export class CreateLibraryDto {
+  @ApiProperty({
+    example: 'novelo',
+    description: 'Slug Platform tempat Library ini dibuat (Fase 4, §4.2, koreksi 11 Sep 2026 — sebelumnya platformId/UUID). Slug, BUKAN UUID: endpoint publik sengaja tidak pernah expose Platform id, dan client (browser) belum tentu Owner/Staff platform manapun untuk bisa akses GET /platforms (authenticated) demi dapat UUID-nya. Resolve slug->Platform dilakukan di service layer (PlatformsService.getActivePlatformBySlugOrThrow).',
+  })
+  @IsString()
+  @IsNotEmpty()
+  platformSlug: string;
+
   @ApiProperty({ example: 'Kisah Senja', description: 'Nama Library (tampil publik sebagai identitas penulis)' })
   @IsString()
   @IsNotEmpty()
