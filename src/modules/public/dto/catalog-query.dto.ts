@@ -29,6 +29,15 @@ export class CatalogQueryDto {
   @IsString()
   genre?: string;
 
+  @ApiPropertyOptional({
+    example: 'fiksi',
+    description:
+      'Filter by Category slug (dari GET /public/platforms/:platformSlug/categories) — expand ke semua Genre anggota Category ini (book.genre_id IN (...)). Bisa dikombinasikan dengan `genre` (keduanya di-AND-kan).',
+  })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
   @ApiPropertyOptional({ example: 1, default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)

@@ -25,6 +25,15 @@ export class UpdateBookDto {
   @IsUUID()
   genreId?: string | null;
 
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: 'ID Category dari GET /public/platforms/{slug}/categories. Kirim null untuk mengosongkan. 400 kalau tidak match Category manapun.',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string | null;
+
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover-2.jpg' })
   @IsOptional()
   @IsString()

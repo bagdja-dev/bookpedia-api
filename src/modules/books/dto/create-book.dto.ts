@@ -36,6 +36,15 @@ export class CreateBookDto {
   @IsUUID()
   genreId?: string;
 
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description:
+      'ID Category dari GET /public/platforms/{slug}/categories — independen dari genreId (tidak divalidasi harus "cocok"). 400 kalau tidak match Category manapun.',
+  })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg' })
   @IsOptional()
   @IsString()

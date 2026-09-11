@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 
 import { Genre } from './genre.entity';
+import { Category } from './category.entity';
 import { Platform } from './platform.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
@@ -68,6 +69,19 @@ export class Book {
   @ManyToOne(() => Genre, { nullable: true })
   @JoinColumn({ name: 'genre_id' })
   genre?: Genre | null;
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  category_id: string | null;
+
+  /**
+   * Category yang dipilih terpisah dari Genre (§4.5, 11 Sep 2026) — TIDAK
+   * diturunkan otomatis dari pivot `genre_categories`, penulis pilih manual
+   * di form Book. Nullable, ON DELETE SET NULL (Book tanpa Category valid).
+   */
+  @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'category_id' })
+  category?: Category | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   cover_url: string | null;

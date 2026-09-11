@@ -89,6 +89,11 @@ export class PublicService {
    * dengan minimal 1 Chapter `published` (EXISTS subquery, bukan JOIN —
    * supaya tidak ada baris ganda per Book & tidak butuh DISTINCT). Library
    * nama/slug di-batch-fetch sekali per page (bukan N+1 per Book).
+   *
+   * §4.5 (11 Sep 2026): tambah filter `category` — Book kini punya
+   * `category_id` sendiri (dipilih terpisah dari `genre_id` di form Book),
+   * filter langsung `category.slug = ...` (join, pola sama filter `genre`).
+   * Bisa dikombinasikan dengan `genre` (di-AND-kan).
    */
   async getCatalog(platformId: string, query: CatalogQueryDto): Promise<CatalogResponseDto> {
     const page = query.page ?? 1;
@@ -97,6 +102,7 @@ export class PublicService {
     const qb = this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
+      .leftJoinAndSelect('book.category', 'category')
       .where('book.platform_id = :platformId', { platformId })
       .andWhere(IS_BOOK_PUBLISHED_SQL)
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
@@ -121,6 +127,11 @@ export class PublicService {
     const genreSlug = query.genre?.trim();
     if (genreSlug) {
       qb.andWhere('genre.slug = :genreSlug', { genreSlug });
+    }
+
+    const categorySlug = query.category?.trim();
+    if (categorySlug) {
+      qb.andWhere('category.slug = :categorySlug', { categorySlug });
     }
 
     qb.orderBy('book.created_at', 'DESC')
@@ -155,6 +166,9 @@ export class PublicService {
       genre: book.genre
         ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
         : null,
+      category: book.category
+        ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
+        : null,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
@@ -177,6 +191,7 @@ export class PublicService {
     const books = await this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
+      .leftJoinAndSelect('book.category', 'category')
       .where('book.library_id = :libraryId', { libraryId: library.id })
       .andWhere(IS_BOOK_PUBLISHED_SQL)
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
@@ -203,7 +218,7 @@ export class PublicService {
   async getBookBySlug(platformId: string, bookSlug: string): Promise<BookDetailDto> {
     const book = await this.bookRepo.findOne({
       where: { slug: bookSlug, platform_id: platformId },
-      relations: ['genre'],
+      relations: ['genre', 'category'],
     });
     if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
@@ -227,6 +242,9 @@ export class PublicService {
       sinopsis: book.sinopsis,
       genre: book.genre
         ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
+        : null,
+      category: book.category
+        ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
         : null,
       coverUrl: book.cover_url,
       status: book.status,

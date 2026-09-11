@@ -19,6 +19,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
 import { PlatformsModule } from './modules/platforms/platforms.module';
 import { PlatformStaffModule } from './modules/platform-staff/platform-staff.module';
 import { PlatformDomainsModule } from './modules/platform-domains/platform-domains.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { PlatformDomainsModule } from './modules/platform-domains/platform-domai
     PlatformsModule,
     PlatformStaffModule,
     PlatformDomainsModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}

@@ -6,6 +6,7 @@ import { Book } from '../../entities/book.entity';
 import { Library } from '../../entities/library.entity';
 import { LibrariesService } from '../libraries/libraries.service';
 import { GenresService } from '../genres/genres.service';
+import { CategoriesService } from '../categories/categories.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookResponseDto } from './dto/book-response.dto';
@@ -17,6 +18,7 @@ export class BooksService {
     private readonly bookRepo: Repository<Book>,
     private readonly librariesService: LibrariesService,
     private readonly genresService: GenresService,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   /**
@@ -41,6 +43,30 @@ export class BooksService {
       throw new BadRequestException(`genreId "${genreId}" bukan milik Platform yang sama dengan Book ini`);
     }
     return genreId;
+  }
+
+  /**
+   * Validasi `categoryId` (kalau dikirim) — pola sama `resolveGenreId()`.
+   * Dipilih terpisah dari `genreId` di form Book, TIDAK divalidasi harus
+   * "cocok" dengan genre yang dipilih (Category & Genre independen di Book,
+   * kaitan `genre_categories` cuma dipakai untuk kelompokkan dropdown Genre
+   * di Studio).
+   */
+  private async resolveCategoryId(
+    categoryId: string | null | undefined,
+    platformId: string | null,
+  ): Promise<string | null | undefined> {
+    if (categoryId === undefined || categoryId === null) {
+      return categoryId;
+    }
+    const category = await this.categoriesService.findById(categoryId);
+    if (!category) {
+      throw new BadRequestException(`categoryId "${categoryId}" tidak ditemukan`);
+    }
+    if (category.platform_id !== platformId) {
+      throw new BadRequestException(`categoryId "${categoryId}" bukan milik Platform yang sama dengan Book ini`);
+    }
+    return categoryId;
   }
 
   /**
@@ -70,6 +96,7 @@ export class BooksService {
     }
 
     const genreId = await this.resolveGenreId(dto.genreId, library.platform_id);
+    const categoryId = await this.resolveCategoryId(dto.categoryId, library.platform_id);
 
     const book = this.bookRepo.create({
       // Denormalisasi dari library.platform_id — TIDAK PERNAH dari client
@@ -80,6 +107,7 @@ export class BooksService {
       slug: dto.slug,
       sinopsis: dto.sinopsis ?? null,
       genre_id: genreId ?? null,
+      category_id: categoryId ?? null,
       cover_url: dto.coverUrl ?? null,
       status: 'draft',
       book_type: dto.bookType ?? 'original',
@@ -94,7 +122,7 @@ export class BooksService {
     const library = await this.getLibraryForOwner(ownerUserId);
     return this.bookRepo.find({
       where: { library_id: library.id },
-      relations: ['genre'],
+      relations: ['genre', 'category'],
       order: { created_at: 'DESC' },
     });
   }
@@ -108,7 +136,7 @@ export class BooksService {
     const library = await this.getLibraryForOwner(ownerUserId);
     const book = await this.bookRepo.findOne({
       where: { id: bookId, library_id: library.id },
-      relations: ['genre'],
+      relations: ['genre', 'category'],
     });
     if (!book) {
       throw new NotFoundException('Book not found');
@@ -131,6 +159,14 @@ export class BooksService {
       // tetap tersimpan. Set `undefined` (bukan null) supaya TypeORM
       // menganggap relasi "tidak diketahui", lalu mengikuti `genre_id`.
       book.genre = undefined;
+    }
+    if (dto.categoryId !== undefined) {
+      book.category_id = await this.resolveCategoryId(dto.categoryId, book.platform_id);
+      // Sama alasan seperti `book.genre = undefined` di atas — relasi
+      // `category` yang sudah ter-load (findOneForOwner) jadi basi begitu
+      // `category_id` mentah diubah, TypeORM save() memprioritaskan objek
+      // relasi lama kalau tidak di-undefined-kan.
+      book.category = undefined;
     }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
     if (dto.status !== undefined) book.status = dto.status;
@@ -160,6 +196,7 @@ export class BooksService {
       genre: book.genre
         ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
         : null,
+      category: book.category ? this.categoriesService.toSummaryDto(book.category) : null,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,

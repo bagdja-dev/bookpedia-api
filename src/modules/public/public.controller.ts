@@ -55,7 +55,7 @@ export class PublicController {
   @ApiOperation({
     summary: 'Katalog pusat Book lintas semua Library milik satu Platform',
     description:
-      'HANYA Book dengan minimal 1 Chapter berstatus published yang muncul. search filter judul (ILIKE), genre filter by slug genre (exact match, dari GET /public/platforms/:platformSlug/genres — bukan free text lagi). page default 1, limit default 20 (max 50).',
+      'HANYA Book dengan minimal 1 Chapter berstatus published yang muncul. search filter judul (ILIKE), genre filter by slug genre (exact match, dari GET /public/platforms/:platformSlug/genres — bukan free text lagi), category filter by slug Category (Book.category_id, dari GET /public/platforms/:platformSlug/categories — independen dari genre). page default 1, limit default 20 (max 50).',
   })
   @ApiOkResponse({ type: CatalogResponseDto, description: 'Daftar Book publik (paginated)' })
   async getCatalog(

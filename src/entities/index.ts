@@ -1,5 +1,7 @@
 export { Library } from './library.entity';
 export { Genre } from './genre.entity';
+export { Category } from './category.entity';
+export { GenreCategory } from './genre-category.entity';
 export { Platform } from './platform.entity';
 export { PlatformStaff } from './platform-staff.entity';
 export { PlatformStaffInvitation } from './platform-staff-invitation.entity';
