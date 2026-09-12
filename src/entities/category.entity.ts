@@ -20,7 +20,7 @@ import { Platform } from './platform.entity';
  *
  * TIDAK ada auto-seed default (beda dari 11 Genre default) — Platform baru
  * lahir tanpa Category, Owner buat manual sesuai kebutuhan lewat
- * novelo-admin.
+ * bookpedia-admin.
  */
 @Entity('categories')
 @Index(['platform_id', 'slug'], { unique: true })

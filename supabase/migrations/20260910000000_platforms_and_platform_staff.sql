@@ -1,14 +1,14 @@
 -- =============================================================
--- Bagdja Novelo — Fase 4: platforms & platform_staff (9-10 Sep 2026)
+-- Bagdja Bookpedia — Fase 4: platforms & platform_staff (9-10 Sep 2026)
 --
 -- Tenant baru di ATAS Library — 1 row = 1 "toko"/target pasar (novel,
 -- buku teknologi, musik, dst). Mengikuti pola `markets` di
 -- bagdja-auction-market APA ADANYA: TANPA kolom kepemilikan sama
 -- sekali (owner_user_id/organization_id) — satu org tunggal (pemilik
--- client_app_id Novelo) otomatis Owner org-wide atas SEMUA row di
+-- client_app_id Bookpedia) otomatis Owner org-wide atas SEMUA row di
 -- tabel ini, diverifikasi runtime via PlatformAccessGuard (bukan
--- disimpan sebagai kolom). Lihat plan/novelo/overview.md §9.3 &
--- plan/novelo/schema.dbml Table platforms/platform_staff untuk
+-- disimpan sebagai kolom). Lihat plan/bookpedia/overview.md §9.3 &
+-- plan/bookpedia/schema.dbml Table platforms/platform_staff untuk
 -- rasional lengkap. Migration sebelumnya: 20260909030000_platform_config_favicon.sql.
 --
 -- Seed 1 baris default di bawah BUKAN backfill §4.4 (execution-plan.md)
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS platforms (
 -- platform_staff — port PERSIS market_staff: keanggotaan BINER
 -- (user ini staff Platform ini, titik), TANPA kolom role. Sub-role
 -- staff sengaja ditunda (dikonfirmasi 9 Sep 2026, berlaku nanti
--- sekaligus untuk bagdja-auction-market DAN Novelo).
+-- sekaligus untuk bagdja-auction-market DAN Bookpedia).
 -- =============================================================
 CREATE TABLE IF NOT EXISTS platform_staff (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,7 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_platform_staff_platform_id ON platform_staff(plat
 -- visual/perilaku untuk instance yang sudah berjalan sampai memang
 -- di-backfill/diedit di §4.4.
 INSERT INTO platforms (nama, slug, colors, lock_studio, renderer_key, is_active) VALUES
-  ('Novelo', 'novelo', '{
+  ('Bookpedia', 'bookpedia', '{
     "bg": "#fbf6ee",
     "surface": "#fffdf8",
     "foreground": "#2c2114",

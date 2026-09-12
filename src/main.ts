@@ -15,7 +15,7 @@ import * as basicAuth from 'express-basic-auth';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('BagdjaNoveloApi');
+  const logger = new Logger('BagdjaBookpediaApi');
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
@@ -40,15 +40,15 @@ async function bootstrap() {
       basicAuth({
         users: { [swaggerUser]: swaggerPass },
         challenge: true,
-        realm: 'Bagdja Novelo API Docs',
+        realm: 'Bagdja Bookpedia API Docs',
       }),
     );
   }
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Bagdja Novelo API')
+    .setTitle('Bagdja Bookpedia API')
     .setDescription(
-      'Backend Novelo — platform menulis & membaca novel/cerita berseri. Library (tenant penulis), Book/Chapter, katalog pusat lintas Library, reading progress & highlight.',
+      'Backend Bookpedia — platform menulis & membaca novel/cerita berseri. Library (tenant penulis), Book/Chapter, katalog pusat lintas Library, reading progress & highlight.',
     )
     .setVersion('0.1.0')
     .addBearerAuth()
@@ -61,7 +61,7 @@ async function bootstrap() {
   const port = Number(config.get('PORT') ?? 5020);
   await app.listen(port);
 
-  logger.log(`Bagdja Novelo API listening on ${await app.getUrl()}`);
+  logger.log(`Bagdja Bookpedia API listening on ${await app.getUrl()}`);
   logger.log(`Swagger docs: ${await app.getUrl()}/docs`);
 }
 

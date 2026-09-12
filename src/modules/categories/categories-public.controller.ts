@@ -7,7 +7,7 @@ import { CategoryResponseDto } from './dto/category-response.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi, pola persis `GenresController`.
- * Disiapkan untuk reader app (`novelo-app`) filter katalog per Category —
+ * Disiapkan untuk reader app (`bookpedia-app`) filter katalog per Category —
  * belum dipakai frontend manapun saat file ini ditulis (di luar scope sesi
  * ini), tapi endpoint-nya murah untuk disiapkan sekalian.
  */

@@ -12,7 +12,7 @@ import type { AuthUser, JwtPayload } from './jwt.strategy';
 
 /**
  * Guard login wajib untuk endpoint Studio (penulis) & endpoint reader yang
- * butuh identitas (Fase 3+). MVP Novelo solo-owner per Library — TIDAK ada
+ * butuh identitas (Fase 3+). MVP Bookpedia solo-owner per Library — TIDAK ada
  * TenantStaffGuard/RolesGuard seperti bagdja-website-api, cukup guard ini +
  * `CurrentUser` untuk dapat `userId` yang login (lihat execution-plan.md
  * Fase 0).
@@ -23,7 +23,7 @@ import type { AuthUser, JwtPayload } from './jwt.strategy';
  * 3) fallback panggilan `/auth/me` (kalau JWT_SECRET beda, mis. dev vs prod SSO)
  *
  * BEDA dari bagdja-website-api: guard ini TIDAK upsert user ke tabel lokal —
- * Novelo sengaja tidak punya tabel `users` lokal (lihat schema.dbml root
+ * Bookpedia sengaja tidak punya tabel `users` lokal (lihat schema.dbml root
  * Note pada Table `users` & database/database.module.ts), identitas
  * sepenuhnya milik bagdja-auth.
  */

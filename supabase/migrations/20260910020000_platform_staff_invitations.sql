@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — Fase 4: platform_staff_invitations (10 Sep 2026)
+-- Bagdja Bookpedia — Fase 4: platform_staff_invitations (10 Sep 2026)
 --
 -- Koreksi desain dari rencana awal §4.1 ("invite langsung insert
 -- PlatformStaff aktif tanpa email") — ternyata TIDAK BISA dieksekusi

@@ -16,7 +16,7 @@ import { Platform } from './platform.entity';
  * Port PERSIS `market_staff` dari bagdja-auction-market — keanggotaan BINER
  * (user ini staff Platform ini, titik), TANPA kolom role. Sub-role staff
  * (mis. "Platform Owner" vs "Platform Staff") sengaja ditunda, akan digarap
- * belakangan dan berlaku SEKALIGUS untuk bagdja-auction-market DAN Novelo.
+ * belakangan dan berlaku SEKALIGUS untuk bagdja-auction-market DAN Bookpedia.
  * Invite (§4.1 versi sederhana, 10 Sep 2026): Owner invite langsung insert
  * row aktif di sini, TANPA email/token — staff internal, link accept di-copy
  * manual oleh Owner.

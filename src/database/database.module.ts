@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Library, Book, Chapter } from '../entities';
 
-// CATATAN: tidak ada entity `User`/tabel `users` lokal di Novelo (beda dari
+// CATATAN: tidak ada entity `User`/tabel `users` lokal di Bookpedia (beda dari
 // bagdja-website-api/bagdja-auction-api) — lihat schema.dbml root Note pada
 // Table `users`: "ID eksternal dari bagdja-auth — representasi visual saja,
 // bukan tabel lokal". Identitas sepenuhnya milik bagdja-auth, JwtAuthGuard

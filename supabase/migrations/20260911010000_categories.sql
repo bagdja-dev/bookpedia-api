@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — Category (satu level di atas Genre), 11 Sep 2026
+-- Bagdja Bookpedia — Category (satu level di atas Genre), 11 Sep 2026
 --
 -- Kelompok besar di ATAS Genre (mis. Category "Fiksi" berisi Genre
 -- Fantasi/Horor/Misteri/Thriller) — di-scope PER Platform seperti Genre
@@ -10,7 +10,7 @@
 -- Tabel BARU tanpa data existing — `platform_id` langsung NOT NULL, TIDAK
 -- perlu dance nullable-lalu-backfill seperti Platform/Genre/Book (§4.1).
 -- Tidak ada auto-seed default Category (beda dari 11 Genre default) —
--- kosong dulu saat Platform baru, Owner buat manual lewat novelo-admin.
+-- kosong dulu saat Platform baru, Owner buat manual lewat bookpedia-admin.
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS categories (

@@ -1,4 +1,4 @@
-# Bagdja Novelo API (NestJS) — build image untuk deploy di Coolify.
+# Bagdja Bookpedia API (NestJS) — build image untuk deploy di Coolify.
 # Pola sama dengan service lain di ekosistem Bagdja (lihat
 # app/website/bagdja-website-api/Dockerfile, app/auction-market/bagdja-auction-api/Dockerfile):
 # 2-stage alpine build, tanpa reinstall di stage production (pakai

@@ -7,7 +7,7 @@ import { DomainCheckResponseDto, DomainVerificationResponseDto } from './dto/dom
 
 /**
  * Verifikasi kepemilikan Domain Kustom Platform, halaman pengaturan Platform
- * di novelo-app Studio. Guard `PlatformAccessGuard` (Owner/Staff platform
+ * di bookpedia-app Studio. Guard `PlatformAccessGuard` (Owner/Staff platform
  * itu) — sama persis level akses `PlatformsController.update()`.
  */
 @ApiTags('Platform Domains')

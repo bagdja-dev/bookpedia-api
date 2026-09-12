@@ -16,7 +16,7 @@ export class UpdatePlatformDto {
 
   @ApiPropertyOptional({
     example: 'teknobuku',
-    description: 'Slug unik Platform, lowercase-kebab-case. Mengubah ini mengubah subdomain publik {slug}.novelo.bagdja.com yang sedang aktif.',
+    description: 'Slug unik Platform, lowercase-kebab-case. Mengubah ini mengubah subdomain publik {slug}.bookpedia.bagdja.com yang sedang aktif.',
   })
   @IsOptional()
   @IsString()

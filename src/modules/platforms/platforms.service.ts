@@ -42,7 +42,7 @@ export class PlatformsService {
   ) {}
 
   /**
-   * Owner (org tunggal pemilik client_app Novelo) lihat SEMUA Platform,
+   * Owner (org tunggal pemilik client_app Bookpedia) lihat SEMUA Platform,
    * org-wide. Staff cuma lihat Platform yang dia punya row aktif di
    * `platform_staff`. Dipanggil controller dengan `isOwner` dari
    * `request.platformAccess` (di-set PlatformAccessGuard).

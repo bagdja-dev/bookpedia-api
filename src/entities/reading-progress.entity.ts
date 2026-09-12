@@ -3,7 +3,7 @@ import { Entity, PrimaryGeneratedColumn, Column, Index, Unique, UpdateDateColumn
 /**
  * Satu row = posisi baca terakhir 1 user untuk 1 Book (Fase 3 — resume baca
  * otomatis / tombol "Lanjutkan Baca"). Di-upsert saat pembaca pindah/scroll
- * chapter — lihat plan/novelo/schema.dbml & execution-plan.md Fase 3.
+ * chapter — lihat plan/bookpedia/schema.dbml & execution-plan.md Fase 3.
  *
  * `user_id` TIDAK ada FK constraint sungguhan (identitas asli dikelola
  * bagdja-auth, pola sama seperti `Library.owner_user_id`). `book_id` &

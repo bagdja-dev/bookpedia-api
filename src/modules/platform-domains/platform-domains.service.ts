@@ -36,13 +36,13 @@ export class PlatformDomainsService {
   /** Cache seumur proses — IP publik server yang sedang jalan praktis tidak pernah berubah tanpa restart. */
   private cachedTargetIp: string | null = null;
   /**
-   * URL internal (Docker network) `bagdja-novelo-app` — dipakai
+   * URL internal (Docker network) `bagdja-bookpedia-app` — dipakai
    * `buildTraefikDynamicConfig()` supaya provider HTTP ini SELF-CONTAINED
    * (definisikan ulang service loadBalancer-nya sendiri), bukan referensi
    * cross-provider `nama@file` (pelajaran §4.4 `custom-domain-setup.md`,
    * bagdja-auction-market — versi pertama tidak pernah benar-benar aktif).
    */
-  private readonly noveloAppInternalUrl: string;
+  private readonly bookpediaAppInternalUrl: string;
 
   constructor(
     @InjectRepository(Platform)
@@ -50,7 +50,7 @@ export class PlatformDomainsService {
     private readonly config: ConfigService,
   ) {
     this.configuredTargetIp = this.config.get<string>('CUSTOM_DOMAIN_TARGET_IP') || '';
-    this.noveloAppInternalUrl = this.config.get<string>('NOVELO_APP_INTERNAL_URL') || '';
+    this.bookpediaAppInternalUrl = this.config.get<string>('BOOKPEDIA_APP_INTERNAL_URL') || '';
   }
 
   /** Idempotent — reuse token lama kalau sudah pernah generate sebelumnya, jadi TXT record lama yang sudah ditambahkan Owner tetap valid. */
@@ -138,7 +138,7 @@ export class PlatformDomainsService {
       where: { domain: Not(IsNull()), domain_verified_at: Not(IsNull()), is_active: true },
     });
 
-    const serviceName = 'novelo-app-custom-domain-svc';
+    const serviceName = 'bookpedia-app-custom-domain-svc';
     const routers: TraefikDynamicConfig['http']['routers'] = {};
     for (const platform of platforms) {
       if (!platform.domain) continue;
@@ -156,12 +156,12 @@ export class PlatformDomainsService {
     // ada service menggantung tanpa router) saat belum ada domain custom
     // sama sekali.
     const services: TraefikDynamicConfig['http']['services'] =
-      Object.keys(routers).length > 0 && this.noveloAppInternalUrl
+      Object.keys(routers).length > 0 && this.bookpediaAppInternalUrl
         ? {
             [serviceName]: {
               loadBalancer: {
                 passHostHeader: true,
-                servers: [{ url: this.noveloAppInternalUrl }],
+                servers: [{ url: this.bookpediaAppInternalUrl }],
               },
             },
           }

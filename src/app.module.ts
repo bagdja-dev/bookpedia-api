@@ -65,7 +65,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
           process.env.BAGDJA_LOG_URL ||
           process.env.LOG_SERVICE_URL ||
           'http://localhost:4087',
-        serviceName: process.env.BAGDJA_SERVICE_NAME || 'bagdja-novelo-api',
+        serviceName: process.env.BAGDJA_SERVICE_NAME || 'bagdja-bookpedia-api',
         clientId: process.env.CLIENT_APP_ID,
         clientSecret: process.env.CLIENT_APP_SECRET,
       },

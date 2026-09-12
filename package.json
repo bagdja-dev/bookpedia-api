@@ -1,7 +1,7 @@
 {
-  "name": "bagdja-novelo-api",
+  "name": "bagdja-bookpedia-api",
   "version": "0.1.0",
-  "description": "Backend API for Bagdja Novelo (platform menulis & membaca novel/cerita berseri)",
+  "description": "Backend API for Bagdja Bookpedia (platform menulis & membaca novel/cerita berseri)",
   "private": true,
   "scripts": {
     "start": "nest start",

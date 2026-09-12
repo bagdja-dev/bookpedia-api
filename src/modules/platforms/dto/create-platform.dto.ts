@@ -10,7 +10,7 @@ export class CreatePlatformDto {
 
   @ApiProperty({
     example: 'teknobuku',
-    description: 'Slug unik Platform, lowercase-kebab-case (subdomain default {slug}.novelo.bagdja.com)',
+    description: 'Slug unik Platform, lowercase-kebab-case (subdomain default {slug}.bookpedia.bagdja.com)',
   })
   @IsString()
   @IsNotEmpty()

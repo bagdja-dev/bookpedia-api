@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — §4.5: books.category_id (11 Sep 2026)
+-- Bagdja Bookpedia — §4.5: books.category_id (11 Sep 2026)
 --
 -- Book kini bisa langsung ditandai dengan satu Category (selain genre_id
 -- yang sudah ada) — dipilih terpisah di form Book Studio, TIDAK diturunkan

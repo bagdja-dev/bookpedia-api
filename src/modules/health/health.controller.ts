@@ -8,7 +8,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Liveness probe' })
   check() {
     return {
-      service: 'bagdja-novelo-api',
+      service: 'bagdja-bookpedia-api',
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),

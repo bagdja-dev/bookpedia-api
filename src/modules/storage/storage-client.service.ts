@@ -22,7 +22,7 @@ interface StorageFileResponse {
  * dari `bagdja-auction-api/src/modules/storage/storage-client.service.ts`
  * (yang sendiri di-port dari `bagdja-website-api`) — reuse
  * `CLIENT_APP_ID`/`CLIENT_APP_SECRET`/`BAGDJA_AUTH_API` yang sudah
- * teregistrasi untuk `bagdja-novelo`, TIDAK perlu identitas client-app baru
+ * teregistrasi untuk `bagdja-bookpedia`, TIDAK perlu identitas client-app baru
  * khusus storage.
  */
 @Injectable()
@@ -37,7 +37,7 @@ export class StorageClientService {
     private readonly config: ConfigService,
     private readonly logger: BagdjaLogger,
   ) {
-    const appId = this.config.get<string>('CLIENT_APP_ID') || 'bagdja-novelo';
+    const appId = this.config.get<string>('CLIENT_APP_ID') || 'bagdja-bookpedia';
     this.logger.init(appId, 'system');
 
     this.apiUrl = (

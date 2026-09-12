@@ -35,7 +35,7 @@ const IS_BOOK_PUBLISHED_SQL = 'book.published_at IS NOT NULL';
  * param `:platformSlug`), lalu diteruskan ke tiap method di sini supaya
  * query Book/Library selalu ter-scope `WHERE platform_id = ...` — cegah
  * data "bocor" lintas Platform. Keputusan resolusi lewat path param
- * eksplisit (bukan Host header), lihat plan/novelo/execution-plan.md §4.1.
+ * eksplisit (bukan Host header), lihat plan/bookpedia/execution-plan.md §4.1.
  */
 @Injectable()
 export class PublicService {
@@ -58,9 +58,9 @@ export class PublicService {
   }
 
   /**
-   * Resolusi Platform dari custom domain (dipanggil middleware novelo-app,
+   * Resolusi Platform dari custom domain (dipanggil middleware bookpedia-app,
    * analog `resolve-domain` di bagdja-auction-market) — subdomain wildcard
-   * `{slug}.novelo.bagdja.com` di-parse langsung dari hostname di sisi
+   * `{slug}.bookpedia.bagdja.com` di-parse langsung dari hostname di sisi
    * frontend, TIDAK lewat endpoint ini (cuma untuk domain custom yang sudah
    * lolos verifikasi DNS TXT).
    */

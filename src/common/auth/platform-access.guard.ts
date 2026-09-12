@@ -46,17 +46,17 @@ function extractBearerToken(request: {
 
 /**
  * Port dari `AppAccessGuard` bagdja-auction-api (§4.1, 10 Sep 2026) — guard
- * role PERTAMA di codebase `bagdja-novelo-api` (sebelumnya cuma ada pola
+ * role PERTAMA di codebase `bagdja-bookpedia-api` (sebelumnya cuma ada pola
  * lookup kepemilikan per-service, lihat `LibrariesService.findLibraryByOwner`).
  * Menentukan apakah user yang sudah lolos `JwtAuthGuard` adalah **Owner**
- * (anggota organisasi bagdja-auth pemilik client_app Novelo) atau **Staff**
+ * (anggota organisasi bagdja-auth pemilik client_app Bookpedia) atau **Staff**
  * (tercatat aktif di `platform_staff` untuk Platform tertentu). HARUS
  * dipasang SETELAH `JwtAuthGuard` di `@UseGuards()` (butuh `request.user`).
  *
- * Algoritma (identik `AppAccessGuard`, lihat plan/novelo/execution-plan.md
+ * Algoritma (identik `AppAccessGuard`, lihat plan/bookpedia/execution-plan.md
  * §4.1 checklist "AppAccessGuard-equivalent"):
- * 1. Client-credential token Novelo sendiri (`POST /auth/client`) — REUSE
- *    `AuthProfileService.getClientToken()` (novelo-api sudah punya cache ini
+ * 1. Client-credential token Bookpedia sendiri (`POST /auth/client`) — REUSE
+ *    `AuthProfileService.getClientToken()` (bookpedia-api sudah punya cache ini
  *    untuk keperluan verifikasi token user, dipakai ulang di sini daripada
  *    diduplikasi).
  * 2. Resolve UUID PK client_app sendiri (`GET /auth/client/me`) — cache
@@ -155,7 +155,7 @@ export class PlatformAccessGuard implements CanActivate {
 
     const token = await this.authProfile.getClientToken();
     if (!token) {
-      throw new ForbiddenException('Novelo client credentials are not configured');
+      throw new ForbiddenException('Bookpedia client credentials are not configured');
     }
 
     const res = await fetch(`${this.authApiUrl}/auth/client/me`, {
@@ -163,7 +163,7 @@ export class PlatformAccessGuard implements CanActivate {
     });
 
     if (!res.ok) {
-      throw new ForbiddenException('Failed to resolve Novelo client_app identity from bagdja-auth');
+      throw new ForbiddenException('Failed to resolve Bookpedia client_app identity from bagdja-auth');
     }
 
     const data = (await res.json()) as ClientAppMeResponse;

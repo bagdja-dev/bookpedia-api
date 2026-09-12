@@ -31,7 +31,7 @@ export class LibrariesController {
   @ApiOperation({
     summary: 'Library milik user login',
     description:
-      'Dipakai novelo-studio untuk cek status onboarding. KONTRAK PENTING: kalau user belum punya Library, response 200 dengan body literal null (BUKAN 404, BUKAN body kosong) — jangan diubah, frontend bergantung pada shape ini.',
+      'Dipakai bookpedia-studio untuk cek status onboarding. KONTRAK PENTING: kalau user belum punya Library, response 200 dengan body literal null (BUKAN 404, BUKAN body kosong) — jangan diubah, frontend bergantung pada shape ini.',
   })
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library milik user, atau null kalau belum onboarding' })
   async findMine(@CurrentUser() user: AuthUser, @Res() res: Response): Promise<void> {

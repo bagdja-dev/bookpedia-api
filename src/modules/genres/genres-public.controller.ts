@@ -8,8 +8,8 @@ import { GenreResponseDto } from './dto/genre-response.dto';
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
  * controller ini), sama seperti PublicModule. Prefix `/public/...` sebagai
- * penanda konsisten "tanpa auth". Dipakai baik novelo-studio (saran genre di
- * form Book) maupun novelo-app (filter katalog) — satu sumber kebenaran,
+ * penanda konsisten "tanpa auth". Dipakai baik bookpedia-studio (saran genre di
+ * form Book) maupun bookpedia-app (filter katalog) — satu sumber kebenaran,
  * menggantikan 2 daftar genre statis hardcoded di frontend yang sebelumnya
  * tidak sinkron.
  *

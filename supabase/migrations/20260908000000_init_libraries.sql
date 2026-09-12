@@ -1,9 +1,9 @@
 -- =============================================================
--- Bagdja Novelo — Initial Schema
+-- Bagdja Bookpedia — Initial Schema
 -- Fase 0: Fondasi Auth & Library Setup (libraries)
 --
 -- Hanya tabel `libraries` di migration ini — books/chapters/reading_progress/
--- chapter_highlights (lihat plan/novelo/schema.dbml) BARU dibuat mulai
+-- chapter_highlights (lihat plan/bookpedia/schema.dbml) BARU dibuat mulai
 -- Fase 1+ (execution-plan.md), BUKAN scope Fase 0.
 -- =============================================================
 

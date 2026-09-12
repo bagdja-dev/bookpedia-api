@@ -14,12 +14,12 @@ import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
  * controller ini, genuinely public). Prefix `/public/...` supaya tidak
  * ambigu/bentrok dengan `/libraries`, `/books` yang tetap butuh auth untuk
- * kebutuhan penulis (Studio). Dipakai reader app (novelo-app) untuk katalog
+ * kebutuhan penulis (Studio). Dipakai reader app (bookpedia-app) untuk katalog
  * pusat & baca Chapter tanpa login.
  *
  * Fase 4 (§4.1, 10 Sep 2026): semua route Book/Library/Chapter di bawah
  * pindah ke bawah `platforms/:platformSlug/...` (resolusi Platform via path
- * param eksplisit, BUKAN Host header — lihat plan/novelo/execution-plan.md
+ * param eksplisit, BUKAN Host header — lihat plan/bookpedia/execution-plan.md
  * §4.1). `platforms/resolve` (custom domain) dan `platforms/:platformSlug`
  * (profil publik, pengganti `GET /public/config` lama) HARUS didaftarkan
  * SEBELUM `platforms/:platformSlug/...` supaya "resolve" tidak ketelan jadi
@@ -33,7 +33,7 @@ export class PublicController {
   @Get('platforms/resolve')
   @ApiOperation({
     summary: 'Resolusi Platform dari custom domain',
-    description: 'Dipanggil middleware novelo-app untuk custom domain (BUKAN subdomain wildcard {slug}.novelo.bagdja.com — itu di-parse langsung dari hostname di frontend). 404 kalau domain tidak ditemukan/belum lolos verifikasi.',
+    description: 'Dipanggil middleware bookpedia-app untuk custom domain (BUKAN subdomain wildcard {slug}.bookpedia.bagdja.com — itu di-parse langsung dari hostname di frontend). 404 kalau domain tidak ditemukan/belum lolos verifikasi.',
   })
   @ApiOkResponse({ type: PlatformResolveResponseDto })
   async resolvePlatform(@Query('host') host: string): Promise<PlatformResolveResponseDto> {

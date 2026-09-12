@@ -1,7 +1,7 @@
 -- =============================================================
--- Bagdja Novelo — Fase 3: Reading Progress & Highlight
+-- Bagdja Bookpedia — Fase 3: Reading Progress & Highlight
 -- Tabel `reading_progress` & `chapter_highlights` (lihat
--- plan/novelo/schema.dbml & execution-plan.md Fase 3). Migration
+-- plan/bookpedia/schema.dbml & execution-plan.md Fase 3). Migration
 -- sebelumnya: 20260908010000_books_chapters.sql.
 -- =============================================================
 

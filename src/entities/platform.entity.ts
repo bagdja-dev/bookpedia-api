@@ -10,10 +10,10 @@ import {
  * Tenant baru di ATAS Library — 1 row = 1 "toko"/target pasar (mis. Platform
  * "novela" utk novel, "teknobuku" utk buku non-fiksi/teknologi). SENGAJA
  * TANPA kolom kepemilikan (owner_user_id/organization_id) — identik `markets`
- * di bagdja-auction-market: satu org tunggal (client_app_id Novelo) otomatis
+ * di bagdja-auction-market: satu org tunggal (client_app_id Bookpedia) otomatis
  * Owner org-wide atas SEMUA row di tabel ini, diverifikasi runtime lewat
  * PlatformAccessGuard (GET /auth/client/{clientAppId}/validate-ownership ke
- * bagdja-auth), BUKAN disimpan sebagai kolom — lihat plan/novelo/overview.md
+ * bagdja-auth), BUKAN disimpan sebagai kolom — lihat plan/bookpedia/overview.md
  * §9.3 untuk alasan lengkap.
  */
 @Entity('platforms')
@@ -50,7 +50,7 @@ export class Platform {
 
   /**
    * Satu Platform = tepat SATU template. Nilai default 'reader' = route
-   * group `(reader)/` novelo-app yang sudah ada. Studio (`/dashboard/*`)
+   * group `(reader)/` bookpedia-app yang sudah ada. Studio (`/dashboard/*`)
    * TIDAK terpengaruh kolom ini sama sekali.
    */
   @Column({ type: 'varchar', default: 'reader' })

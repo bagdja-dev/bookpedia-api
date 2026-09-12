@@ -1,11 +1,11 @@
-# Konfigurasi Supabase lokal untuk bagdja-novelo-api.
+# Konfigurasi Supabase lokal untuk bagdja-bookpedia-api.
 # Referensi lengkap: https://supabase.com/docs/guides/local-development/cli/config
 #
 # Nomor port di-offset agar tidak bentrok dengan Supabase project lain di
 # local dev: bagdja-payment-service (54320-54329), shipping-services
 # (54330-54339), bagdja-website-api (54340-54344). Blok ini (54350-54354)
 # dipilih setelah dicek `lsof`/`docker ps` — belum dipakai instance manapun.
-project_id = "novelo"
+project_id = "bookpedia"
 
 [api]
 enabled = true

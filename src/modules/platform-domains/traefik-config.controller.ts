@@ -9,9 +9,9 @@ import { TraefikDynamicConfig, toTraefikYaml } from './dto/traefik-dynamic-confi
  * BUKAN dipanggil browser, BUKAN bagian kontrak API publik
  * (`@ApiExcludeController` — tidak masuk Swagger). Mengembalikan satu
  * router per domain custom Platform yang sudah terverifikasi, supaya
- * Traefik tahu cara meneruskan tiap domain custom ke `bagdja-novelo-app`.
+ * Traefik tahu cara meneruskan tiap domain custom ke `bagdja-bookpedia-app`.
  * Inert sampai infra §4.3 (cron sync file dynamic-config Traefik, wildcard
- * DNS `*.novelo.bagdja.com`) siap memakainya — lihat docblock
+ * DNS `*.bookpedia.bagdja.com`) siap memakainya — lihat docblock
  * `PlatformDomainsService.buildTraefikDynamicConfig()`.
  *
  * `GET /yaml` (yang akan dipakai) — hasilnya ditulis (via cron/script di

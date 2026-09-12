@@ -12,7 +12,7 @@ export type ChapterStatus = 'draft' | 'published';
 
 /**
  * Satu Chapter = satu bab milik satu Book (`book_id`). Fase 1 — lihat
- * execution-plan.md & plan/novelo/schema.dbml.
+ * execution-plan.md & plan/bookpedia/schema.dbml.
  *
  * `content_version` naik tiap kali `konten` berubah (dibandingkan dengan
  * nilai lama, bukan cuma "field dikirim") — dipakai anti-drift highlight

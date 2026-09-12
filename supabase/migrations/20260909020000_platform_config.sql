@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — platform_config
+-- Bagdja Bookpedia — platform_config
 --
 -- Key-value generik untuk pengaturan level platform (bukan per-Library) —
 -- disepakati 9 Sep 2026: memfasilitasi kemungkinan platform ini nanti
@@ -7,7 +7,7 @@
 -- jalur "publisher tertutup" vs "publisher terbuka"), masing-masing
 -- instance punya database & baris config sendiri.
 --
--- Diedit LANGSUNG di database untuk sekarang (belum ada novelo-admin) —
+-- Diedit LANGSUNG di database untuk sekarang (belum ada bookpedia-admin) —
 -- konsisten dengan filosofi key lockStudio di bawah.
 -- =============================================================
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS platform_config (
 -- kode saat ini, supaya tidak ada perubahan visual/perilaku sampai memang
 -- diedit manual di DB.
 INSERT INTO platform_config (key, value) VALUES
-  ('title', '"Novelo"'),
+  ('title', '"Bookpedia"'),
   ('logo', 'null'),
   ('colors', '{
     "bg": "#fbf6ee",

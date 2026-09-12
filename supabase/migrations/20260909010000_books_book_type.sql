@@ -1,9 +1,9 @@
 -- =============================================================
--- Bagdja Novelo — books.book_type + books.original_author
+-- Bagdja Bookpedia — books.book_type + books.original_author
 --
 -- Memfasilitasi penulis yang menerjemahkan/mengadaptasi karya orang
 -- lain (Library = penerbit/penerjemah, bukan penulis asli) — lihat
--- plan/novelo/schema.dbml Table books & Enum book_type.
+-- plan/bookpedia/schema.dbml Table books & Enum book_type.
 -- =============================================================
 
 DO $$ BEGIN

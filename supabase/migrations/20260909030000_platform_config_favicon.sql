@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — platform_config.favicon
+-- Bagdja Bookpedia — platform_config.favicon
 --
 -- Tambahan key baru di platform_config (lihat 20260909020000_platform_config.sql) —
 -- URL favicon platform, terpisah dari `logo` (dipakai di header, ukuran/rasio

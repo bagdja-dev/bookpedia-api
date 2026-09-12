@@ -18,7 +18,7 @@ export type BookType = 'original' | 'translation' | 'adaptation';
 
 /**
  * Satu Book = satu karya (novel/cerita berseri) milik satu Library
- * (`library_id`). Fase 1 — lihat execution-plan.md & plan/novelo/schema.dbml.
+ * (`library_id`). Fase 1 — lihat execution-plan.md & plan/bookpedia/schema.dbml.
  * `slug` UNIK GLOBAL lintas platform (bukan per-library) — dipakai di URL
  * publik `/book/{slug}` mulai Fase 2.
  *
@@ -64,7 +64,7 @@ export class Book {
 
   /**
    * Relasi ke lookup table `genres` — nullable, ON DELETE SET NULL (Book
-   * tanpa genre tetap valid). Lihat plan/novelo/schema.dbml Table genres.
+   * tanpa genre tetap valid). Lihat plan/bookpedia/schema.dbml Table genres.
    */
   @ManyToOne(() => Genre, { nullable: true })
   @JoinColumn({ name: 'genre_id' })

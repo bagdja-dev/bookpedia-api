@@ -1,6 +1,6 @@
 -- =============================================================
--- Bagdja Novelo — Fase 1: Writer Tulis & Kelola Book/Chapter
--- Tabel `books` & `chapters` (lihat plan/novelo/schema.dbml &
+-- Bagdja Bookpedia — Fase 1: Writer Tulis & Kelola Book/Chapter
+-- Tabel `books` & `chapters` (lihat plan/bookpedia/schema.dbml &
 -- execution-plan.md Fase 1). Migration `libraries` sebelumnya:
 -- 20260908000000_init_libraries.sql.
 -- =============================================================

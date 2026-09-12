@@ -1,9 +1,9 @@
 -- =============================================================
--- Bagdja Novelo — Genre lookup table (revisi 8 Sep 2026)
+-- Bagdja Bookpedia — Genre lookup table (revisi 8 Sep 2026)
 -- Menggantikan `books.genre` varchar bebas dengan lookup table
 -- `genres`, satu sumber kebenaran (sebelumnya ada 2 daftar genre
 -- statis hardcoded di frontend yang tidak sinkron — lihat
--- plan/novelo/schema.dbml Table genres Note). Migration sebelumnya:
+-- plan/bookpedia/schema.dbml Table genres Note). Migration sebelumnya:
 -- 20260908020000_reading_progress_highlights.sql.
 -- =============================================================
 

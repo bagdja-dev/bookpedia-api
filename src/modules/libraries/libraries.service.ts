@@ -29,7 +29,7 @@ export class LibrariesService {
   async create(ownerUserId: string, dto: CreateLibraryDto): Promise<Library> {
     // Fase 4 (§4.1, 10 Sep 2026; koreksi §4.2, 11 Sep 2026): platformSlug
     // sekarang wajib dari client, resolusi via body eksplisit (BUKAN Host
-    // header) — lihat plan/novelo/execution-plan.md §4.1/§4.2 (keputusan
+    // header) — lihat plan/bookpedia/execution-plan.md §4.1/§4.2 (keputusan
     // resolusi Platform). Slug, bukan UUID — lihat doc-comment
     // CreateLibraryDto.platformSlug untuk alasan lengkap.
     const platform = await this.platformsService.getActivePlatformBySlugOrThrow(dto.platformSlug);

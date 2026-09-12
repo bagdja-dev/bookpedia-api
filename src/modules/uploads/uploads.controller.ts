@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../../common/auth';
 import { UploadsService } from './uploads.service';
 import { UploadImageResponseDto } from './dto/upload-image-response.dto';
 
-/** Batas ukuran gambar cover Library/Book — sama dengan yang dipakai frontend (novelo-studio). */
+/** Batas ukuran gambar cover Library/Book — sama dengan yang dipakai frontend (bookpedia-studio). */
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -23,7 +23,7 @@ const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
  * Endpoint upload gambar generik (cover Library, nanti Book) — hanya
  * menyimpan file & mengembalikan URL, TIDAK terikat ke resource manapun
  * (pola PERSIS `POST /api/uploads/asset` di `bagdja-auction-api`, disederhanakan
- * karena Novelo cuma butuh kategori gambar, tidak ada video/model 3D). Guard
+ * karena Bookpedia cuma butuh kategori gambar, tidak ada video/model 3D). Guard
  * cuma `JwtAuthGuard` — kepemilikan/keterkaitan ke Library/Book divalidasi
  * saat URL hasil upload disimpan lewat endpoint create/update Library/Book.
  */

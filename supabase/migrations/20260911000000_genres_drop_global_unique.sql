@@ -1,5 +1,5 @@
 -- =============================================================
--- Bagdja Novelo — Fase 4: drop UNIQUE(nama)/UNIQUE(slug) GLOBAL di genres
+-- Bagdja Bookpedia — Fase 4: drop UNIQUE(nama)/UNIQUE(slug) GLOBAL di genres
 -- (11 Sep 2026, bug fix)
 --
 -- Migration 20260910010000 SENGAJA mempertahankan constraint global ini
@@ -11,7 +11,7 @@
 -- itu justru perilaku yang DIINGINKAN per Platform). Ditemukan langsung
 -- dari error production nyata (409 "duplicate key value violates unique
 -- constraint genres_nama_key") saat user mencoba buat Platform kedua lewat
--- novelo-admin.
+-- bookpedia-admin.
 --
 -- Unique index composite (platform_id, nama)/(platform_id, slug) dari
 -- migration 20260910010000 SUDAH cukup jadi constraint yang benar — baris
