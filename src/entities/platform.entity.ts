@@ -101,6 +101,18 @@ export class Platform {
   @Column({ type: 'int', default: 5 })
   max_tags_per_book: number;
 
+  /**
+   * Verifikasi Google Search Console per-Platform (17 Sep 2026, SEO susulan)
+   * — Owner paste nama file (mis. `google9bbe81680154a078.html`) + isi
+   * persis dari Google, dibalas dinamis oleh `middleware.ts` bookpedia-app
+   * sesuai Host yang resolve ke Platform ini. NULL = belum diisi.
+   */
+  @Column({ type: 'varchar', nullable: true })
+  search_console_verification_filename: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  search_console_verification_content: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

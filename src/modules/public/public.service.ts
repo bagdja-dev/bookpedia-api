@@ -89,6 +89,8 @@ export class PublicService {
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,
       maxTagsPerBook: platform.max_tags_per_book,
+      searchConsoleVerificationFilename: platform.search_console_verification_filename,
+      searchConsoleVerificationContent: platform.search_console_verification_content,
     };
   }
 

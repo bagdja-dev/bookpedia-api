@@ -89,4 +89,26 @@ export class UpdatePlatformDto {
   @IsInt()
   @Min(0)
   maxTagsPerBook?: number;
+
+  @ApiPropertyOptional({
+    example: 'google9bbe81680154a078.html',
+    nullable: true,
+    description:
+      'Verifikasi Google Search Console (17 Sep 2026, "HTML file" method) — nama file persis dari Google. Dibalas dinamis oleh middleware bookpedia-app sesuai Host. Kirim null untuk mengosongkan.',
+  })
+  @IsOptional()
+  @Matches(/^google[a-zA-Z0-9_-]+\.html$/, {
+    message: 'searchConsoleVerificationFilename harus format "google<hash>.html" persis dari Google',
+  })
+  searchConsoleVerificationFilename?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'google-site-verification: google9bbe81680154a078.html',
+    nullable: true,
+    description: 'Isi file verifikasi persis dari Google (biasanya satu baris "google-site-verification: <nama file>"). Kirim null untuk mengosongkan.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  searchConsoleVerificationContent?: string | null;
 }

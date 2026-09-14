@@ -174,6 +174,12 @@ export class PlatformsService {
     if (dto.maxFreeChapters !== undefined) platform.max_free_chapters = dto.maxFreeChapters;
     if (dto.showBookStatus !== undefined) platform.show_book_status = dto.showBookStatus;
     if (dto.maxTagsPerBook !== undefined) platform.max_tags_per_book = dto.maxTagsPerBook;
+    if (dto.searchConsoleVerificationFilename !== undefined) {
+      platform.search_console_verification_filename = dto.searchConsoleVerificationFilename;
+    }
+    if (dto.searchConsoleVerificationContent !== undefined) {
+      platform.search_console_verification_content = dto.searchConsoleVerificationContent;
+    }
 
     return this.platformRepo.save(platform);
   }
@@ -196,6 +202,8 @@ export class PlatformsService {
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,
       maxTagsPerBook: platform.max_tags_per_book,
+      searchConsoleVerificationFilename: platform.search_console_verification_filename,
+      searchConsoleVerificationContent: platform.search_console_verification_content,
     };
   }
 }

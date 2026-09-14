@@ -43,4 +43,14 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book. Dipakai Studio untuk validasi/hint input Tag.' })
   maxTagsPerBook: number;
+
+  @ApiPropertyOptional({
+    example: 'google9bbe81680154a078.html',
+    nullable: true,
+    description: 'Verifikasi Google Search Console (17 Sep 2026) — dipakai middleware bookpedia-app membalas /{filename} apa adanya per-Host yang resolve ke Platform ini.',
+  })
+  searchConsoleVerificationFilename: string | null;
+
+  @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
+  searchConsoleVerificationContent: string | null;
 }

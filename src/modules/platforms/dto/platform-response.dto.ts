@@ -46,6 +46,12 @@ export class PlatformResponseDto {
   @ApiProperty({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book.' })
   maxTagsPerBook: number;
 
+  @ApiPropertyOptional({ example: 'google9bbe81680154a078.html', nullable: true, description: 'Verifikasi Google Search Console ("HTML file" method) — nama file persis dari Google.' })
+  searchConsoleVerificationFilename: string | null;
+
+  @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
+  searchConsoleVerificationContent: string | null;
+
   @ApiProperty()
   createdAt: Date;
 
