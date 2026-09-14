@@ -17,6 +17,7 @@ import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto'
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 import { TagResponseDto } from '../tags/dto/tag-response.dto';
 import { TagsService } from '../tags/tags.service';
+import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { isChapterFree } from '../../common/utils/free-chapters.util';
 
 /** SQL fragment: Book ini "discoverable" publik kalau punya minimal 1 Chapter published. */
@@ -213,6 +214,29 @@ export class PublicService {
   }
 
   /**
+   * SEO Fase 2 (16 Sep 2026) — daftar Book+Library publik untuk `sitemap.xml`
+   * (`bookpedia-app`). TANPA pagination (skala kecil, lihat seo-plan.md §3.4).
+   * Chapter individual SENGAJA tidak disertakan (seo-plan.md §6.2).
+   */
+  async getSitemapEntries(platformId: string): Promise<SitemapEntriesDto> {
+    const books = await this.bookRepo
+      .createQueryBuilder('book')
+      .where('book.platform_id = :platformId', { platformId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+      .orderBy('book.created_at', 'DESC')
+      .getMany();
+
+    const libraryIds = [...new Set(books.map((book) => book.library_id))];
+    const libraries = libraryIds.length > 0 ? await this.libraryRepo.find({ where: { id: In(libraryIds) } }) : [];
+
+    return {
+      books: books.map((book) => ({ slug: book.slug, updatedAt: book.updated_at })),
+      libraries: libraries.map((library) => ({ slug: library.slug, updatedAt: library.updated_at })),
+    };
+  }
+
+  /**
    * Profil publik Library by slug (di-scope ke satu Platform) — `books`
    * HANYA yang punya minimal 1 Chapter published (aturan sama seperti
    * katalog). 404 kalau slug tidak ditemukan di Platform ini.
@@ -355,7 +379,7 @@ export class PublicService {
       konten: chapter.konten,
       orderIndex: chapter.order_index,
       publishedAt: chapter.published_at,
-      book: { id: book.id, judul: book.judul, slug: book.slug },
+      book: { id: book.id, judul: book.judul, slug: book.slug, coverUrl: book.cover_url },
       prevOrderIndex: prev?.order_index ?? null,
       nextOrderIndex: next?.order_index ?? null,
       isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),

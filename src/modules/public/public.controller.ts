@@ -9,6 +9,7 @@ import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
+import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
@@ -64,6 +65,17 @@ export class PublicController {
   ): Promise<CatalogResponseDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getCatalog(platform.id, query);
+  }
+
+  @Get('platforms/:platformSlug/sitemap-entries')
+  @ApiOperation({
+    summary: 'Daftar Book+Library publik untuk sitemap.xml (SEO Fase 2)',
+    description: 'TANPA pagination. Chapter individual sengaja tidak disertakan (lihat plan/bookpedia/seo-plan.md §6.2).',
+  })
+  @ApiOkResponse({ type: SitemapEntriesDto })
+  async getSitemapEntries(@Param('platformSlug') platformSlug: string): Promise<SitemapEntriesDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getSitemapEntries(platform.id);
   }
 
   @Get('platforms/:platformSlug/libraries/:librarySlug')

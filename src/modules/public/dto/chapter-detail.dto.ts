@@ -9,6 +9,9 @@ export class BookSummaryDto {
 
   @ApiProperty({ example: 'kisah-di-ujung-senja' })
   slug: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg', nullable: true, description: 'SEO Fase 1 — dipakai og:image halaman Chapter.' })
+  coverUrl: string | null;
 }
 
 /**
