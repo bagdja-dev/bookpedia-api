@@ -39,8 +39,9 @@ export class CatalogQueryDto {
   category?: string;
 
   @ApiPropertyOptional({
-    example: 'petualangan',
-    description: 'Fase 6 — filter Tag by slug (dari GET /public/platforms/:platformSlug/tags, exact match). Bisa dikombinasikan dengan genre/category (semua di-AND-kan).',
+    example: 'petualangan,slow-burn',
+    description:
+      'Fase 6 — filter Tag by slug (dari GET /public/platforms/:platformSlug/tags, exact match). Boleh lebih dari satu, dipisah koma — Book harus punya SEMUA tag yang disebut (AND, bukan salah satu). Bisa dikombinasikan dengan genre/category (semua di-AND-kan).',
   })
   @IsOptional()
   @IsString()

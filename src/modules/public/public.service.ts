@@ -141,17 +141,23 @@ export class PublicService {
       qb.andWhere('category.slug = :categorySlug', { categorySlug });
     }
 
-    const tagSlug = query.tag?.trim();
-    if (tagSlug) {
-      // Fase 6 — Tag many-to-many via pivot `book_tags`, EXISTS subquery
-      // (bukan JOIN) supaya tidak menghasilkan baris ganda per Book kalau
-      // suatu saat filter multi-tag ditambahkan (§12.2 overview.md: saat ini
-      // sengaja cuma single-tag, tapi EXISTS tetap pola paling aman).
+    // `tag` boleh berisi lebih dari satu slug dipisah koma (dipakai tombol
+    // "Cari Serupa" — filter Category+Genre+SEMUA Tag Book sekaligus,
+    // 16 Sep 2026 susulan §12). Tiap tag jadi EXISTS terpisah, di-AND-kan —
+    // Book harus punya SEMUA tag yang diminta (bukan salah satu/OR), supaya
+    // makin banyak Tag diklik makin spesifik hasilnya. Klik 1 chip Tag biasa
+    // (bukan tombol Cari Serupa) tetap kirim 1 slug saja, jalur yang sama.
+    const tagSlugs = (query.tag ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    tagSlugs.forEach((tagSlug, i) => {
+      const param = `tagSlug${i}`;
       qb.andWhere(
-        `EXISTS (SELECT 1 FROM book_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.book_id = book.id AND t.slug = :tagSlug)`,
-        { tagSlug },
+        `EXISTS (SELECT 1 FROM book_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.book_id = book.id AND t.slug = :${param})`,
+        { [param]: tagSlug },
       );
-    }
+    });
 
     qb.orderBy('book.created_at', 'DESC')
       .skip((page - 1) * limit)
