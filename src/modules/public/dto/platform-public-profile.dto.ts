@@ -65,4 +65,13 @@ export class PlatformPublicProfileDto {
     description: 'Fase 7 — grain rating saat ini: "book" = widget rating di halaman detail Book, "chapter" = widget rating di halaman baca Chapter (agregat Book tetap ditampilkan di detail Book).',
   })
   ratingMode: RatingMode;
+
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Like di ChapterEngagementBar. false = reader app tidak merender tombol Like sama sekali.' })
+  enableLike: boolean;
+
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Comment (mock) di ChapterEngagementBar.' })
+  enableComment: boolean;
+
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar. Kalau enableLike, enableComment, DAN enableShare ketiganya false, reader app menyembunyikan seluruh bar.' })
+  enableShare: boolean;
 }

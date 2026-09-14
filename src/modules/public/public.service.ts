@@ -93,6 +93,9 @@ export class PublicService {
       searchConsoleVerificationContent: platform.search_console_verification_content,
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,
+      enableLike: platform.enable_like,
+      enableComment: platform.enable_comment,
+      enableShare: platform.enable_share,
     };
   }
 
@@ -217,6 +220,7 @@ export class PublicService {
       viewCount: book.view_count,
       ratingAverage: Number(book.rating_average),
       ratingCount: book.rating_count,
+      likeCount: book.like_count,
     };
   }
 
@@ -337,6 +341,7 @@ export class PublicService {
       viewCount: book.view_count,
       ratingAverage: Number(book.rating_average),
       ratingCount: book.rating_count,
+      likeCount: book.like_count,
     };
   }
 
@@ -397,6 +402,7 @@ export class PublicService {
       isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
       ratingAverage: Number(chapter.rating_average),
       ratingCount: chapter.rating_count,
+      likeCount: chapter.like_count,
     };
   }
 

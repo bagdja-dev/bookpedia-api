@@ -69,4 +69,7 @@ export class ChapterDetailDto {
 
   @ApiProperty({ example: 3, description: 'Fase 7 — jumlah rating Chapter ini.' })
   ratingCount: number;
+
+  @ApiProperty({ example: 43, description: 'Fase 8 — total Like Chapter ini. Status like user login sendiri diambil terpisah dari GET /likes/chapter/:chapterId (butuh auth), field ini murni angka total.' })
+  likeCount: number;
 }

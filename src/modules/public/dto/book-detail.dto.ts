@@ -89,4 +89,7 @@ export class BookDetailDto {
 
   @ApiProperty({ example: 12, description: 'Fase 7 — jumlah rating yang membentuk ratingAverage di atas.' })
   ratingCount: number;
+
+  @ApiProperty({ example: 89, description: 'Fase 8 — total Like (SUM like_count semua Chapter Book ini).' })
+  likeCount: number;
 }

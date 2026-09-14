@@ -134,6 +134,9 @@ export class PlatformsService {
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
         enable_rating: dto.enableRating ?? true,
         rating_mode: dto.ratingMode ?? 'book',
+        enable_like: dto.enableLike ?? true,
+        enable_comment: dto.enableComment ?? true,
+        enable_share: dto.enableShare ?? true,
       });
       const saved = await platformRepo.save(platform);
 
@@ -184,6 +187,9 @@ export class PlatformsService {
     }
     if (dto.enableRating !== undefined) platform.enable_rating = dto.enableRating;
     if (dto.ratingMode !== undefined) platform.rating_mode = dto.ratingMode;
+    if (dto.enableLike !== undefined) platform.enable_like = dto.enableLike;
+    if (dto.enableComment !== undefined) platform.enable_comment = dto.enableComment;
+    if (dto.enableShare !== undefined) platform.enable_share = dto.enableShare;
 
     return this.platformRepo.save(platform);
   }
@@ -210,6 +216,9 @@ export class PlatformsService {
       searchConsoleVerificationContent: platform.search_console_verification_content,
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,
+      enableLike: platform.enable_like,
+      enableComment: platform.enable_comment,
+      enableShare: platform.enable_share,
     };
   }
 }

@@ -68,6 +68,10 @@ export class Chapter {
   @Column({ type: 'int', default: 0 })
   rating_count: number;
 
+  /** Fase 8 (14 Sep 2026) — jumlah Like Chapter ini (binary per user, lihat `ChapterLike`), diagregasi ke `books.like_count`. Lihat plan/bookpedia/overview.md §14. */
+  @Column({ type: 'int', default: 0 })
+  like_count: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

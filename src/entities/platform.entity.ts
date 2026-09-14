@@ -130,6 +130,25 @@ export class Platform {
   @Column({ type: 'varchar', length: 10, default: 'book' })
   rating_mode: RatingMode;
 
+  /**
+   * Fase 8 (14 Sep 2026) — nyala/mati tombol Like/Comment/Share di
+   * `ChapterEngagementBar` (bottom bar halaman baca Chapter), independen
+   * satu sama lain. Kalau ketiganya `false`, reader app menyembunyikan
+   * seluruh bar (tidak ada elemen anchor lain yang bisa dipertahankan —
+   * beda dari `enable_rating` yang toggle tunggal). Like & Comment
+   * ditegakkan juga di backend (defense in depth, pola sama `enable_rating`);
+   * Share murni client-side jadi cukup dikontrol di frontend. Lihat
+   * plan/bookpedia/overview.md §14.
+   */
+  @Column({ type: 'boolean', default: true })
+  enable_like: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  enable_comment: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  enable_share: boolean;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

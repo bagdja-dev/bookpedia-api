@@ -60,6 +60,15 @@ export class PlatformResponseDto {
   @ApiProperty({ example: 'book', enum: ['book', 'chapter'], description: 'Fase 7 — grain rating saat ini.' })
   ratingMode: RatingMode;
 
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Like di ChapterEngagementBar.' })
+  enableLike: boolean;
+
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Comment (mock) di ChapterEngagementBar.' })
+  enableComment: boolean;
+
+  @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar.' })
+  enableShare: boolean;
+
   @ApiProperty()
   createdAt: Date;
 

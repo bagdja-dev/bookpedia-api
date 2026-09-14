@@ -63,4 +63,7 @@ export class BookCatalogDto {
 
   @ApiProperty({ example: 12, description: 'Fase 7 — jumlah rating yang membentuk ratingAverage di atas.' })
   ratingCount: number;
+
+  @ApiProperty({ example: 89, description: 'Fase 8 (susulan, 15 Sep 2026) — total Like (SUM like_count semua Chapter Book ini), ditampilkan juga di card katalog.' })
+  likeCount: number;
 }

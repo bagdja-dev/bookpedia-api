@@ -136,6 +136,10 @@ export class Book {
   @Column({ type: 'int', default: 0 })
   rating_count: number;
 
+  /** Fase 8 (14 Sep 2026) — denormalisasi SUM `chapters.like_count` semua Chapter Book ini, dinaikkan/diturunkan BERSAMAAN via increment()/decrement() atomik saat toggle Like. Lihat plan/bookpedia/overview.md §14. */
+  @Column({ type: 'int', default: 0 })
+  like_count: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

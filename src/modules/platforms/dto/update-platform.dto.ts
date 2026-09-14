@@ -127,4 +127,19 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsIn(['book', 'chapter'])
   ratingMode?: RatingMode;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Like di ChapterEngagementBar.' })
+  @IsOptional()
+  @IsBoolean()
+  enableLike?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Comment (mock) di ChapterEngagementBar.' })
+  @IsOptional()
+  @IsBoolean()
+  enableComment?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar. Kalau enableLike, enableComment, DAN enableShare ketiganya false, reader app menyembunyikan seluruh bar.' })
+  @IsOptional()
+  @IsBoolean()
+  enableShare?: boolean;
 }

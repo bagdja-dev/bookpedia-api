@@ -96,4 +96,19 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsIn(['book', 'chapter'])
   ratingMode?: RatingMode;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Like di ChapterEngagementBar. Default true.' })
+  @IsOptional()
+  @IsBoolean()
+  enableLike?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Comment (mock) di ChapterEngagementBar. Default true.' })
+  @IsOptional()
+  @IsBoolean()
+  enableComment?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar. Default true.' })
+  @IsOptional()
+  @IsBoolean()
+  enableShare?: boolean;
 }
