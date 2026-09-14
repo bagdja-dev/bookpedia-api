@@ -24,6 +24,15 @@ export class ChapterListItemDto {
     description: 'Fase 5 (SEO) — true kalau Chapter ini bisa dibaca tanpa login. Dipakai reader app untuk badge "Gratis" di daftar Chapter.',
   })
   isFree: boolean;
+
+  @ApiProperty({
+    example: 4.2,
+    description: 'Fase 7 — rating Chapter ini (0 kalau belum ada rating). Cuma relevan/ditampilkan reader app kalau platform.ratingMode="chapter".',
+  })
+  ratingAverage: number;
+
+  @ApiProperty({ example: 3, description: 'Fase 7 — jumlah rating Chapter ini.' })
+  ratingCount: number;
 }
 
 /**
@@ -71,4 +80,13 @@ export class BookDetailDto {
 
   @ApiProperty({ type: ChapterListItemDto, isArray: true })
   chapters: ChapterListItemDto[];
+
+  @ApiProperty({ example: 1234, description: 'Fase 7 — total dibaca (SUM view_count semua Chapter Book ini).' })
+  viewCount: number;
+
+  @ApiProperty({ example: 4.5, description: 'Fase 7 — agregat rating Book ini (0 kalau belum ada rating). Sumbernya ikut ratingMode Platform.' })
+  ratingAverage: number;
+
+  @ApiProperty({ example: 12, description: 'Fase 7 — jumlah rating yang membentuk ratingAverage di atas.' })
+  ratingCount: number;
 }

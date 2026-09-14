@@ -1,5 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+
+import type { RatingMode } from '../../../entities/platform.entity';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
 // lewat update) — slug Platform BOLEH diubah lewat admin console (dikonfirmasi
@@ -111,4 +113,18 @@ export class UpdatePlatformDto {
   @IsString()
   @MaxLength(1000)
   searchConsoleVerificationContent?: string | null;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter. Saat false, seluruh UI rating publik disembunyikan dan submit baru ditolak backend.' })
+  @IsOptional()
+  @IsBoolean()
+  enableRating?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'book',
+    enum: ['book', 'chapter'],
+    description: 'Fase 7 — grain rating: "book" (satu rating per Book) atau "chapter" (rating terpisah tiap Chapter, diagregasi ke Book saat ditampilkan). Ganti mode tidak menghapus data mode sebelumnya.',
+  })
+  @IsOptional()
+  @IsIn(['book', 'chapter'])
+  ratingMode?: RatingMode;
 }

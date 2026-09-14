@@ -119,6 +119,23 @@ export class Book {
   @Column({ type: 'int', nullable: true })
   max_free_chapters: number | null;
 
+  /** Fase 7 (18 Sep 2026) — denormalisasi SUM `chapters.view_count` semua Chapter Book ini, dinaikkan BERSAMAAN via increment() atomik saat ada Chapter yang dibuka. Lihat plan/bookpedia/overview.md §13. */
+  @Column({ type: 'int', default: 0 })
+  view_count: number;
+
+  /**
+   * Agregat rating Book ini, sumbernya beda tergantung `platforms.rating_mode`:
+   * mode 'book' -> AVG/COUNT `book_ratings WHERE book_id=ini AND chapter_id IS NULL`;
+   * mode 'chapter' -> AVG/COUNT SELURUH `book_ratings WHERE book_id=ini AND chapter_id IS NOT NULL`
+   * (rata-rata dari semua rating individual semua Chapter, BUKAN rata-rata-dari-rata-rata).
+   * Dihitung ulang tiap submit, bukan matematika inkremental. Lihat `RatingsService`.
+   */
+  @Column({ type: 'numeric', precision: 3, scale: 2, default: 0 })
+  rating_average: number;
+
+  @Column({ type: 'int', default: 0 })
+  rating_count: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

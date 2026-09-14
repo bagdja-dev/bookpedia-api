@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import type { RatingMode } from '../../../entities/platform.entity';
+
 export class PlatformResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   id: string;
@@ -51,6 +53,12 @@ export class PlatformResponseDto {
 
   @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
   searchConsoleVerificationContent: string | null;
+
+  @ApiProperty({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter.' })
+  enableRating: boolean;
+
+  @ApiProperty({ example: 'book', enum: ['book', 'chapter'], description: 'Fase 7 — grain rating saat ini.' })
+  ratingMode: RatingMode;
 
   @ApiProperty()
   createdAt: Date;

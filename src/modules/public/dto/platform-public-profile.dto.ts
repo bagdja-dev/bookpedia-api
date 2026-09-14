@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import type { RatingMode } from '../../../entities/platform.entity';
+
 /**
  * Profil Platform yang aman diekspos publik tanpa auth — pengganti langsung
  * `GET /public/config` lama (Fase 4, §4.1, 10 Sep 2026). SENGAJA tidak
@@ -53,4 +55,14 @@ export class PlatformPublicProfileDto {
 
   @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
   searchConsoleVerificationContent: string | null;
+
+  @ApiProperty({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter. false = reader app sembunyikan seluruh UI rating.' })
+  enableRating: boolean;
+
+  @ApiProperty({
+    example: 'book',
+    enum: ['book', 'chapter'],
+    description: 'Fase 7 — grain rating saat ini: "book" = widget rating di halaman detail Book, "chapter" = widget rating di halaman baca Chapter (agregat Book tetap ditampilkan di detail Book).',
+  })
+  ratingMode: RatingMode;
 }

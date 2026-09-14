@@ -60,4 +60,13 @@ export class ChapterDetailDto {
       'Fase 5 (SEO) — true kalau Chapter ini bisa dibaca TANPA login (di dalam batas "Maximum Free Chapter" efektif Platform/Book). false = reader app wajib redirect ke /auth/login sebelum render konten.',
   })
   isFree: boolean;
+
+  @ApiProperty({
+    example: 4.2,
+    description: 'Fase 7 — rating Chapter ini (0 kalau belum ada rating). Cuma relevan/ditampilkan reader app kalau platform.ratingMode="chapter".',
+  })
+  ratingAverage: number;
+
+  @ApiProperty({ example: 3, description: 'Fase 7 — jumlah rating Chapter ini.' })
+  ratingCount: number;
 }

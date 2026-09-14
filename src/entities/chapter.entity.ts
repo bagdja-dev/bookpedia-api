@@ -52,6 +52,22 @@ export class Chapter {
   @Column({ type: 'timestamptz', nullable: true })
   published_at: Date | null;
 
+  /** Fase 7 (18 Sep 2026) — dihitung MENTAH tiap kali Chapter dibuka (termasuk buka ulang, termasuk pembaca anonim), naik BERSAMAAN dengan `books.view_count` via increment() atomik. Lihat plan/bookpedia/overview.md §13. */
+  @Column({ type: 'int', default: 0 })
+  view_count: number;
+
+  /**
+   * Rating khusus Chapter ini — HANYA terisi kalau `platforms.rating_mode`
+   * Book pemiliknya sedang 'chapter'. Dihitung ulang dari `AVG()`/`COUNT()`
+   * `book_ratings WHERE chapter_id = ini` tiap ada submit (bukan matematika
+   * inkremental). Lihat `RatingsService`.
+   */
+  @Column({ type: 'numeric', precision: 3, scale: 2, default: 0 })
+  rating_average: number;
+
+  @Column({ type: 'int', default: 0 })
+  rating_count: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

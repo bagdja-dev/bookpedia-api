@@ -153,6 +153,9 @@ export class ChaptersService {
       status: chapter.status,
       contentVersion: chapter.content_version,
       publishedAt: chapter.published_at,
+      viewCount: chapter.view_count,
+      ratingAverage: Number(chapter.rating_average),
+      ratingCount: chapter.rating_count,
       createdAt: chapter.created_at,
       updatedAt: chapter.updated_at,
     };

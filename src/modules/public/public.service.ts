@@ -91,6 +91,8 @@ export class PublicService {
       maxTagsPerBook: platform.max_tags_per_book,
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,
+      enableRating: platform.enable_rating,
+      ratingMode: platform.rating_mode,
     };
   }
 
@@ -212,6 +214,9 @@ export class PublicService {
       bookType: book.book_type,
       originalAuthor: book.original_author,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
+      viewCount: book.view_count,
+      ratingAverage: Number(book.rating_average),
+      ratingCount: book.rating_count,
     };
   }
 
@@ -326,7 +331,12 @@ export class PublicService {
         orderIndex: chapter.order_index,
         publishedAt: chapter.published_at,
         isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
+        ratingAverage: Number(chapter.rating_average),
+        ratingCount: chapter.rating_count,
       })),
+      viewCount: book.view_count,
+      ratingAverage: Number(book.rating_average),
+      ratingCount: book.rating_count,
     };
   }
 
@@ -385,6 +395,37 @@ export class PublicService {
       prevOrderIndex: prev?.order_index ?? null,
       nextOrderIndex: next?.order_index ?? null,
       isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
+      ratingAverage: Number(chapter.rating_average),
+      ratingCount: chapter.rating_count,
     };
+  }
+
+  /**
+   * Fase 7 (18 Sep 2026) — catat 1x "buka" Chapter, dipanggil komponen client
+   * `ChapterViewTracker` (fire-and-forget, TANPA syarat login — pembaca
+   * anonim yang baca Chapter gratis tetap terhitung). SENGAJA endpoint POST
+   * terpisah dari `getChapterByOrderIndex()` (yang di-cache ISR
+   * `revalidate: 60` di reader app) — kalau dihitung di situ, buka berulang
+   * dalam jendela cache tidak akan tercatat karena request tidak sampai ke
+   * backend. `increment()` atomik (`UPDATE ... SET x = x + 1`, bukan
+   * read-then-write) hindari race condition antar pembaca bersamaan.
+   */
+  async incrementChapterView(platform: Platform, bookSlug: string, orderIndex: number): Promise<void> {
+    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platform.id } });
+    if (!book || !book.published_at) {
+      throw new NotFoundException('Book not found');
+    }
+
+    const chapter = await this.chapterRepo.findOne({
+      where: { book_id: book.id, order_index: orderIndex, status: 'published' },
+    });
+    if (!chapter) {
+      throw new NotFoundException('Chapter not found');
+    }
+
+    await Promise.all([
+      this.chapterRepo.increment({ id: chapter.id }, 'view_count', 1),
+      this.bookRepo.increment({ id: book.id }, 'view_count', 1),
+    ]);
   }
 }

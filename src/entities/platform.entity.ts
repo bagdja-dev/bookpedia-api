@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export type RatingMode = 'book' | 'chapter';
+
 /**
  * Tenant baru di ATAS Library — 1 row = 1 "toko"/target pasar (mis. Platform
  * "novela" utk novel, "teknobuku" utk buku non-fiksi/teknologi). SENGAJA
@@ -112,6 +114,21 @@ export class Platform {
 
   @Column({ type: 'text', nullable: true })
   search_console_verification_content: string | null;
+
+  /** Fase 7 (18 Sep 2026) — nyala/mati fitur rating Book/Chapter secara keseluruhan di Platform ini. Saat false, seluruh UI rating publik disembunyikan DAN submit baru ditolak backend (defense in depth) — data lama tetap tersimpan. Lihat plan/bookpedia/overview.md §13. */
+  @Column({ type: 'boolean', default: true })
+  enable_rating: boolean;
+
+  /**
+   * Grain rating: 'book' = satu rating untuk keseluruhan Book, 'chapter' =
+   * rating terpisah tiap Chapter (diagregasi ke Book saat ditampilkan).
+   * Cuma relevan kalau `enable_rating=true`. Ganti mode TIDAK menghapus data
+   * mode sebelumnya (tetap tersimpan, berhenti menerima rating baru sampai
+   * mode diganti balik) — batasan yang diterima, bukan ditangani migrasi
+   * data otomatis.
+   */
+  @Column({ type: 'varchar', length: 10, default: 'book' })
+  rating_mode: RatingMode;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

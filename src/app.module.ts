@@ -13,6 +13,7 @@ import { BooksModule } from './modules/books/books.module';
 import { ChaptersModule } from './modules/chapters/chapters.module';
 import { PublicModule } from './modules/public/public.module';
 import { ReadingProgressModule } from './modules/reading-progress/reading-progress.module';
+import { RatingsModule } from './modules/ratings/ratings.module';
 import { HighlightsModule } from './modules/highlights/highlights.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
@@ -82,6 +83,7 @@ import { TagsModule } from './modules/tags/tags.module';
     ChaptersModule,
     PublicModule,
     ReadingProgressModule,
+    RatingsModule,
     HighlightsModule,
     StorageModule,
     UploadsModule,

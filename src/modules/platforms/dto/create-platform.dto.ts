@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+
+import type { RatingMode } from '../../../entities/platform.entity';
 
 export class CreatePlatformDto {
   @ApiProperty({ example: 'Teknobuku', description: 'Nama Platform, tampil di header/tab browser/footer' })
@@ -80,4 +82,18 @@ export class CreatePlatformDto {
   @IsInt()
   @Min(0)
   maxTagsPerBook?: number;
+
+  @ApiPropertyOptional({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter. Default true.' })
+  @IsOptional()
+  @IsBoolean()
+  enableRating?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'book',
+    enum: ['book', 'chapter'],
+    description: 'Fase 7 — grain rating: "book" (satu rating per Book) atau "chapter" (rating terpisah tiap Chapter, diagregasi ke Book saat ditampilkan). Default "book".',
+  })
+  @IsOptional()
+  @IsIn(['book', 'chapter'])
+  ratingMode?: RatingMode;
 }

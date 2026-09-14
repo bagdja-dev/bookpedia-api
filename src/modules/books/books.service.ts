@@ -289,6 +289,9 @@ export class BooksService {
       originalAuthor: book.original_author,
       publishedAt: book.published_at,
       maxFreeChapters: book.max_free_chapters,
+      viewCount: book.view_count,
+      ratingAverage: Number(book.rating_average),
+      ratingCount: book.rating_count,
       createdAt: book.created_at,
       updatedAt: book.updated_at,
     };

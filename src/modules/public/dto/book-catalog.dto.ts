@@ -54,4 +54,13 @@ export class BookCatalogDto {
 
   @ApiProperty({ type: LibrarySummaryDto })
   library: LibrarySummaryDto;
+
+  @ApiProperty({ example: 1234, description: 'Fase 7 — total dibaca (SUM view_count semua Chapter Book ini).' })
+  viewCount: number;
+
+  @ApiProperty({ example: 4.5, description: 'Fase 7 — agregat rating Book ini (0 kalau belum ada rating). Sumbernya ikut ratingMode Platform.' })
+  ratingAverage: number;
+
+  @ApiProperty({ example: 12, description: 'Fase 7 — jumlah rating yang membentuk ratingAverage di atas.' })
+  ratingCount: number;
 }

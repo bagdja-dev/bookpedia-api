@@ -27,6 +27,15 @@ export class ChapterResponseDto {
   @ApiPropertyOptional({ nullable: true, description: 'Diisi saat status pindah ke published, null kalau draft' })
   publishedAt: Date | null;
 
+  @ApiProperty({ example: 456, description: 'Fase 7 — total dibaca Chapter ini, info read-only untuk penulis.' })
+  viewCount: number;
+
+  @ApiProperty({ example: 4.2, description: 'Fase 7 — rating Chapter ini (0 kalau belum ada rating). Cuma relevan kalau Platform pemiliknya ratingMode="chapter".' })
+  ratingAverage: number;
+
+  @ApiProperty({ example: 3, description: 'Fase 7 — jumlah rating Chapter ini.' })
+  ratingCount: number;
+
   @ApiProperty()
   createdAt: Date;
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { PublicService } from './public.service';
@@ -122,5 +122,22 @@ export class PublicController {
   ): Promise<ChapterDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getChapterByOrderIndex(platform, bookSlug, orderIndex);
+  }
+
+  @Post('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex/view')
+  @HttpCode(204)
+  @ApiOperation({
+    summary: 'Catat 1x "buka" Chapter ini (statistik baca, Fase 7)',
+    description:
+      'TANPA autentikasi — dihitung untuk SEMUA pembaca (termasuk anonim). Dihitung MENTAH, termasuk buka ulang oleh pembaca yang sama. Menaikkan chapters.view_count DAN books.view_count sekaligus (atomik). Dipanggil komponen client ChapterViewTracker, fire-and-forget.',
+  })
+  @ApiOkResponse({ description: 'View tercatat, tidak ada body response' })
+  async recordChapterView(
+    @Param('platformSlug') platformSlug: string,
+    @Param('bookSlug') bookSlug: string,
+    @Param('orderIndex', ParseIntPipe) orderIndex: number,
+  ): Promise<void> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    await this.publicService.incrementChapterView(platform, bookSlug, orderIndex);
   }
 }
