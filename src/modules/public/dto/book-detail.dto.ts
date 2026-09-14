@@ -92,4 +92,7 @@ export class BookDetailDto {
 
   @ApiProperty({ example: 89, description: 'Fase 8 — total Like (SUM like_count semua Chapter Book ini).' })
   likeCount: number;
+
+  @ApiProperty({ example: 132, description: 'Jumlah komentar sungguhan pada semua Chapter published Book ini (termasuk balasan, dihitung dari topic chat tiap Chapter).' })
+  commentCount: number;
 }

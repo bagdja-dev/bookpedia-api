@@ -23,10 +23,13 @@ import { PlatformStaffModule } from './modules/platform-staff/platform-staff.mod
 import { PlatformDomainsModule } from './modules/platform-domains/platform-domains.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TagsModule } from './modules/tags/tags.module';
+import { ChatServiceModule } from './common/chat-service/chat-service.module';
+import { CommentsModule } from './modules/comments/comments.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ChatServiceModule,
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -94,6 +97,7 @@ import { TagsModule } from './modules/tags/tags.module';
     PlatformDomainsModule,
     CategoriesModule,
     TagsModule,
+    CommentsModule,
   ],
 })
 export class AppModule {}

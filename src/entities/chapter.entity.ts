@@ -49,6 +49,9 @@ export class Chapter {
   @Column({ type: 'integer', default: 1 })
   content_version: number;
 
+  @Column({ type: 'uuid', nullable: true })
+  chat_topic_id: string | null;
+
   @Column({ type: 'timestamptz', nullable: true })
   published_at: Date | null;
 

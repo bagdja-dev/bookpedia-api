@@ -31,6 +31,12 @@ import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 
+  @Get('realtime/ws-token')
+  @ApiOperation({ summary: 'Tukar client credential menjadi token WebSocket Event Hub' })
+  async getRealtimeWsToken(): Promise<{ access_token: string; expires_in: number; channels: string[] }> {
+    return this.publicService.getRealtimeWsToken();
+  }
+
   @Get('platforms/resolve')
   @ApiOperation({
     summary: 'Resolusi Platform dari custom domain',
