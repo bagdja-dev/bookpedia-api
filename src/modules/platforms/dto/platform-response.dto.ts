@@ -34,6 +34,12 @@ export class PlatformResponseDto {
   @ApiProperty({ example: true })
   isActive: boolean;
 
+  @ApiProperty({
+    example: 0,
+    description: 'Jumlah Chapter pertama tiap Book yang bisa dibaca tanpa login. 0 = SEMUA Chapter gratis (bukan "nol Chapter gratis").',
+  })
+  maxFreeChapters: number;
+
   @ApiProperty()
   createdAt: Date;
 

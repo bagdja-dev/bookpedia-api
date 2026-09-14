@@ -27,4 +27,11 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ example: 'reader' })
   rendererKey: string;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Fase 5 (SEO) — jumlah Chapter pertama tiap Book yang bisa dibaca tanpa login. 0 = SEMUA Chapter gratis (bukan "nol Chapter gratis"). Dipakai Studio untuk validasi/hint override per-Book.',
+  })
+  maxFreeChapters: number;
 }

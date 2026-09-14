@@ -129,6 +129,7 @@ export class PlatformsService {
         colors: dto.colors,
         lock_studio: dto.lockStudio ?? false,
         renderer_key: dto.rendererKey ?? 'reader',
+        max_free_chapters: dto.maxFreeChapters ?? 0,
       });
       const saved = await platformRepo.save(platform);
 
@@ -168,6 +169,7 @@ export class PlatformsService {
       }
       platform.domain = dto.domain;
     }
+    if (dto.maxFreeChapters !== undefined) platform.max_free_chapters = dto.maxFreeChapters;
 
     return this.platformRepo.save(platform);
   }
@@ -187,6 +189,7 @@ export class PlatformsService {
       isActive: platform.is_active,
       createdAt: platform.created_at,
       updatedAt: platform.updated_at,
+      maxFreeChapters: platform.max_free_chapters,
     };
   }
 }

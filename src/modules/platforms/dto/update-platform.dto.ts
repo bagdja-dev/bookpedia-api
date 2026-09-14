@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsObject, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
 // lewat update) — slug Platform BOLEH diubah lewat admin console (dikonfirmasi
@@ -65,4 +65,14 @@ export class UpdatePlatformDto {
   @IsString()
   @MaxLength(255)
   domain?: string;
+
+  @ApiPropertyOptional({
+    example: 3,
+    description:
+      'Jumlah Chapter pertama tiap Book yang bisa dibaca TANPA login. SENTINEL: 0 = SEMUA Chapter di Platform ini gratis (bukan "nol Chapter gratis"). Menaikkan nilai ini otomatis "melonggarkan" Book yang override-nya jadi lebih kecil dari nilai baru (lihat resolveEffectiveMaxFreeChapters), tidak perlu migrasi data Book.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxFreeChapters?: number;
 }

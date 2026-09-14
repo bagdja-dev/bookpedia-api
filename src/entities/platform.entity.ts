@@ -78,6 +78,16 @@ export class Platform {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
+  /**
+   * Jumlah Chapter pertama (by `order_index`) tiap Book di Platform ini yang
+   * bisa dibaca TANPA login — bisa di-override per-Book (lihat
+   * `books.max_free_chapters`). SENTINEL: `0` = SEMUA Chapter gratis (BUKAN
+   * "nol Chapter gratis"). Lihat plan/bookpedia/overview.md §11 & helper
+   * `src/common/utils/free-chapters.util.ts`.
+   */
+  @Column({ type: 'int', default: 0 })
+  max_free_chapters: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

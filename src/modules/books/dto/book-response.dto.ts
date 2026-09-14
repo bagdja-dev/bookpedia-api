@@ -48,6 +48,13 @@ export class BookResponseDto {
   })
   publishedAt: Date | null;
 
+  @ApiPropertyOptional({
+    example: null,
+    nullable: true,
+    description: 'Override "Maximum Free Chapter" Platform (Fase 5). null = ikut kebijakan Platform.',
+  })
+  maxFreeChapters: number | null;
+
   @ApiProperty()
   createdAt: Date;
 

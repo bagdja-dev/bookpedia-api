@@ -7,6 +7,8 @@ import { Library } from '../../entities/library.entity';
 import { LibrariesService } from '../libraries/libraries.service';
 import { GenresService } from '../genres/genres.service';
 import { CategoriesService } from '../categories/categories.service';
+import { PlatformsService } from '../platforms/platforms.service';
+import { assertValidBookMaxFreeChapters } from '../../common/utils/free-chapters.util';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookResponseDto } from './dto/book-response.dto';
@@ -19,7 +21,20 @@ export class BooksService {
     private readonly librariesService: LibrariesService,
     private readonly genresService: GenresService,
     private readonly categoriesService: CategoriesService,
+    private readonly platformsService: PlatformsService,
   ) {}
+
+  /**
+   * Nilai `max_free_chapters` Platform saat ini — dipakai validasi override
+   * Book (Fase 5, §11.2 overview.md). `platformId` bisa null untuk Book/
+   * Library lama sebelum backfill Fase 4 §4.4 — dianggap tanpa batas (0)
+   * karena tidak ada Platform yang bisa divalidasikan.
+   */
+  private async getPlatformMaxFreeChapters(platformId: string | null): Promise<number> {
+    if (!platformId) return 0;
+    const platform = await this.platformsService.findById(platformId);
+    return platform?.max_free_chapters ?? 0;
+  }
 
   /**
    * Validasi `genreId` (kalau dikirim) match row `genres` manapun DAN
@@ -98,6 +113,9 @@ export class BooksService {
     const genreId = await this.resolveGenreId(dto.genreId, library.platform_id);
     const categoryId = await this.resolveCategoryId(dto.categoryId, library.platform_id);
 
+    const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(library.platform_id);
+    assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
+
     const book = this.bookRepo.create({
       // Denormalisasi dari library.platform_id — TIDAK PERNAH dari client
       // (lihat entities/book.entity.ts doc-comment & execution-plan.md §4.1).
@@ -112,6 +130,7 @@ export class BooksService {
       status: 'draft',
       book_type: dto.bookType ?? 'original',
       original_author: dto.originalAuthor ?? null,
+      max_free_chapters: dto.maxFreeChapters ?? null,
     });
 
     const saved = await this.bookRepo.save(book);
@@ -175,6 +194,11 @@ export class BooksService {
     }
     if (dto.bookType !== undefined) book.book_type = dto.bookType;
     if (dto.originalAuthor !== undefined) book.original_author = dto.originalAuthor || null;
+    if (dto.maxFreeChapters !== undefined) {
+      const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(book.platform_id);
+      assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
+      book.max_free_chapters = dto.maxFreeChapters;
+    }
 
     await this.bookRepo.save(book);
     return this.findOneForOwner(ownerUserId, bookId);
@@ -202,6 +226,7 @@ export class BooksService {
       bookType: book.book_type,
       originalAuthor: book.original_author,
       publishedAt: book.published_at,
+      maxFreeChapters: book.max_free_chapters,
       createdAt: book.created_at,
       updatedAt: book.updated_at,
     };

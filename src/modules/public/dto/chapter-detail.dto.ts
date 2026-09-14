@@ -50,4 +50,11 @@ export class ChapterDetailDto {
     description: 'order_index Chapter published berikutnya di Book yang sama, null kalau tidak ada',
   })
   nextOrderIndex: number | null;
+
+  @ApiProperty({
+    example: true,
+    description:
+      'Fase 5 (SEO) — true kalau Chapter ini bisa dibaca TANPA login (di dalam batas "Maximum Free Chapter" efektif Platform/Book). false = reader app wajib redirect ke /auth/login sebelum render konten.',
+  })
+  isFree: boolean;
 }

@@ -93,7 +93,7 @@ export class PublicController {
     @Param('bookSlug') bookSlug: string,
   ): Promise<BookDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
-    return this.publicService.getBookBySlug(platform.id, bookSlug);
+    return this.publicService.getBookBySlug(platform, bookSlug);
   }
 
   @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex')
@@ -109,6 +109,6 @@ export class PublicController {
     @Param('orderIndex', ParseIntPipe) orderIndex: number,
   ): Promise<ChapterDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
-    return this.publicService.getChapterByOrderIndex(platform.id, bookSlug, orderIndex);
+    return this.publicService.getChapterByOrderIndex(platform, bookSlug, orderIndex);
   }
 }

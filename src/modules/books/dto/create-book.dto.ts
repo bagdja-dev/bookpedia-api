@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from 'class-validator';
 
 import type { BookType } from '../../../entities/book.entity';
 
@@ -68,4 +68,15 @@ export class CreateBookDto {
   @IsString()
   @MaxLength(255)
   originalAuthor?: string;
+
+  @ApiPropertyOptional({
+    example: null,
+    nullable: true,
+    description:
+      'Override "Maximum Free Chapter" milik Platform (Fase 5, SEO). Kosongkan untuk ikut kebijakan Platform apa adanya. Kalau diisi: WAJIB 0 (Book ini sepenuhnya gratis) atau lebih besar dari nilai Platform saat ini — 400 kalau melanggar (lihat GET /platforms/:id untuk nilai Platform saat ini).',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxFreeChapters?: number;
 }

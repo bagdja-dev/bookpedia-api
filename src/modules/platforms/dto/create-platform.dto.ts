@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
 
 export class CreatePlatformDto {
   @ApiProperty({ example: 'Teknobuku', description: 'Nama Platform, tampil di header/tab browser/footer' })
@@ -56,4 +56,14 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsString()
   rendererKey?: string;
+
+  @ApiPropertyOptional({
+    example: 0,
+    description:
+      'Jumlah Chapter pertama tiap Book yang bisa dibaca TANPA login. SENTINEL: 0 = SEMUA Chapter di Platform ini gratis (bukan "nol Chapter gratis"). Default 0.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxFreeChapters?: number;
 }

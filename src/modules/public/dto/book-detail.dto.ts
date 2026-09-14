@@ -17,6 +17,12 @@ export class ChapterListItemDto {
 
   @ApiPropertyOptional({ nullable: true })
   publishedAt: Date | null;
+
+  @ApiProperty({
+    example: true,
+    description: 'Fase 5 (SEO) — true kalau Chapter ini bisa dibaca tanpa login. Dipakai reader app untuk badge "Gratis" di daftar Chapter.',
+  })
+  isFree: boolean;
 }
 
 /**

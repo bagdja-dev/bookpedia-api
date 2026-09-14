@@ -15,6 +15,7 @@ import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
+import { isChapterFree } from '../../common/utils/free-chapters.util';
 
 /** SQL fragment: Book ini "discoverable" publik kalau punya minimal 1 Chapter published. */
 const HAS_PUBLISHED_CHAPTER_SQL =
@@ -81,6 +82,7 @@ export class PublicService {
       colors: platform.colors,
       lockStudio: platform.lock_studio,
       rendererKey: platform.renderer_key,
+      maxFreeChapters: platform.max_free_chapters,
     };
   }
 
@@ -215,9 +217,9 @@ export class PublicService {
    * published sama sekali (tidak "discoverable" publik, meski row-nya ada
    * di DB). `chapters` HANYA yang published, urut order_index ASC.
    */
-  async getBookBySlug(platformId: string, bookSlug: string): Promise<BookDetailDto> {
+  async getBookBySlug(platform: Platform, bookSlug: string): Promise<BookDetailDto> {
     const book = await this.bookRepo.findOne({
-      where: { slug: bookSlug, platform_id: platformId },
+      where: { slug: bookSlug, platform_id: platform.id },
       relations: ['genre', 'category'],
     });
     if (!book || !book.published_at) {
@@ -256,6 +258,7 @@ export class PublicService {
         judul: chapter.judul,
         orderIndex: chapter.order_index,
         publishedAt: chapter.published_at,
+        isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
       })),
     };
   }
@@ -272,11 +275,11 @@ export class PublicService {
    * tombol next/prev tanpa fetch daftar chapter terpisah.
    */
   async getChapterByOrderIndex(
-    platformId: string,
+    platform: Platform,
     bookSlug: string,
     orderIndex: number,
   ): Promise<ChapterDetailDto> {
-    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platformId } });
+    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platform.id } });
     if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
     }
@@ -314,6 +317,7 @@ export class PublicService {
       book: { id: book.id, judul: book.judul, slug: book.slug },
       prevOrderIndex: prev?.order_index ?? null,
       nextOrderIndex: next?.order_index ?? null,
+      isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
     };
   }
 }

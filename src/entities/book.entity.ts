@@ -109,6 +109,16 @@ export class Book {
   @Column({ type: 'timestamptz', nullable: true })
   published_at: Date | null;
 
+  /**
+   * Override opsional `platforms.max_free_chapters` (Fase 5, SEO) — `NULL` =
+   * ikut kebijakan Platform apa adanya. Kalau diisi: WAJIB `0` (Book ini
+   * sepenuhnya gratis) atau lebih besar dari nilai Platform saat ini —
+   * divalidasi di `BooksService` lewat `assertValidBookMaxFreeChapters()`,
+   * TIDAK di-enforce sebagai DB constraint. Lihat plan/bookpedia/overview.md §11.
+   */
+  @Column({ type: 'int', nullable: true })
+  max_free_chapters: number | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
