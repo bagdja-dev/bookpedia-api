@@ -75,4 +75,18 @@ export class UpdatePlatformDto {
   @IsInt()
   @Min(0)
   maxFreeChapters?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Tampilkan badge status cerita (draft/ongoing/completed) di halaman publik. Tidak mempengaruhi Studio (penulis tetap lihat/ubah status apa pun nilainya).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  showBookStatus?: boolean;
+
+  @ApiPropertyOptional({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book.' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  maxTagsPerBook?: number;
 }

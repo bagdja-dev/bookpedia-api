@@ -88,6 +88,19 @@ export class Platform {
   @Column({ type: 'int', default: 0 })
   max_free_chapters: number;
 
+  /**
+   * Kontrol tampil/sembunyi badge status cerita (draft/ongoing/completed) di
+   * halaman publik (katalog, profil Library, detail Book) — TIDAK
+   * mempengaruhi Studio (penulis tetap lihat & bisa ubah status apa pun
+   * nilai kolom ini).
+   */
+  @Column({ type: 'boolean', default: true })
+  show_book_status: boolean;
+
+  /** Fase 6 (16 Sep 2026) — batas jumlah Tag yang boleh dilekatkan ke satu Book, divalidasi di `BooksService`. */
+  @Column({ type: 'int', default: 5 })
+  max_tags_per_book: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

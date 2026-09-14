@@ -38,6 +38,14 @@ export class CatalogQueryDto {
   @IsString()
   category?: string;
 
+  @ApiPropertyOptional({
+    example: 'petualangan',
+    description: 'Fase 6 — filter Tag by slug (dari GET /public/platforms/:platformSlug/tags, exact match). Bisa dikombinasikan dengan genre/category (semua di-AND-kan).',
+  })
+  @IsOptional()
+  @IsString()
+  tag?: string;
+
   @ApiPropertyOptional({ example: 1, default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)

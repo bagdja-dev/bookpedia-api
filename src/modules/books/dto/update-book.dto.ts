@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 
 import type { BookStatus, BookType } from '../../../entities/book.entity';
 
@@ -83,4 +83,15 @@ export class UpdateBookDto {
   @IsInt()
   @Min(0)
   maxFreeChapters?: number | null;
+
+  @ApiPropertyOptional({
+    example: ['petualangan', 'slow-burn'],
+    description:
+      'Fase 6 — ganti SELURUH Tag Book ini (bukan tambah/hapus sebagian). Kirim [] untuk menghapus semua Tag. Teks apa adanya (BUKAN slug/UUID) — find-or-create per nama. Ditolak 400 kalau jumlahnya melebihi maxTagsPerBook milik Platform.',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

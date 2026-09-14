@@ -8,6 +8,7 @@ import { LibrariesService } from '../libraries/libraries.service';
 import { GenresService } from '../genres/genres.service';
 import { CategoriesService } from '../categories/categories.service';
 import { PlatformsService } from '../platforms/platforms.service';
+import { TagsService } from '../tags/tags.service';
 import { assertValidBookMaxFreeChapters } from '../../common/utils/free-chapters.util';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -22,6 +23,7 @@ export class BooksService {
     private readonly genresService: GenresService,
     private readonly categoriesService: CategoriesService,
     private readonly platformsService: PlatformsService,
+    private readonly tagsService: TagsService,
   ) {}
 
   /**
@@ -34,6 +36,42 @@ export class BooksService {
     if (!platformId) return 0;
     const platform = await this.platformsService.findById(platformId);
     return platform?.max_free_chapters ?? 0;
+  }
+
+  /**
+   * Nilai `max_tags_per_book` Platform saat ini (Fase 6, §12.2 overview.md).
+   * `platformId` null (Book/Library lama sebelum backfill) dianggap tanpa
+   * batas praktis — sama semangat dengan `getPlatformMaxFreeChapters()`.
+   */
+  private async getPlatformMaxTagsPerBook(platformId: string | null): Promise<number> {
+    if (!platformId) return Number.MAX_SAFE_INTEGER;
+    const platform = await this.platformsService.findById(platformId);
+    return platform?.max_tags_per_book ?? Number.MAX_SAFE_INTEGER;
+  }
+
+  /**
+   * Resolusi `tags` (Fase 6) — find-or-create lewat `TagsService`, divalidasi
+   * dulu terhadap batas Platform SEBELUM bikin Tag baru (hindari Tag baru
+   * "nyangkut" ter-create padahal ujungnya ditolak karena kelebihan batas).
+   * `undefined` (field tidak dikirim) dibedakan dari `[]` (sengaja
+   * dikosongkan) — keduanya valid, cuma `[]` yang benar-benar menghapus
+   * seluruh Tag Book ini saat update.
+   */
+  private async resolveTagIds(
+    platformId: string | null,
+    tagNames: string[] | undefined,
+  ): Promise<string[] | undefined> {
+    if (tagNames === undefined) return undefined;
+
+    const maxTags = await this.getPlatformMaxTagsPerBook(platformId);
+    const distinctCount = new Set(tagNames.map((t) => t.trim().toLowerCase()).filter(Boolean)).size;
+    if (distinctCount > maxTags) {
+      throw new BadRequestException(`Jumlah Tag melebihi batas Platform saat ini (maksimum ${maxTags}).`);
+    }
+
+    if (!platformId) return [];
+    const tags = await this.tagsService.findOrCreateMany(platformId, tagNames);
+    return tags.map((t) => t.id);
   }
 
   /**
@@ -116,6 +154,8 @@ export class BooksService {
     const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(library.platform_id);
     assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
 
+    const tagIds = await this.resolveTagIds(library.platform_id, dto.tags);
+
     const book = this.bookRepo.create({
       // Denormalisasi dari library.platform_id — TIDAK PERNAH dari client
       // (lihat entities/book.entity.ts doc-comment & execution-plan.md §4.1).
@@ -134,6 +174,9 @@ export class BooksService {
     });
 
     const saved = await this.bookRepo.save(book);
+    if (tagIds !== undefined) {
+      await this.tagsService.replaceBookTags(saved.id, tagIds);
+    }
     return this.findOneForOwner(ownerUserId, saved.id);
   }
 
@@ -200,7 +243,12 @@ export class BooksService {
       book.max_free_chapters = dto.maxFreeChapters;
     }
 
+    const tagIds = await this.resolveTagIds(book.platform_id, dto.tags);
+
     await this.bookRepo.save(book);
+    if (tagIds !== undefined) {
+      await this.tagsService.replaceBookTags(book.id, tagIds);
+    }
     return this.findOneForOwner(ownerUserId, bookId);
   }
 
@@ -209,7 +257,20 @@ export class BooksService {
     await this.bookRepo.remove(book);
   }
 
-  toResponseDto(book: Book): BookResponseDto {
+  async toResponseDto(book: Book): Promise<BookResponseDto> {
+    const tags = await this.tagsService.findTagsForBook(book.id);
+    return this.buildResponseDto(book, tags.map((t) => this.tagsService.toResponseDto(t)));
+  }
+
+  /** Batch — dipakai `findAll()` supaya tidak N+1 query Tag per Book. */
+  async toResponseDtos(books: Book[]): Promise<BookResponseDto[]> {
+    const tagsByBook = await this.tagsService.findTagsForBooks(books.map((b) => b.id));
+    return books.map((book) =>
+      this.buildResponseDto(book, (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t))),
+    );
+  }
+
+  private buildResponseDto(book: Book, tags: BookResponseDto['tags']): BookResponseDto {
     return {
       id: book.id,
       platformId: book.platform_id,
@@ -221,6 +282,7 @@ export class BooksService {
         ? { id: book.genre.id, platformId: book.genre.platform_id, nama: book.genre.nama, slug: book.genre.slug }
         : null,
       category: book.category ? this.categoriesService.toSummaryDto(book.category) : null,
+      tags,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,

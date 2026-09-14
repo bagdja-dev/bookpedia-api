@@ -31,7 +31,7 @@ export class BooksController {
   @ApiOkResponse({ type: BookResponseDto, isArray: true, description: 'Daftar Book milik Library user login' })
   async findAll(@CurrentUser() user: AuthUser): Promise<BookResponseDto[]> {
     const books = await this.booksService.findAllForOwner(user.userId);
-    return books.map((book) => this.booksService.toResponseDto(book));
+    return this.booksService.toResponseDtos(books);
   }
 
   @Get(':id')

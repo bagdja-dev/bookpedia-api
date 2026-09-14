@@ -34,4 +34,13 @@ export class PlatformPublicProfileDto {
       'Fase 5 (SEO) — jumlah Chapter pertama tiap Book yang bisa dibaca tanpa login. 0 = SEMUA Chapter gratis (bukan "nol Chapter gratis"). Dipakai Studio untuk validasi/hint override per-Book.',
   })
   maxFreeChapters: number;
+
+  @ApiProperty({
+    example: true,
+    description: 'Tampilkan badge status cerita (draft/ongoing/completed) di halaman publik. false = sembunyikan dari katalog/profil Library/detail Book (Studio tidak terpengaruh).',
+  })
+  showBookStatus: boolean;
+
+  @ApiProperty({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book. Dipakai Studio untuk validasi/hint input Tag.' })
+  maxTagsPerBook: number;
 }

@@ -7,11 +7,12 @@ import { LibrariesModule } from '../libraries/libraries.module';
 import { GenresModule } from '../genres/genres.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { PlatformsModule } from '../platforms/platforms.module';
+import { TagsModule } from '../tags/tags.module';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book]), AuthModule, LibrariesModule, GenresModule, CategoriesModule, PlatformsModule],
+  imports: [TypeOrmModule.forFeature([Book]), AuthModule, LibrariesModule, GenresModule, CategoriesModule, PlatformsModule, TagsModule],
   controllers: [BooksController],
   providers: [BooksService],
   // Diexport supaya ChaptersModule bisa reuse `findOneForOwner()` untuk

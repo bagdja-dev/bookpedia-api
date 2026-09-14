@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { BookStatus, BookType } from '../../../entities/book.entity';
 import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
+import { TagResponseDto } from '../../tags/dto/tag-response.dto';
 
 export class BookResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -28,6 +29,9 @@ export class BookResponseDto {
 
   @ApiPropertyOptional({ type: CategorySummaryDto, nullable: true })
   category: CategorySummaryDto | null;
+
+  @ApiProperty({ type: TagResponseDto, isArray: true, description: 'Fase 6 — Tag bebas milik Book ini (folksonomi, beda dari Genre/Category kurasi).' })
+  tags: TagResponseDto[];
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg', nullable: true })
   coverUrl: string | null;

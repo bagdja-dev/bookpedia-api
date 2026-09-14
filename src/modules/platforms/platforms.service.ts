@@ -130,6 +130,8 @@ export class PlatformsService {
         lock_studio: dto.lockStudio ?? false,
         renderer_key: dto.rendererKey ?? 'reader',
         max_free_chapters: dto.maxFreeChapters ?? 0,
+        show_book_status: dto.showBookStatus ?? true,
+        max_tags_per_book: dto.maxTagsPerBook ?? 5,
       });
       const saved = await platformRepo.save(platform);
 
@@ -170,6 +172,8 @@ export class PlatformsService {
       platform.domain = dto.domain;
     }
     if (dto.maxFreeChapters !== undefined) platform.max_free_chapters = dto.maxFreeChapters;
+    if (dto.showBookStatus !== undefined) platform.show_book_status = dto.showBookStatus;
+    if (dto.maxTagsPerBook !== undefined) platform.max_tags_per_book = dto.maxTagsPerBook;
 
     return this.platformRepo.save(platform);
   }
@@ -190,6 +194,8 @@ export class PlatformsService {
       createdAt: platform.created_at,
       updatedAt: platform.updated_at,
       maxFreeChapters: platform.max_free_chapters,
+      showBookStatus: platform.show_book_status,
+      maxTagsPerBook: platform.max_tags_per_book,
     };
   }
 }

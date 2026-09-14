@@ -40,6 +40,12 @@ export class PlatformResponseDto {
   })
   maxFreeChapters: number;
 
+  @ApiProperty({ example: true, description: 'Tampilkan badge status cerita di halaman publik. Tidak mempengaruhi Studio.' })
+  showBookStatus: boolean;
+
+  @ApiProperty({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book.' })
+  maxTagsPerBook: number;
+
   @ApiProperty()
   createdAt: Date;
 

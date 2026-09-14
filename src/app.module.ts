@@ -20,6 +20,7 @@ import { PlatformsModule } from './modules/platforms/platforms.module';
 import { PlatformStaffModule } from './modules/platform-staff/platform-staff.module';
 import { PlatformDomainsModule } from './modules/platform-domains/platform-domains.module';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { TagsModule } from './modules/tags/tags.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
     PlatformStaffModule,
     PlatformDomainsModule,
     CategoriesModule,
+    TagsModule,
   ],
 })
 export class AppModule {}

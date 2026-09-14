@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from 'class-validator';
 
 import type { BookType } from '../../../entities/book.entity';
 
@@ -79,4 +79,15 @@ export class CreateBookDto {
   @IsInt()
   @Min(0)
   maxFreeChapters?: number;
+
+  @ApiPropertyOptional({
+    example: ['petualangan', 'slow-burn'],
+    description:
+      'Fase 6 — Tag bebas (teks apa adanya, BUKAN slug/UUID) — dibuat otomatis kalau belum pernah ada di Platform ini (find-or-create), atau reuse Tag existing hasil autocomplete GET /public/platforms/{slug}/tags. Ditolak 400 kalau jumlahnya melebihi maxTagsPerBook milik Platform.',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

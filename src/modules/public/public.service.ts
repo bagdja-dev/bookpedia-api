@@ -15,6 +15,8 @@ import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
+import { TagResponseDto } from '../tags/dto/tag-response.dto';
+import { TagsService } from '../tags/tags.service';
 import { isChapterFree } from '../../common/utils/free-chapters.util';
 
 /** SQL fragment: Book ini "discoverable" publik kalau punya minimal 1 Chapter published. */
@@ -48,6 +50,7 @@ export class PublicService {
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
     private readonly platformsService: PlatformsService,
+    private readonly tagsService: TagsService,
   ) {}
 
   async resolvePlatformBySlugOrThrow(platformSlug: string): Promise<Platform> {
@@ -83,6 +86,8 @@ export class PublicService {
       lockStudio: platform.lock_studio,
       rendererKey: platform.renderer_key,
       maxFreeChapters: platform.max_free_chapters,
+      showBookStatus: platform.show_book_status,
+      maxTagsPerBook: platform.max_tags_per_book,
     };
   }
 
@@ -136,6 +141,18 @@ export class PublicService {
       qb.andWhere('category.slug = :categorySlug', { categorySlug });
     }
 
+    const tagSlug = query.tag?.trim();
+    if (tagSlug) {
+      // Fase 6 — Tag many-to-many via pivot `book_tags`, EXISTS subquery
+      // (bukan JOIN) supaya tidak menghasilkan baris ganda per Book kalau
+      // suatu saat filter multi-tag ditambahkan (§12.2 overview.md: saat ini
+      // sengaja cuma single-tag, tapi EXISTS tetap pola paling aman).
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM book_tags bt JOIN tags t ON t.id = bt.tag_id WHERE bt.book_id = book.id AND t.slug = :tagSlug)`,
+        { tagSlug },
+      );
+    }
+
     qb.orderBy('book.created_at', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -146,20 +163,29 @@ export class PublicService {
     return { items, total, page, limit };
   }
 
-  /** Batch-resolve Library nama/slug untuk sekumpulan Book — satu query IN, bukan per-baris. */
+  /** Batch-resolve Library nama/slug + Tag untuk sekumpulan Book — satu query IN per jenis, bukan per-baris. */
   private async toCatalogDtos(books: Book[]): Promise<BookCatalogDto[]> {
     if (books.length === 0) {
       return [];
     }
 
     const libraryIds = [...new Set(books.map((book) => book.library_id))];
-    const libraries = await this.libraryRepo.find({ where: { id: In(libraryIds) } });
+    const [libraries, tagsByBook] = await Promise.all([
+      this.libraryRepo.find({ where: { id: In(libraryIds) } }),
+      this.tagsService.findTagsForBooks(books.map((book) => book.id)),
+    ]);
     const libraryById = new Map(libraries.map((library) => [library.id, library]));
 
-    return books.map((book) => this.toCatalogDto(book, libraryById.get(book.library_id)));
+    return books.map((book) =>
+      this.toCatalogDto(
+        book,
+        libraryById.get(book.library_id),
+        (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
+      ),
+    );
   }
 
-  private toCatalogDto(book: Book, library: Library | undefined): BookCatalogDto {
+  private toCatalogDto(book: Book, library: Library | undefined, tags: TagResponseDto[]): BookCatalogDto {
     return {
       id: book.id,
       judul: book.judul,
@@ -171,6 +197,7 @@ export class PublicService {
       category: book.category
         ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
         : null,
+      tags,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
@@ -200,6 +227,8 @@ export class PublicService {
       .orderBy('book.created_at', 'DESC')
       .getMany();
 
+    const tagsByBook = await this.tagsService.findTagsForBooks(books.map((book) => book.id));
+
     return {
       id: library.id,
       nama: library.nama,
@@ -207,7 +236,9 @@ export class PublicService {
       deskripsi: library.deskripsi,
       coverUrl: library.cover_url,
       createdAt: library.created_at,
-      books: books.map((book) => this.toCatalogDto(book, library)),
+      books: books.map((book) =>
+        this.toCatalogDto(book, library, (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t))),
+      ),
     };
   }
 
@@ -235,7 +266,10 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const library = await this.libraryRepo.findOne({ where: { id: book.library_id } });
+    const [library, tags] = await Promise.all([
+      this.libraryRepo.findOne({ where: { id: book.library_id } }),
+      this.tagsService.findTagsForBook(book.id),
+    ]);
 
     return {
       id: book.id,
@@ -248,6 +282,7 @@ export class PublicService {
       category: book.category
         ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
         : null,
+      tags: tags.map((t) => this.tagsService.toResponseDto(t)),
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
