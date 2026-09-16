@@ -88,13 +88,20 @@ export class CommentsService {
     return this.getMessage(chapter.id, messageId);
   }
 
-  async create(chapterId: string, userId: string, senderDisplayName: string | null, dto: CreateCommentDto): Promise<ChatMessageResponse> {
+  async create(
+    chapterId: string,
+    userId: string,
+    senderDisplayName: string | null,
+    senderAvatarUrl: string | null,
+    dto: CreateCommentDto,
+  ): Promise<ChatMessageResponse> {
     const chapter = await this.findPublishedChapter(chapterId);
     if (chapter.status !== 'published') throw new BadRequestException('Chapter is not published');
     const topicId = await this.getOrCreateTopicForChapter(chapterId, userId);
     return this.chatService.createMessage(topicId, {
       senderUserId: userId,
       senderDisplayName,
+      senderAvatarUrl,
       body: dto.body,
       parentMessageId: dto.parentMessageId ?? null,
     });

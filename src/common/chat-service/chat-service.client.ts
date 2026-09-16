@@ -13,6 +13,7 @@ export interface ChatMessageResponse {
   topicId: string;
   senderUserId: string;
   senderDisplayName: string | null;
+  senderAvatarUrl: string | null;
   body: string;
   parentMessageId: string | null;
   threadRootMessageId: string;
@@ -24,6 +25,16 @@ export interface ChatMessageResponse {
 export interface ChatMessageListResponse {
   items: ChatMessageResponse[];
   total: number;
+}
+
+/** Respons `POST /topics/direct` — get-or-create idempoten, lihat chat-service/overview.md §4.3.1. */
+export interface ChatDirectTopicResponse {
+  id: string;
+  appId: string;
+  orgId: string;
+  type: string;
+  accessMode: string;
+  dmKey: string;
 }
 
 /**
@@ -157,11 +168,50 @@ export class ChatServiceClient {
 
   async createMessage(
     topicId: string,
-    input: { senderUserId: string; senderDisplayName?: string | null; body: string; parentMessageId?: string | null },
+    input: {
+      senderUserId: string;
+      senderDisplayName?: string | null;
+      senderAvatarUrl?: string | null;
+      body: string;
+      parentMessageId?: string | null;
+    },
   ): Promise<ChatMessageResponse> {
     return this.request<ChatMessageResponse>(`/topics/${encodeURIComponent(topicId)}/messages`, {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  }
+
+  /**
+   * Get-or-create idempoten sebuah Topic `type=private, accessMode=direct`
+   * by `dmKey` — dipakai Inbox/DM (peer maupun Library), lihat
+   * chat-service/overview.md §4.3.1. `dmKey` opaque buat chat-service,
+   * rumusnya diputuskan `InboxService` (lihat komentar di sana).
+   */
+  async createDirectTopic(input: {
+    dmKey: string;
+    participantUserIds: string[];
+    name?: string;
+    createdByUserId: string;
+  }): Promise<ChatDirectTopicResponse> {
+    return this.request<ChatDirectTopicResponse>('/topics/direct', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  }
+
+  /** Tambah partisipan langsung ke Topic private/direct (tanpa invite) — dipakai sinkron staff Library nanti. */
+  async addDirectParticipant(topicId: string, userId: string, email?: string | null): Promise<void> {
+    await this.request(`/topics/${encodeURIComponent(topicId)}/participants`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, email: email ?? undefined }),
+    });
+  }
+
+  /** Hapus partisipan dari Topic private/direct — dipakai sinkron staff Library nanti. */
+  async removeDirectParticipant(topicId: string, userId: string): Promise<void> {
+    await this.request(`/topics/${encodeURIComponent(topicId)}/participants/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
     });
   }
 

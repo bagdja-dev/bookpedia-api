@@ -6,6 +6,7 @@ import { Book } from '../../entities/book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
 import { Platform } from '../../entities/platform.entity';
+import { ReadingProgress } from '../../entities/reading-progress.entity';
 import { PlatformsService } from '../platforms/platforms.service';
 import { BookCatalogDto } from './dto/book-catalog.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
@@ -15,6 +16,7 @@ import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
+import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
 import { TagResponseDto } from '../tags/dto/tag-response.dto';
 import { TagsService } from '../tags/tags.service';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
@@ -51,6 +53,8 @@ export class PublicService {
     private readonly chapterRepo: Repository<Chapter>,
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
+    @InjectRepository(ReadingProgress)
+    private readonly readingProgressRepo: Repository<ReadingProgress>,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
@@ -244,6 +248,43 @@ export class PublicService {
     return { totalBooks: books.length, totalViews, totalComments };
   }
 
+  /**
+   * Statistik publik halaman Profile User (susulan 16 Sep 2026, murni
+   * display — bookpedia/overview.md §15.3). `userId` TIDAK divalidasi ke
+   * bagdja-auth (bukan tanggung jawab bookpedia-api) — kalau tidak
+   * ditemukan/tidak pernah berinteraksi, kembalikan angka nol/array kosong,
+   * BUKAN 404 (404 di sini cuma buat Platform yang tidak ditemukan, lihat
+   * PublicController).
+   */
+  async getUserProfileStats(platformId: string, userId: string): Promise<UserProfileStatsDto> {
+    const library = await this.libraryRepo.findOne({ where: { owner_user_id: userId, platform_id: platformId } });
+
+    const [libraryStats, progressRows] = await Promise.all([
+      library ? this.getLibraryAggregateStats(library.id) : Promise.resolve(null),
+      this.readingProgressRepo.find({ where: { user_id: userId } }),
+    ]);
+
+    const bookIds = progressRows.map((row) => row.book_id);
+    const books =
+      bookIds.length > 0
+        ? await this.bookRepo
+            .createQueryBuilder('book')
+            .leftJoinAndSelect('book.genre', 'genre')
+            .leftJoinAndSelect('book.category', 'category')
+            .where('book.id IN (:...bookIds)', { bookIds })
+            .andWhere('book.platform_id = :platformId', { platformId })
+            .andWhere(IS_BOOK_PUBLISHED_SQL)
+            .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+            .getMany()
+        : [];
+
+    return {
+      worksCount: libraryStats?.totalBooks ?? 0,
+      librarySlug: library?.slug ?? null,
+      readingList: await this.toCatalogDtos(books),
+    };
+  }
+
   /** Batch-resolve Library nama/slug + Tag untuk sekumpulan Book — satu query IN per jenis, bukan per-baris. */
   private async toCatalogDtos(books: Book[]): Promise<BookCatalogDto[]> {
     if (books.length === 0) {
@@ -409,6 +450,7 @@ export class PublicService {
       bookType: book.book_type,
       originalAuthor: book.original_author,
       library: {
+        id: library?.id ?? '',
         nama: library?.nama ?? '',
         slug: library?.slug ?? '',
         coverUrl: library?.cover_url ?? null,

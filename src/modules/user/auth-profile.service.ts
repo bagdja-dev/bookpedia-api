@@ -8,6 +8,8 @@ interface OAuthAccessTokenPayload {
   sub?: string;
   email?: string;
   username?: string;
+  /** Klaim avatar bagdja-auth, cuma ada di token hasil alur OAuth. */
+  picture?: string;
 }
 
 interface AuthMeResponse {
@@ -19,6 +21,8 @@ interface AuthMeResponse {
     preferred_username?: string;
     name?: string;
     full_name?: string;
+    picture?: string;
+    profilePicture?: string;
   };
   id?: string;
   sub?: string;
@@ -27,6 +31,8 @@ interface AuthMeResponse {
   preferred_username?: string;
   name?: string;
   full_name?: string;
+  picture?: string;
+  profilePicture?: string;
 }
 
 @Injectable()
@@ -76,6 +82,7 @@ export class AuthProfileService {
         userId: payload.sub,
         email: payload.email,
         username: payload.username,
+        avatar: payload.picture,
       };
     } catch (error) {
       this.logger.warn(`JWKS verification failed (url=${jwksUrl}): ${(error as Error).message}`);
@@ -116,6 +123,7 @@ export class AuthProfileService {
         userId,
         email: user.email,
         username: user.username ?? user.preferred_username,
+        avatar: user.picture ?? user.profilePicture,
       };
     } catch (error) {
       this.logger.warn(`Token validation failed: ${(error as Error).message}`);

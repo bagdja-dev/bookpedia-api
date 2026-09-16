@@ -89,7 +89,8 @@ export class CommentsController {
     // tidak ada JWT untuk resolve nama saat render). Lihat konvensi
     // "Snapshot Identitas Pengirim" di plan/architecture/overview.md.
     const senderDisplayName = user.username ?? user.email ?? null;
-    return this.commentsService.create(chapterId, user.userId, senderDisplayName, dto);
+    const senderAvatarUrl = user.avatar ?? null;
+    return this.commentsService.create(chapterId, user.userId, senderDisplayName, senderAvatarUrl, dto);
   }
 
   @Delete('chapters/:chapterId/comments/:messageId')

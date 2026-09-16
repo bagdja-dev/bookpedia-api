@@ -14,6 +14,9 @@ import { TagResponseDto } from '../../tags/dto/tag-response.dto';
  * (banyak Book per response) tidak ikut kena N+1 agregat.
  */
 export class LibraryDetailSummaryDto {
+  @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'Susulan 16 Sep 2026 — dipakai frontend buat tombol "Kirim Pesan ke Penulis" (POST /messages/direct/libraries/:libraryId).' })
+  id: string;
+
   @ApiProperty({ example: 'Kisah Senja' })
   nama: string;
 

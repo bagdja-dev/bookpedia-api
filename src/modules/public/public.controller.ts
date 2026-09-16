@@ -10,6 +10,7 @@ import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
+import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
@@ -128,6 +129,21 @@ export class PublicController {
   ): Promise<ChapterDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getChapterByOrderIndex(platform, bookSlug, orderIndex);
+  }
+
+  @Get('platforms/:platformSlug/users/:userId')
+  @ApiOperation({
+    summary: 'Statistik publik 1 user (halaman Profile User) — Karya + Reading List, TANPA Followers (tidak ada konsepnya)',
+    description:
+      'Murni display, tidak ada endpoint tulis. Nama/avatar user TIDAK dikembalikan di sini (bookpedia-api sengaja tanpa tabel users lokal) — frontend membawanya dari konteks klik. userId tidak divalidasi ke bagdja-auth; kalau tidak ditemukan/belum pernah berinteraksi, dikembalikan worksCount:0, librarySlug:null, readingList:[] (BUKAN 404).',
+  })
+  @ApiOkResponse({ type: UserProfileStatsDto })
+  async getUserProfileStats(
+    @Param('platformSlug') platformSlug: string,
+    @Param('userId') userId: string,
+  ): Promise<UserProfileStatsDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getUserProfileStats(platform.id, userId);
   }
 
   @Post('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex/view')

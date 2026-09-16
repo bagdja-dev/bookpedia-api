@@ -25,6 +25,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { TagsModule } from './modules/tags/tags.module';
 import { ChatServiceModule } from './common/chat-service/chat-service.module';
 import { CommentsModule } from './modules/comments/comments.module';
+import { InboxModule } from './modules/inbox/inbox.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { CommentsModule } from './modules/comments/comments.module';
     CategoriesModule,
     TagsModule,
     CommentsModule,
+    InboxModule,
   ],
 })
 export class AppModule {}
