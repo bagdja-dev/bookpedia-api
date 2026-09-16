@@ -255,9 +255,31 @@ export class ChatServiceClient {
     });
   }
 
+  /**
+   * Bug ditemukan 17 Sep 2026: sebelumnya cuma 1x `listMessages(topicId,
+   * 1000, 0)` (asumsi "1000" = ambil semua sekaligus). Setelah
+   * `ListMessagesQueryDto` di chat-service dikasih `@Max(100)` (fix bug
+   * ParseIntPipe hari yang sama), `limit=1000` selalu ditolak 400 → 502 di
+   * sini → SELURUH `getBookBySlug()` gagal (Promise.all), bukan cuma hitung
+   * komentar — makanya statistik Chapter yang baru ditambahkan kelihatan
+   * "0 semua" terus (halaman yang tampil sebenarnya cache lama, revalidate
+   * di belakang layar selalu gagal). Diperbaiki jadi paginasi asli — untuk
+   * topic biasa (<=100 pesan top-level) tetap 1 request, sama seperti dulu.
+   */
   async getCommentCountForTopic(topicId: string): Promise<number> {
-    const response = await this.listMessages(topicId, 1000, 0);
-    return response.items.reduce((sum, item) => sum + item.replyCount + 1, 0);
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 100; // guard — 10.000 pesan top-level, jauh di atas skala wajar
+    let offset = 0;
+    let total = 0;
+
+    for (let page = 0; page < MAX_PAGES; page += 1) {
+      const response = await this.listMessages(topicId, PAGE_SIZE, offset);
+      total += response.items.reduce((sum, item) => sum + item.replyCount + 1, 0);
+      if (response.items.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    return total;
   }
 
   async getRealtimeWsToken(): Promise<{ access_token: string; expires_in: number; channels: string[] }> {

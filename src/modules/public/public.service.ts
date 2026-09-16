@@ -217,9 +217,32 @@ export class PublicService {
     return countsByBook;
   }
 
-  private async getCommentCountForBook(bookId: string): Promise<number> {
-    const countsByBook = await this.getCommentCountsForBooks([bookId]);
-    return countsByBook.get(bookId) ?? 0;
+  /**
+   * Susulan 17 Sep 2026 — komentar PER-CHAPTER (bukan agregat per-Book
+   * seperti `getCommentCountsForBooks`) untuk statistik di daftar Chapter
+   * halaman detail Book. Terima entity Chapter yang SUDAH di-fetch caller
+   * (`getBookBySlug` sudah query semua Chapter published Book itu) supaya
+   * tidak query ulang — cukup dedupe `chat_topic_id`, satu panggilan
+   * `getCommentCountForTopic` per topic unik (biasanya = jumlah Chapter,
+   * kecil, aman tanpa endpoint batch terpisah di chat-service).
+   */
+  private async getCommentCountsForChapters(
+    chapters: { id: string; chat_topic_id: string | null }[],
+  ): Promise<Map<string, number>> {
+    const countsByChapter = new Map<string, number>();
+    const topicIds = [...new Set(chapters.filter((chapter) => chapter.chat_topic_id).map((chapter) => chapter.chat_topic_id!))];
+    const topicCounts = new Map<string, number>();
+    if (topicIds.length > 0) {
+      const entries = await Promise.all(
+        topicIds.map(async (topicId) => [topicId, await this.chatService.getCommentCountForTopic(topicId)] as const),
+      );
+      entries.forEach(([topicId, count]) => topicCounts.set(topicId, count));
+    }
+
+    for (const chapter of chapters) {
+      countsByChapter.set(chapter.id, chapter.chat_topic_id ? (topicCounts.get(chapter.chat_topic_id) ?? 0) : 0);
+    }
+    return countsByChapter;
   }
 
   /**
@@ -426,12 +449,13 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const [library, tags, commentCount, libraryStats] = await Promise.all([
+    const [library, tags, chapterCommentCounts, libraryStats] = await Promise.all([
       this.libraryRepo.findOne({ where: { id: book.library_id } }),
       this.tagsService.findTagsForBook(book.id),
-      this.getCommentCountForBook(book.id),
+      this.getCommentCountsForChapters(chapters),
       this.getLibraryAggregateStats(book.library_id),
     ]);
+    const commentCount = [...chapterCommentCounts.values()].reduce((sum, count) => sum + count, 0);
 
     return {
       id: book.id,
@@ -466,6 +490,8 @@ export class PublicService {
         isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
         ratingAverage: Number(chapter.rating_average),
         ratingCount: chapter.rating_count,
+        viewCount: chapter.view_count,
+        commentCount: chapterCommentCounts.get(chapter.id) ?? 0,
       })),
       viewCount: book.view_count,
       ratingAverage: Number(book.rating_average),

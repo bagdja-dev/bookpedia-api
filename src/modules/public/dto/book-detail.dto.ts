@@ -63,6 +63,12 @@ export class ChapterListItemDto {
 
   @ApiProperty({ example: 3, description: 'Fase 7 — jumlah rating Chapter ini.' })
   ratingCount: number;
+
+  @ApiProperty({ example: 512, description: 'Susulan 17 Sep 2026 — total dibaca Chapter ini (chapters.view_count).' })
+  viewCount: number;
+
+  @ApiProperty({ example: 8, description: 'Susulan 17 Sep 2026 — jumlah komentar Chapter ini (dihitung dari topic chat Chapter, termasuk balasan).' })
+  commentCount: number;
 }
 
 /**
