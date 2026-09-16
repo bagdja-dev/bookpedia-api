@@ -218,6 +218,32 @@ export class PublicService {
     return countsByBook.get(bookId) ?? 0;
   }
 
+  /**
+   * Agregat Library untuk halaman detail Book (susulan §"Author/Library
+   * card", 16 Sep 2026) — total karya/views/comments SEMUA Book published
+   * milik satu Library. HANYA dipanggil untuk satu Library per request
+   * (`getBookBySlug`), jadi aman fetch entity Book penuh (id+viewCount)
+   * lalu sum di memory — pola sama `getLibraryBySlug` yang sudah fetch
+   * entity Book penuh untuk katalog Library, bukan query SUM terpisah.
+   */
+  private async getLibraryAggregateStats(
+    libraryId: string,
+  ): Promise<{ totalBooks: number; totalViews: number; totalComments: number }> {
+    const books = await this.bookRepo
+      .createQueryBuilder('book')
+      .select(['book.id', 'book.view_count'])
+      .where('book.library_id = :libraryId', { libraryId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+      .getMany();
+
+    const commentCountsByBook = await this.getCommentCountsForBooks(books.map((book) => book.id));
+    const totalComments = [...commentCountsByBook.values()].reduce((sum, count) => sum + count, 0);
+    const totalViews = books.reduce((sum, book) => sum + book.view_count, 0);
+
+    return { totalBooks: books.length, totalViews, totalComments };
+  }
+
   /** Batch-resolve Library nama/slug + Tag untuk sekumpulan Book — satu query IN per jenis, bukan per-baris. */
   private async toCatalogDtos(books: Book[]): Promise<BookCatalogDto[]> {
     if (books.length === 0) {
@@ -359,10 +385,11 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const [library, tags, commentCount] = await Promise.all([
+    const [library, tags, commentCount, libraryStats] = await Promise.all([
       this.libraryRepo.findOne({ where: { id: book.library_id } }),
       this.tagsService.findTagsForBook(book.id),
       this.getCommentCountForBook(book.id),
+      this.getLibraryAggregateStats(book.library_id),
     ]);
 
     return {
@@ -381,7 +408,14 @@ export class PublicService {
       status: book.status,
       bookType: book.book_type,
       originalAuthor: book.original_author,
-      library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
+      library: {
+        nama: library?.nama ?? '',
+        slug: library?.slug ?? '',
+        coverUrl: library?.cover_url ?? null,
+        totalBooks: libraryStats.totalBooks,
+        totalViews: libraryStats.totalViews,
+        totalComments: libraryStats.totalComments,
+      },
       chapters: chapters.map((chapter) => ({
         id: chapter.id,
         judul: chapter.judul,

@@ -4,7 +4,34 @@ import type { BookStatus, BookType } from '../../../entities/book.entity';
 import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
 import { TagResponseDto } from '../../tags/dto/tag-response.dto';
-import { LibrarySummaryDto } from './book-catalog.dto';
+
+/**
+ * Info Library untuk halaman detail Book — beda dari `LibrarySummaryDto`
+ * (katalog/daftar Book, cuma nama+slug) karena butuh field agregat
+ * (avatar, total karya/views/comments) yang HANYA dihitung untuk satu
+ * Library per request (lihat `PublicService.getLibraryAggregateStats`) —
+ * sengaja tidak digabung ke `LibrarySummaryDto` supaya payload katalog
+ * (banyak Book per response) tidak ikut kena N+1 agregat.
+ */
+export class LibraryDetailSummaryDto {
+  @ApiProperty({ example: 'Kisah Senja' })
+  nama: string;
+
+  @ApiProperty({ example: 'kisah-senja' })
+  slug: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/library/kisah-senja/avatar.jpg', nullable: true })
+  coverUrl: string | null;
+
+  @ApiProperty({ example: 12, description: 'Total Book published milik Library ini.' })
+  totalBooks: number;
+
+  @ApiProperty({ example: 48230, description: 'Total dibaca (SUM viewCount semua Book published) milik Library ini.' })
+  totalViews: number;
+
+  @ApiProperty({ example: 1420, description: 'Total komentar (semua Chapter published, semua Book) milik Library ini.' })
+  totalComments: number;
+}
 
 export class ChapterListItemDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -75,8 +102,8 @@ export class BookDetailDto {
   @ApiPropertyOptional({ example: null, nullable: true, description: 'Nama penulis asli, relevan kalau bookType bukan "original".' })
   originalAuthor: string | null;
 
-  @ApiProperty({ type: LibrarySummaryDto })
-  library: LibrarySummaryDto;
+  @ApiProperty({ type: LibraryDetailSummaryDto })
+  library: LibraryDetailSummaryDto;
 
   @ApiProperty({ type: ChapterListItemDto, isArray: true })
   chapters: ChapterListItemDto[];
