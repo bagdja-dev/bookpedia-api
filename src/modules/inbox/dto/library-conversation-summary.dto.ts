@@ -11,6 +11,9 @@ export class LibraryConversationSummaryDto {
   @ApiProperty({ example: 'Pembaca Setia', description: 'Snapshot nama reader SAAT DM dimulai (bisa berbeda dari nama terkini)' })
   readerDisplayName: string;
 
+  @ApiProperty({ example: 3, description: 'Fase 3.5 (Status Baca) — jumlah pesan belum dibaca dari sudut pandang owner Library.' })
+  unreadCount: number;
+
   @ApiProperty()
   createdAt: Date;
 }

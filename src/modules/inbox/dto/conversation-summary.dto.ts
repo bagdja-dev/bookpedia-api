@@ -26,6 +26,9 @@ export class ConversationSummaryDto {
   @ApiProperty({ example: null, nullable: true, description: 'Slug Library kalau contextType=library, buat link ke /library/{slug}.' })
   librarySlug: string | null;
 
+  @ApiProperty({ example: 3, description: 'Fase 3.5 (Status Baca) — jumlah pesan belum dibaca (bukan milik user login sendiri).' })
+  unreadCount: number;
+
   @ApiProperty()
   createdAt: Date;
 }

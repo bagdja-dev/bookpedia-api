@@ -37,6 +37,13 @@ export interface ChatDirectTopicResponse {
   dmKey: string;
 }
 
+/** Respons `POST /topics/read-state` (batch) & item hasil `POST /topics/:id/read` — Fase 3.5 (Status Baca). */
+export interface ChatReadStateItem {
+  topicId: string;
+  lastReadMessageId: string | null;
+  unreadCount: number;
+}
+
 /**
  * Client proxy ke `bagdja-chat-service` — pola auth PORT PERSIS
  * `StorageClientService` (exchange `CLIENT_APP_ID`/`CLIENT_APP_SECRET` yang
@@ -223,6 +230,29 @@ export class ChatServiceClient {
         body: JSON.stringify({ requesterUserId }),
       },
     );
+  }
+
+  /** Tandai Topic sudah dibaca `userId` sampai pesan terbaru saat ini — Fase 3.5. */
+  async markTopicRead(topicId: string, userId: string): Promise<{ topicId: string; lastReadMessageId: string | null }> {
+    return this.request(`/topics/${encodeURIComponent(topicId)}/read`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  /**
+   * BATCH `lastReadMessageId`+`unreadCount` buat banyak Topic sekaligus —
+   * Fase 3.5, dipakai `GET /inbox`/`GET /library/inbox` supaya tidak N+1
+   * (satu panggilan buat SEMUA percakapan, bukan satu per percakapan).
+   */
+  async getReadState(userId: string, topicIds: string[]): Promise<ChatReadStateItem[]> {
+    if (topicIds.length === 0) {
+      return [];
+    }
+    return this.request<ChatReadStateItem[]>('/topics/read-state', {
+      method: 'POST',
+      body: JSON.stringify({ userId, topicIds }),
+    });
   }
 
   async getCommentCountForTopic(topicId: string): Promise<number> {

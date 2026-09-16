@@ -68,6 +68,12 @@ export class InboxController {
     return this.inboxService.sendMessage(topicId, user, dto.body, dto.parentMessageId ?? null, dto.asLibrary ?? false);
   }
 
+  @Post('inbox/:topicId/read')
+  @ApiOperation({ summary: 'Tandai 1 percakapan sudah dibaca sampai sekarang (403 kalau bukan partisipan)' })
+  async markRead(@CurrentUser() user: AuthUser, @Param('topicId') topicId: string) {
+    return this.inboxService.markRead(topicId, user.userId);
+  }
+
   @Get('library/inbox')
   @ApiOperation({
     summary: 'Inbox Studio — reader yang pernah DM ke Library milik user login',
@@ -76,5 +82,11 @@ export class InboxController {
   @ApiOkResponse({ type: LibraryConversationSummaryDto, isArray: true })
   async listLibraryInbox(@CurrentUser() user: AuthUser): Promise<LibraryConversationSummaryDto[]> {
     return this.inboxService.listLibraryInbox(user.userId);
+  }
+
+  @Post('library/inbox/:topicId/read')
+  @ApiOperation({ summary: 'Studio: tandai 1 percakapan (dari sudut pandang Library) sudah dibaca sampai sekarang' })
+  async markLibraryRead(@CurrentUser() user: AuthUser, @Param('topicId') topicId: string) {
+    return this.inboxService.markRead(topicId, user.userId);
   }
 }

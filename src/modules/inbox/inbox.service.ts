@@ -3,7 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
 import type { AuthUser } from '../../common/auth';
-import { ChatServiceClient, ChatMessageListResponse, ChatMessageResponse } from '../../common/chat-service/chat-service.client';
+import {
+  ChatServiceClient,
+  ChatMessageListResponse,
+  ChatMessageResponse,
+  ChatReadStateItem,
+} from '../../common/chat-service/chat-service.client';
 import { ChatConversation } from '../../entities/chat-conversation.entity';
 import { Library } from '../../entities/library.entity';
 import { ConversationSummaryDto } from './dto/conversation-summary.dto';
@@ -134,7 +139,14 @@ export class InboxService {
     }
   }
 
-  private toSummary(conversation: ChatConversation, myUserId: string, libraryById: Map<string, Library>): ConversationSummaryDto {
+  private toSummary(
+    conversation: ChatConversation,
+    myUserId: string,
+    libraryById: Map<string, Library>,
+    readStateByTopic: Map<string, ChatReadStateItem>,
+  ): ConversationSummaryDto {
+    const unreadCount = readStateByTopic.get(conversation.topicId)?.unreadCount ?? 0;
+
     if (conversation.contextType === 'library') {
       const library = conversation.libraryId ? libraryById.get(conversation.libraryId) : undefined;
       return {
@@ -144,6 +156,7 @@ export class InboxService {
         contactDisplayName: library?.nama ?? 'Library',
         contactAvatarUrl: library?.cover_url ?? null,
         librarySlug: library?.slug ?? null,
+        unreadCount,
         createdAt: conversation.createdAt,
       };
     }
@@ -156,6 +169,7 @@ export class InboxService {
       contactDisplayName: (iAmInitiator ? conversation.counterpartDisplayName : conversation.initiatorDisplayName) ?? 'Pengguna',
       contactAvatarUrl: null,
       librarySlug: null,
+      unreadCount,
       createdAt: conversation.createdAt,
     };
   }
@@ -169,10 +183,25 @@ export class InboxService {
     const libraryIds = [
       ...new Set(conversations.filter((c) => c.contextType === 'library' && c.libraryId).map((c) => c.libraryId as string)),
     ];
-    const libraries = libraryIds.length > 0 ? await this.libraryRepo.find({ where: { id: In(libraryIds) } }) : [];
+    const [libraries, readStates] = await Promise.all([
+      libraryIds.length > 0 ? this.libraryRepo.find({ where: { id: In(libraryIds) } }) : Promise.resolve([]),
+      this.chatService.getReadState(userId, conversations.map((conversation) => conversation.topicId)),
+    ]);
     const libraryById = new Map(libraries.map((library) => [library.id, library]));
+    const readStateByTopic = new Map(readStates.map((state) => [state.topicId, state]));
 
-    return conversations.map((conversation) => this.toSummary(conversation, userId, libraryById));
+    return conversations.map((conversation) => this.toSummary(conversation, userId, libraryById, readStateByTopic));
+  }
+
+  /**
+   * Fase 3.5 (Status Baca) — tandai 1 percakapan sudah dibaca `userId`
+   * sampai sekarang. Dipakai reader (`POST /inbox/:topicId/read`) DAN
+   * Studio (`POST /library/inbox/:topicId/read`, `userId` di situ = owner
+   * Library, yang memang partisipan asli di chat-service).
+   */
+  async markRead(topicId: string, userId: string): Promise<{ topicId: string; lastReadMessageId: string | null }> {
+    await this.ensureMyConversation(topicId, userId);
+    return this.chatService.markTopicRead(topicId, userId);
   }
 
   /**
@@ -192,10 +221,17 @@ export class InboxService {
       order: { createdAt: 'DESC' },
     });
 
+    const readStates = await this.chatService.getReadState(
+      ownerUserId,
+      conversations.map((conversation) => conversation.topicId),
+    );
+    const readStateByTopic = new Map(readStates.map((state) => [state.topicId, state]));
+
     return conversations.map((conversation) => ({
       topicId: conversation.topicId,
       readerUserId: conversation.initiatorUserId,
       readerDisplayName: conversation.initiatorDisplayName ?? 'Pembaca',
+      unreadCount: readStateByTopic.get(conversation.topicId)?.unreadCount ?? 0,
       createdAt: conversation.createdAt,
     }));
   }
