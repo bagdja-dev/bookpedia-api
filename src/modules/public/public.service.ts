@@ -373,11 +373,26 @@ export class PublicService {
       .getMany();
 
     const libraryIds = [...new Set(books.map((book) => book.library_id))];
-    const libraries = libraryIds.length > 0 ? await this.libraryRepo.find({ where: { id: In(libraryIds) } }) : [];
+    const bookIds = books.map((book) => book.id);
+    const [libraries, chapters] = await Promise.all([
+      libraryIds.length > 0 ? this.libraryRepo.find({ where: { id: In(libraryIds) } }) : Promise.resolve([]),
+      bookIds.length > 0
+        ? this.chapterRepo.find({
+            where: { book_id: In(bookIds), status: 'published' },
+            select: ['book_id', 'order_index', 'updated_at'],
+          })
+        : Promise.resolve([]),
+    ]);
+    const bookSlugById = new Map(books.map((book) => [book.id, book.slug]));
 
     return {
       books: books.map((book) => ({ slug: book.slug, updatedAt: book.updated_at })),
       libraries: libraries.map((library) => ({ slug: library.slug, updatedAt: library.updated_at })),
+      chapters: chapters.map((chapter) => ({
+        bookSlug: bookSlugById.get(chapter.book_id) ?? '',
+        orderIndex: chapter.order_index,
+        updatedAt: chapter.updated_at,
+      })),
     };
   }
 
