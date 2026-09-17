@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { Chapter } from '../../entities/chapter.entity';
+import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { Library } from '../../entities/library.entity';
 import { LibrariesService } from '../libraries/libraries.service';
 import { GenresService } from '../genres/genres.service';
@@ -19,11 +21,14 @@ export class BooksService {
   constructor(
     @InjectRepository(Book)
     private readonly bookRepo: Repository<Book>,
+    @InjectRepository(Chapter)
+    private readonly chapterRepo: Repository<Chapter>,
     private readonly librariesService: LibrariesService,
     private readonly genresService: GenresService,
     private readonly categoriesService: CategoriesService,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
+    private readonly chatService: ChatServiceClient,
   ) {}
 
   /**
@@ -259,18 +264,56 @@ export class BooksService {
 
   async toResponseDto(book: Book): Promise<BookResponseDto> {
     const tags = await this.tagsService.findTagsForBook(book.id);
-    return this.buildResponseDto(book, tags.map((t) => this.tagsService.toResponseDto(t)));
+    const commentCount = await this.getCommentCountForBook(book.id);
+    return this.buildResponseDto(book, tags.map((t) => this.tagsService.toResponseDto(t)), commentCount);
   }
 
   /** Batch — dipakai `findAll()` supaya tidak N+1 query Tag per Book. */
   async toResponseDtos(books: Book[]): Promise<BookResponseDto[]> {
     const tagsByBook = await this.tagsService.findTagsForBooks(books.map((b) => b.id));
+    const commentCounts = await this.getCommentCountsForBooks(books.map((book) => book.id));
     return books.map((book) =>
-      this.buildResponseDto(book, (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t))),
+      this.buildResponseDto(
+        book,
+        (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
+        commentCounts.get(book.id) ?? 0,
+      ),
     );
   }
 
-  private buildResponseDto(book: Book, tags: BookResponseDto['tags']): BookResponseDto {
+  private async getCommentCountForBook(bookId: string): Promise<number> {
+    const counts = await this.getCommentCountsForBooks([bookId]);
+    return counts.get(bookId) ?? 0;
+  }
+
+  private async getCommentCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    if (bookIds.length === 0) return counts;
+
+    const chapters = await this.chapterRepo.find({
+      where: bookIds.map((bookId) => ({ book_id: bookId })),
+      select: ['book_id', 'chat_topic_id'],
+    });
+    const topicIds = [...new Set(chapters.flatMap((chapter) => chapter.chat_topic_id ? [chapter.chat_topic_id] : []))];
+    const topicCounts = new Map<string, number>();
+    await Promise.all(
+      topicIds.map(async (topicId) => {
+        topicCounts.set(topicId, await this.chatService.getCommentCountForTopic(topicId));
+      }),
+    );
+
+    for (const bookId of bookIds) {
+      counts.set(
+        bookId,
+        chapters
+          .filter((chapter) => chapter.book_id === bookId && chapter.chat_topic_id)
+          .reduce((total, chapter) => total + (topicCounts.get(chapter.chat_topic_id!) ?? 0), 0),
+      );
+    }
+    return counts;
+  }
+
+  private buildResponseDto(book: Book, tags: BookResponseDto['tags'], commentCount: number): BookResponseDto {
     return {
       id: book.id,
       platformId: book.platform_id,
@@ -290,6 +333,7 @@ export class BooksService {
       publishedAt: book.published_at,
       maxFreeChapters: book.max_free_chapters,
       viewCount: book.view_count,
+      commentCount,
       ratingAverage: Number(book.rating_average),
       ratingCount: book.rating_count,
       createdAt: book.created_at,

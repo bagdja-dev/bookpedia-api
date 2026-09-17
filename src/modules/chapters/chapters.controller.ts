@@ -36,7 +36,7 @@ export class ChaptersController {
   @ApiOkResponse({ type: ChapterResponseDto, isArray: true, description: 'Daftar Chapter urut order_index ASC' })
   async findAll(@CurrentUser() user: AuthUser, @Param('bookId') bookId: string): Promise<ChapterResponseDto[]> {
     const chapters = await this.chaptersService.findAllForBook(user.userId, bookId);
-    return chapters.map((chapter) => this.chaptersService.toResponseDto(chapter));
+    return Promise.all(chapters.map((chapter) => this.chaptersService.toResponseDto(chapter)));
   }
 
   @Patch('reorder')
@@ -52,7 +52,7 @@ export class ChaptersController {
     @Body() dto: ReorderChaptersDto,
   ): Promise<ChapterResponseDto[]> {
     const chapters = await this.chaptersService.reorder(user.userId, bookId, dto);
-    return chapters.map((chapter) => this.chaptersService.toResponseDto(chapter));
+    return Promise.all(chapters.map((chapter) => this.chaptersService.toResponseDto(chapter)));
   }
 
   @Get(':chapterId')

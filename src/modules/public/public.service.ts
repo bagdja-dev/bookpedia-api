@@ -284,7 +284,7 @@ export class PublicService {
 
     const [libraryStats, progressRows] = await Promise.all([
       library ? this.getLibraryAggregateStats(library.id) : Promise.resolve(null),
-      this.readingProgressRepo.find({ where: { user_id: userId } }),
+      this.readingProgressRepo.find({ where: { user_id: userId, is_public: true } }),
     ]);
 
     const bookIds = progressRows.map((row) => row.book_id);
@@ -315,10 +315,11 @@ export class PublicService {
     }
 
     const libraryIds = [...new Set(books.map((book) => book.library_id))];
-    const [libraries, tagsByBook, commentCountsByBook] = await Promise.all([
+    const [libraries, tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
       this.libraryRepo.find({ where: { id: In(libraryIds) } }),
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
+      this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
     ]);
     const libraryById = new Map(libraries.map((library) => [library.id, library]));
 
@@ -328,11 +329,31 @@ export class PublicService {
         libraryById.get(book.library_id),
         (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
         commentCountsByBook.get(book.id) ?? 0,
+        latestChapterByBook.get(book.id) ?? null,
       ),
     );
   }
 
-  private toCatalogDto(book: Book, library: Library | undefined, tags: TagResponseDto[], commentCount: number): BookCatalogDto {
+  private async getLatestPublishedChapterTitles(bookIds: string[]): Promise<Map<string, string>> {
+    const chapters = await this.chapterRepo.find({
+      where: bookIds.map((bookId) => ({ book_id: bookId, status: 'published' as const })),
+      select: ['book_id', 'judul', 'order_index'],
+      order: { order_index: 'DESC' },
+    });
+    const latestByBook = new Map<string, string>();
+    for (const chapter of chapters) {
+      if (!latestByBook.has(chapter.book_id)) latestByBook.set(chapter.book_id, chapter.judul);
+    }
+    return latestByBook;
+  }
+
+  private toCatalogDto(
+    book: Book,
+    library: Library | undefined,
+    tags: TagResponseDto[],
+    commentCount: number,
+    latestChapterTitle: string | null,
+  ): BookCatalogDto {
     return {
       id: book.id,
       judul: book.judul,
@@ -347,6 +368,7 @@ export class PublicService {
       tags,
       coverUrl: book.cover_url,
       status: book.status,
+      latestChapterTitle,
       bookType: book.book_type,
       originalAuthor: book.original_author,
       library: { nama: library?.nama ?? '', slug: library?.slug ?? '' },
@@ -417,9 +439,10 @@ export class PublicService {
       .orderBy('book.created_at', 'DESC')
       .getMany();
 
-    const [tagsByBook, commentCountsByBook] = await Promise.all([
+    const [tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
+      this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
     ]);
 
     return {
@@ -435,6 +458,7 @@ export class PublicService {
           library,
           (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
           commentCountsByBook.get(book.id) ?? 0,
+          latestChapterByBook.get(book.id) ?? null,
         ),
       ),
     };
@@ -574,6 +598,9 @@ export class PublicService {
       ratingAverage: Number(chapter.rating_average),
       ratingCount: chapter.rating_count,
       likeCount: chapter.like_count,
+      commentCount: chapter.chat_topic_id
+        ? await this.chatService.getCommentCountForTopic(chapter.chat_topic_id)
+        : 0,
     };
   }
 

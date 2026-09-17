@@ -26,6 +26,9 @@ export class ReadingProgress {
   @Column({ type: 'uuid' })
   last_chapter_id: string;
 
+  @Column({ type: 'boolean', default: false })
+  is_public: boolean;
+
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }

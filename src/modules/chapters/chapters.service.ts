@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
 import { Chapter } from '../../entities/chapter.entity';
+import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { BooksService } from '../books/books.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -16,6 +17,7 @@ export class ChaptersService {
     @InjectRepository(Chapter)
     private readonly chapterRepo: Repository<Chapter>,
     private readonly booksService: BooksService,
+    private readonly chatService: ChatServiceClient,
   ) {}
 
   /**
@@ -143,7 +145,10 @@ export class ChaptersService {
     await this.chapterRepo.remove(chapter);
   }
 
-  toResponseDto(chapter: Chapter): ChapterResponseDto {
+  async toResponseDto(chapter: Chapter): Promise<ChapterResponseDto> {
+    const commentCount = chapter.chat_topic_id
+      ? await this.chatService.getCommentCountForTopic(chapter.chat_topic_id)
+      : 0;
     return {
       id: chapter.id,
       bookId: chapter.book_id,
@@ -154,6 +159,7 @@ export class ChaptersService {
       contentVersion: chapter.content_version,
       publishedAt: chapter.published_at,
       viewCount: chapter.view_count,
+      commentCount,
       ratingAverage: Number(chapter.rating_average),
       ratingCount: chapter.rating_count,
       createdAt: chapter.created_at,

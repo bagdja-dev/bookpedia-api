@@ -46,6 +46,9 @@ export class BookCatalogDto {
   @ApiProperty({ example: 'ongoing', enum: ['draft', 'ongoing', 'completed'] })
   status: BookStatus;
 
+  @ApiPropertyOptional({ example: 'Bab 12: Jalan Pulang', nullable: true, description: 'Nama Chapter published terakhir berdasarkan order_index.' })
+  latestChapterTitle: string | null;
+
   @ApiProperty({ example: 'original', enum: ['original', 'translation', 'adaptation'] })
   bookType: BookType;
 

@@ -62,6 +62,9 @@ export class BookResponseDto {
   @ApiProperty({ example: 1234, description: 'Fase 7 — total dibaca (SUM view_count semua Chapter Book ini), info read-only untuk penulis pantau performa.' })
   viewCount: number;
 
+  @ApiProperty({ example: 132, description: 'Total komentar pada semua Chapter Book ini, termasuk balasan.' })
+  commentCount: number;
+
   @ApiProperty({ example: 4.5, description: 'Fase 7 — agregat rating Book ini (0 kalau belum ada rating). Sumbernya ikut ratingMode Platform.' })
   ratingAverage: number;
 

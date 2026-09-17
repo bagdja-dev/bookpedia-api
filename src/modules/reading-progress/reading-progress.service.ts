@@ -62,6 +62,7 @@ export class ReadingProgressService {
       lastChapterId: chapter.id,
       lastChapterOrderIndex: chapter.order_index,
       lastChapterJudul: chapter.judul,
+      isPublic: progress.is_public,
       updatedAt: progress.updated_at,
     };
   }
@@ -83,6 +84,7 @@ export class ReadingProgressService {
       lastChapterId: progress.last_chapter_id,
       lastChapterOrderIndex: chapter?.order_index ?? 0,
       lastChapterJudul: chapter?.judul ?? '',
+      isPublic: progress.is_public,
       updatedAt: progress.updated_at,
     };
   }
@@ -122,8 +124,29 @@ export class ReadingProgressService {
         lastChapterId: progress.last_chapter_id,
         lastChapterOrderIndex: chapter?.order_index ?? 0,
         lastChapterJudul: chapter?.judul ?? '',
+        isPublic: progress.is_public,
         updatedAt: progress.updated_at,
       };
     });
+  }
+
+  async updateVisibility(userId: string, bookId: string, isPublic: boolean): Promise<ReadingProgressResponseDto> {
+    const progress = await this.progressRepo.findOne({ where: { user_id: userId, book_id: bookId } });
+    if (!progress) {
+      throw new NotFoundException('Reading progress not found');
+    }
+
+    progress.is_public = isPublic;
+    const saved = await this.progressRepo.save(progress);
+    const chapter = await this.chapterRepo.findOne({ where: { id: saved.last_chapter_id } });
+
+    return {
+      bookId: saved.book_id,
+      lastChapterId: saved.last_chapter_id,
+      lastChapterOrderIndex: chapter?.order_index ?? 0,
+      lastChapterJudul: chapter?.judul ?? '',
+      isPublic: saved.is_public,
+      updatedAt: saved.updated_at,
+    };
   }
 }

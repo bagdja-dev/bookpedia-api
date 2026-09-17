@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { Chapter } from '../../entities/chapter.entity';
 import { AuthModule } from '../../common/auth';
 import { LibrariesModule } from '../libraries/libraries.module';
 import { GenresModule } from '../genres/genres.module';
@@ -12,7 +13,7 @@ import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book]), AuthModule, LibrariesModule, GenresModule, CategoriesModule, PlatformsModule, TagsModule],
+  imports: [TypeOrmModule.forFeature([Book, Chapter]), AuthModule, LibrariesModule, GenresModule, CategoriesModule, PlatformsModule, TagsModule],
   controllers: [BooksController],
   providers: [BooksService],
   // Diexport supaya ChaptersModule bisa reuse `findOneForOwner()` untuk

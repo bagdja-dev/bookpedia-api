@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
@@ -6,6 +6,7 @@ import { ReadingProgressService } from './reading-progress.service';
 import { PutReadingProgressDto } from './dto/put-reading-progress.dto';
 import { ReadingProgressResponseDto } from './dto/reading-progress-response.dto';
 import { ReadingProgressListItemDto } from './dto/reading-progress-list-item.dto';
+import { UpdateReadingProgressVisibilityDto } from './dto/update-reading-progress-visibility.dto';
 
 /**
  * Fase 3 — reading progress. User login di sini adalah PEMBACA, BUKAN
@@ -46,6 +47,17 @@ export class ReadingProgressController {
     @Param('bookId') bookId: string,
   ): Promise<ReadingProgressResponseDto> {
     return this.readingProgressService.findOneForBook(user.userId, bookId);
+  }
+
+  @Patch(':bookId/visibility')
+  @ApiOperation({ summary: 'Atur apakah Book tampil pada Reading List profil publik user' })
+  @ApiOkResponse({ type: ReadingProgressResponseDto, description: 'Visibilitas Reading List diperbarui' })
+  async updateVisibility(
+    @CurrentUser() user: AuthUser,
+    @Param('bookId') bookId: string,
+    @Body() dto: UpdateReadingProgressVisibilityDto,
+  ): Promise<ReadingProgressResponseDto> {
+    return this.readingProgressService.updateVisibility(user.userId, bookId, dto.isPublic);
   }
 
   @Get()

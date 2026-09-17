@@ -13,6 +13,9 @@ export class ReadingProgressResponseDto {
   @ApiProperty({ example: 'Bab 2: Pertemuan' })
   lastChapterJudul: string;
 
+  @ApiProperty({ example: false, description: 'Apakah Book ini ditampilkan pada Reading List profil publik user.' })
+  isPublic: boolean;
+
   @ApiProperty()
   updatedAt: Date;
 }
