@@ -11,3 +11,4 @@ export { ReadingProgress } from './reading-progress.entity';
 export { BookRating } from './book-rating.entity';
 export { ChapterHighlight } from './chapter-highlight.entity';
 export { ChatConversation, type ChatConversationContextType } from './chat-conversation.entity';
+export { User } from './user.entity';

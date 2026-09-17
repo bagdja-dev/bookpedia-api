@@ -8,6 +8,7 @@ import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { PlatformResponseDto } from './dto/platform-response.dto';
+import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -65,6 +66,81 @@ export class PlatformsService {
 
   async findBySlug(slug: string): Promise<Platform | null> {
     return this.platformRepo.findOne({ where: { slug } });
+  }
+
+  async listUserActivity(
+    platformId: string,
+    page: number,
+    limit: number,
+    search: string,
+  ): Promise<PlatformUserActivityResponseDto> {
+    const offset = (page - 1) * limit;
+    const params: unknown[] = [platformId];
+    const searchClause = search
+      ? `WHERE (u.display_name ILIKE $2 OR u.username ILIKE $2 OR u.email ILIKE $2 OR u.external_user_id::text ILIKE $2)`
+      : '';
+    if (search) params.push(`%${search}%`);
+
+    const activityCte = `
+      WITH activity AS (
+        SELECT l.owner_user_id AS user_id, l.updated_at AS activity_at, 'library' AS activity_type
+        FROM libraries l WHERE l.platform_id = $1
+        UNION ALL
+        SELECT rp.user_id, rp.updated_at, 'reading'
+        FROM reading_progress rp JOIN books b ON b.id = rp.book_id
+        WHERE b.platform_id = $1
+        UNION ALL
+        SELECT br.user_id, br.updated_at, 'rating'
+        FROM book_ratings br JOIN books b ON b.id = br.book_id
+        WHERE b.platform_id = $1
+        UNION ALL
+        SELECT cl.user_id, cl.created_at, 'like'
+        FROM chapter_likes cl JOIN chapters c ON c.id = cl.chapter_id JOIN books b ON b.id = c.book_id
+        WHERE b.platform_id = $1
+        UNION ALL
+        SELECT ch.user_id, ch.created_at, 'highlight'
+        FROM chapter_highlights ch JOIN chapters c ON c.id = ch.chapter_id JOIN books b ON b.id = c.book_id
+        WHERE b.platform_id = $1
+      ), grouped AS (
+        SELECT
+          user_id,
+          MAX(activity_at) AS last_activity_at,
+          COUNT(*) FILTER (WHERE activity_type = 'reading')::int AS reading_count,
+          COUNT(*) FILTER (WHERE activity_type = 'rating')::int AS rating_count,
+          COUNT(*) FILTER (WHERE activity_type = 'like')::int AS like_count,
+          COUNT(*) FILTER (WHERE activity_type = 'highlight')::int AS highlight_count,
+          COUNT(*) FILTER (WHERE activity_type = 'library')::int AS library_count
+        FROM activity
+        GROUP BY user_id
+      )
+    `;
+
+    const [rows, totalRows] = await Promise.all([
+      this.dataSource.query(
+        `${activityCte}
+         SELECT g.user_id AS "userId", u.email, u.username, u.display_name AS "displayName",
+           u.avatar_url AS "avatarUrl", g.reading_count AS "readingCount", g.rating_count AS "ratingCount",
+           g.like_count AS "likeCount", g.highlight_count AS "highlightCount", g.library_count AS "libraryCount",
+           g.last_activity_at AS "lastActivityAt"
+         FROM grouped g LEFT JOIN users u ON u.external_user_id = g.user_id
+         ${searchClause}
+         ORDER BY g.last_activity_at DESC
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, limit, offset],
+      ),
+      this.dataSource.query(
+        `${activityCte}
+         SELECT COUNT(*)::int AS total FROM grouped g LEFT JOIN users u ON u.external_user_id = g.user_id ${searchClause}`,
+        params,
+      ),
+    ]);
+
+    return {
+      items: rows,
+      total: Number(totalRows[0]?.total ?? 0),
+      page,
+      limit,
+    };
   }
 
   /**

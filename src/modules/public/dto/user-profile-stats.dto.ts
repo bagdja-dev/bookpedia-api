@@ -5,8 +5,9 @@ import { BookCatalogDto } from './book-catalog.dto';
 /**
  * Statistik publik 1 user — halaman Profile User (bookpedia-app §15.3,
  * susulan 16 Sep 2026). Murni DISPLAY, tidak ada endpoint tulis di scope
- * ini. `bookpedia-api` sengaja tidak punya tabel `users` lokal, jadi nama/
- * avatar user TIDAK ada di sini — dibawa dari konteks klik di frontend.
+ * ini. Nama/avatar user bukan bagian dari response statistik ini; profile
+ * projection lokal dipakai untuk kebutuhan admin, sedangkan halaman publik
+ * tetap membawa konteks nama/avatar dari frontend.
  * Followers/Following TIDAK ADA sama sekali (bukan ditunda) — Bookpedia
  * tidak punya konsep follow.
  */

@@ -22,10 +22,8 @@ import type { AuthUser, JwtPayload } from './jwt.strategy';
  * 2) fallback JWKS stateless (token OAuth cross-app EdDSA)
  * 3) fallback panggilan `/auth/me` (kalau JWT_SECRET beda, mis. dev vs prod SSO)
  *
- * BEDA dari bagdja-website-api: guard ini TIDAK upsert user ke tabel lokal —
- * Bookpedia sengaja tidak punya tabel `users` lokal (lihat schema.dbml root
- * Note pada Table `users` & database/database.module.ts), identitas
- * sepenuhnya milik bagdja-auth.
+ * Profile lokal di-upsert setelah token valid sebagai projection untuk
+ * observability/admin. Source of truth identitas tetap bagdja-auth.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -54,6 +52,13 @@ export class JwtAuthGuard implements CanActivate {
 
     if (!authUser) {
       throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    try {
+      await this.authProfile.syncUserProfile(authUser);
+    } catch (error) {
+      // Profile projection is observability data; it must not block valid login.
+      this.authProfile.logProfileSyncFailure(error);
     }
 
     request.user = authUser;

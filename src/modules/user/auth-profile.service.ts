@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
 
 import type { AuthUser } from '../../common/auth/jwt.strategy';
+import { UserService } from './user.service';
 
 interface OAuthAccessTokenPayload {
   sub?: string;
@@ -45,7 +46,10 @@ export class AuthProfileService {
   private clientTokenExpiry: Date | null = null;
   private jwks: JWTVerifyGetKey | null = null;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly userService: UserService,
+  ) {
     this.authServiceUrl = (
       config.get<string>('BAGDJA_AUTH_API') ??
       config.get<string>('BAGDJA_AUTH_URL') ??
@@ -53,6 +57,14 @@ export class AuthProfileService {
     ).replace(/\/$/, '');
     this.clientAppId = config.get<string>('CLIENT_APP_ID') ?? '';
     this.clientAppSecret = config.get<string>('CLIENT_APP_SECRET') ?? '';
+  }
+
+  async syncUserProfile(user: AuthUser): Promise<void> {
+    await this.userService.syncFromAuthUser(user);
+  }
+
+  logProfileSyncFailure(error: unknown): void {
+    this.logger.warn(`User profile sync failed: ${(error as Error).message}`);
   }
 
   /**

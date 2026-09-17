@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 
@@ -8,6 +8,7 @@ import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformListResponseDto } from './dto/platform-list-response.dto';
+import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
 
 interface RequestWithPlatformAccess extends Request {
   platformAccess?: { isOwner: boolean; organizationId?: string };
@@ -51,6 +52,20 @@ export class PlatformsController {
     const platform = await this.platformsService.findById(id);
     if (!platform) throw new NotFoundException('Platform not found');
     return this.platformsService.toResponseDto(platform);
+  }
+
+  @Get(':id/users')
+  @ApiOperation({ summary: 'Daftar user yang berinteraksi dengan Platform' })
+  @ApiOkResponse({ type: PlatformUserActivityResponseDto })
+  async listUsers(
+    @Param('id') id: string,
+    @Query('page') pageParam?: string,
+    @Query('limit') limitParam?: string,
+    @Query('search') search?: string,
+  ): Promise<PlatformUserActivityResponseDto> {
+    const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(limitParam ?? '25', 10) || 25));
+    return this.platformsService.listUserActivity(id, page, limit, search?.trim() ?? '');
   }
 
   @Patch(':id')
