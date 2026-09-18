@@ -213,6 +213,14 @@ export class PlatformsService {
         enable_like: dto.enableLike ?? true,
         enable_comment: dto.enableComment ?? true,
         enable_share: dto.enableShare ?? true,
+        seo_default_h1: dto.seoDefaultH1 ?? null,
+        seo_default_title: dto.seoDefaultTitle ?? null,
+        seo_default_description: dto.seoDefaultDescription ?? null,
+        seo_default_og_title: dto.seoDefaultOgTitle ?? null,
+        seo_default_og_description: dto.seoDefaultOgDescription ?? null,
+        seo_default_og_type: dto.seoDefaultOgType ?? 'website',
+        seo_prefix: dto.seoPrefix ?? null,
+        seo_suffix: dto.seoSuffix ?? null,
       });
       const saved = await platformRepo.save(platform);
 
@@ -266,6 +274,14 @@ export class PlatformsService {
     if (dto.enableLike !== undefined) platform.enable_like = dto.enableLike;
     if (dto.enableComment !== undefined) platform.enable_comment = dto.enableComment;
     if (dto.enableShare !== undefined) platform.enable_share = dto.enableShare;
+    if (dto.seoDefaultH1 !== undefined) platform.seo_default_h1 = dto.seoDefaultH1;
+    if (dto.seoDefaultTitle !== undefined) platform.seo_default_title = dto.seoDefaultTitle;
+    if (dto.seoDefaultDescription !== undefined) platform.seo_default_description = dto.seoDefaultDescription;
+    if (dto.seoDefaultOgTitle !== undefined) platform.seo_default_og_title = dto.seoDefaultOgTitle;
+    if (dto.seoDefaultOgDescription !== undefined) platform.seo_default_og_description = dto.seoDefaultOgDescription;
+    if (dto.seoDefaultOgType !== undefined) platform.seo_default_og_type = dto.seoDefaultOgType ?? 'website';
+    if (dto.seoPrefix !== undefined) platform.seo_prefix = dto.seoPrefix;
+    if (dto.seoSuffix !== undefined) platform.seo_suffix = dto.seoSuffix;
 
     return this.platformRepo.save(platform);
   }
@@ -295,6 +311,14 @@ export class PlatformsService {
       enableLike: platform.enable_like,
       enableComment: platform.enable_comment,
       enableShare: platform.enable_share,
+      seoDefaultH1: platform.seo_default_h1,
+      seoDefaultTitle: platform.seo_default_title,
+      seoDefaultDescription: platform.seo_default_description,
+      seoDefaultOgTitle: platform.seo_default_og_title,
+      seoDefaultOgDescription: platform.seo_default_og_description,
+      seoDefaultOgType: platform.seo_default_og_type,
+      seoPrefix: platform.seo_prefix,
+      seoSuffix: platform.seo_suffix,
     };
   }
 }

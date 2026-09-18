@@ -172,6 +172,14 @@ export class BooksService {
       genre_id: genreId ?? null,
       category_id: categoryId ?? null,
       cover_url: dto.coverUrl ?? null,
+      seo_h1: dto.seoH1 ?? null,
+      seo_title: dto.seoTitle ?? null,
+      seo_description: dto.seoDescription ?? null,
+      seo_og_title: dto.seoOgTitle ?? null,
+      seo_og_description: dto.seoOgDescription ?? null,
+      seo_og_type: dto.seoOgType ?? 'book',
+      seo_prefix: dto.seoPrefix ?? null,
+      seo_suffix: dto.seoSuffix ?? null,
       status: 'draft',
       book_type: dto.bookType ?? 'original',
       original_author: dto.originalAuthor ?? null,
@@ -236,6 +244,14 @@ export class BooksService {
       book.category = undefined;
     }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
+    if (dto.seoH1 !== undefined) book.seo_h1 = dto.seoH1;
+    if (dto.seoTitle !== undefined) book.seo_title = dto.seoTitle;
+    if (dto.seoDescription !== undefined) book.seo_description = dto.seoDescription;
+    if (dto.seoOgTitle !== undefined) book.seo_og_title = dto.seoOgTitle;
+    if (dto.seoOgDescription !== undefined) book.seo_og_description = dto.seoOgDescription;
+    if (dto.seoOgType !== undefined) book.seo_og_type = dto.seoOgType ?? 'book';
+    if (dto.seoPrefix !== undefined) book.seo_prefix = dto.seoPrefix;
+    if (dto.seoSuffix !== undefined) book.seo_suffix = dto.seoSuffix;
     if (dto.status !== undefined) book.status = dto.status;
     if (dto.published !== undefined) {
       book.published_at = dto.published ? new Date() : null;
@@ -332,6 +348,14 @@ export class BooksService {
       originalAuthor: book.original_author,
       publishedAt: book.published_at,
       maxFreeChapters: book.max_free_chapters,
+      seoTitle: book.seo_title,
+      seoDescription: book.seo_description,
+      seoH1: book.seo_h1,
+      seoOgTitle: book.seo_og_title,
+      seoOgDescription: book.seo_og_description,
+      seoOgType: book.seo_og_type,
+      seoPrefix: book.seo_prefix,
+      seoSuffix: book.seo_suffix,
       viewCount: book.view_count,
       commentCount,
       ratingAverage: Number(book.rating_average),

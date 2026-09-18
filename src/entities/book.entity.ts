@@ -86,6 +86,30 @@ export class Book {
   @Column({ type: 'varchar', length: 500, nullable: true })
   cover_url: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  seo_h1: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_title: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_description: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_og_title: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_og_description: string | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'book' })
+  seo_og_type: 'website' | 'book' | 'profile';
+
+  @Column({ type: 'text', nullable: true })
+  seo_prefix: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_suffix: string | null;
+
   @Column({ type: 'varchar', length: 20, default: 'draft' })
   status: BookStatus;
 

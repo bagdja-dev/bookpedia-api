@@ -142,4 +142,44 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsBoolean()
   enableShare?: boolean;
+
+  @ApiPropertyOptional({ example: '{{title}} — {{platform}}', description: 'Template default title SEO Platform.' })
+  @IsOptional()
+  @IsString()
+  seoDefaultTitle?: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}} di {{platform}}.', description: 'Template default description SEO Platform.' })
+  @IsOptional()
+  @IsString()
+  seoDefaultDescription?: string | null;
+
+  @ApiPropertyOptional({ example: '{{title}}', description: 'Template default H1 SEO Platform.' })
+  @IsOptional()
+  @IsString()
+  seoDefaultH1?: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}}', description: 'Template default og:title SEO Platform.' })
+  @IsOptional()
+  @IsString()
+  seoDefaultOgTitle?: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca cerita lengkap {{title}} di {{platform}}.', description: 'Template default og:description SEO Platform.' })
+  @IsOptional()
+  @IsString()
+  seoDefaultOgDescription?: string | null;
+
+  @ApiPropertyOptional({ example: 'website', enum: ['website', 'book', 'profile'], nullable: true, description: 'Default og:type Platform. Kirim null untuk reset.' })
+  @IsOptional()
+  @IsIn(['website', 'book', 'profile'])
+  seoDefaultOgType?: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ example: 'Novel', nullable: true, description: 'Prefix SEO global Platform.' })
+  @IsOptional()
+  @IsString()
+  seoPrefix?: string | null;
+
+  @ApiPropertyOptional({ example: 'Bahasa Indonesia', nullable: true, description: 'Suffix SEO global Platform.' })
+  @IsOptional()
+  @IsString()
+  seoSuffix?: string | null;
 }

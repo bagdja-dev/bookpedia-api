@@ -74,4 +74,28 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar. Kalau enableLike, enableComment, DAN enableShare ketiganya false, reader app menyembunyikan seluruh bar.' })
   enableShare: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDefaultH1: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDefaultTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDefaultDescription: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDefaultOgTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDefaultOgDescription: string | null;
+
+  @ApiPropertyOptional({ enum: ['website', 'book', 'profile'], nullable: true })
+  seoDefaultOgType: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoPrefix: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoSuffix: string | null;
 }

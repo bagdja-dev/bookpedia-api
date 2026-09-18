@@ -22,6 +22,30 @@ export class LibraryResponseDto {
   @ApiPropertyOptional({ example: 'https://cdn.example.com/library/kisah-senja/cover.jpg', nullable: true })
   coverUrl: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  seoTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDescription: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoH1: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoOgTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoOgDescription: string | null;
+
+  @ApiPropertyOptional({ enum: ['website', 'book', 'profile'], nullable: true })
+  seoOgType: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoPrefix: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoSuffix: string | null;
+
   @ApiProperty()
   createdAt: Date;
 

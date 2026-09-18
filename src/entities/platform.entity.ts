@@ -149,6 +149,31 @@ export class Platform {
   @Column({ type: 'boolean', default: true })
   enable_share: boolean;
 
+  /** SEO template default per Platform — root fallback when Library/Book tidak override. */
+  @Column({ type: 'text', nullable: true })
+  seo_default_h1: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_default_title: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_default_description: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_default_og_title: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_default_og_description: string | null;
+
+  @Column({ type: 'varchar', length: 20, default: 'website' })
+  seo_default_og_type: 'website' | 'book' | 'profile';
+
+  @Column({ type: 'text', nullable: true })
+  seo_prefix: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  seo_suffix: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

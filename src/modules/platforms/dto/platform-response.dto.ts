@@ -69,6 +69,30 @@ export class PlatformResponseDto {
   @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar.' })
   enableShare: boolean;
 
+  @ApiPropertyOptional({ example: '{{title}} — {{platform}}', nullable: true, description: 'Template default title SEO Platform.' })
+  seoDefaultTitle: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}} di {{platform}}.', nullable: true, description: 'Template default description SEO Platform.' })
+  seoDefaultDescription: string | null;
+
+  @ApiPropertyOptional({ example: '{{title}}', nullable: true, description: 'Template default H1 SEO Platform.' })
+  seoDefaultH1: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}}', nullable: true, description: 'Template default og:title SEO Platform.' })
+  seoDefaultOgTitle: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca cerita lengkap {{title}} di {{platform}}.', nullable: true, description: 'Template default og:description SEO Platform.' })
+  seoDefaultOgDescription: string | null;
+
+  @ApiPropertyOptional({ example: 'website', enum: ['website', 'book', 'profile'], nullable: true, description: 'Default og:type Platform.' })
+  seoDefaultOgType: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ example: 'Novel', nullable: true, description: 'Prefix SEO global Platform.' })
+  seoPrefix: string | null;
+
+  @ApiPropertyOptional({ example: 'Bahasa Indonesia', nullable: true, description: 'Suffix SEO global Platform.' })
+  seoSuffix: string | null;
+
   @ApiProperty()
   createdAt: Date;
 

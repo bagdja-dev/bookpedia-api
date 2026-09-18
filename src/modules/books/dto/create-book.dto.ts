@@ -90,4 +90,44 @@ export class CreateBookDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @ApiPropertyOptional({ example: '{{title}} — {{platform}}', description: 'Template override title SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoTitle?: string;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}} di {{platform}}.', description: 'Template override description SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoDescription?: string;
+
+  @ApiPropertyOptional({ example: '{{title}}', description: 'Template override H1 SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoH1?: string;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}}', description: 'Template override og:title SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoOgTitle?: string;
+
+  @ApiPropertyOptional({ example: 'Baca cerita lengkap {{title}} di {{platform}}.', description: 'Template override og:description SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoOgDescription?: string;
+
+  @ApiPropertyOptional({ example: 'book', enum: ['website', 'book', 'profile'], description: 'Override og:type SEO Book.' })
+  @IsOptional()
+  @IsIn(['website', 'book', 'profile'])
+  seoOgType?: 'website' | 'book' | 'profile';
+
+  @ApiPropertyOptional({ example: 'Novel', description: 'Prefix SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoPrefix?: string;
+
+  @ApiPropertyOptional({ example: 'Bahasa Indonesia', description: 'Suffix SEO Book.' })
+  @IsOptional()
+  @IsString()
+  seoSuffix?: string;
 }

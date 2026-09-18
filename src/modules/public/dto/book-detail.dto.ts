@@ -111,6 +111,30 @@ export class BookDetailDto {
   @ApiPropertyOptional({ example: null, nullable: true, description: 'Nama penulis asli, relevan kalau bookType bukan "original".' })
   originalAuthor: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  seoTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoDescription: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoH1: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoOgTitle: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoOgDescription: string | null;
+
+  @ApiPropertyOptional({ enum: ['website', 'book', 'profile'], nullable: true })
+  seoOgType: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoPrefix: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  seoSuffix: string | null;
+
   @ApiProperty({ type: LibraryDetailSummaryDto })
   library: LibraryDetailSummaryDto;
 

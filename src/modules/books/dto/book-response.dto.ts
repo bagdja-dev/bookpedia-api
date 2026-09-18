@@ -59,6 +59,30 @@ export class BookResponseDto {
   })
   maxFreeChapters: number | null;
 
+  @ApiPropertyOptional({ example: '{{title}} — {{platform}}', nullable: true, description: 'Template override title SEO Book.' })
+  seoTitle: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}} di {{platform}}.', nullable: true, description: 'Template override description SEO Book.' })
+  seoDescription: string | null;
+
+  @ApiPropertyOptional({ example: '{{title}}', nullable: true, description: 'Template override H1 SEO Book.' })
+  seoH1: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca {{title}}', nullable: true, description: 'Template override og:title SEO Book.' })
+  seoOgTitle: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca cerita lengkap {{title}} di {{platform}}.', nullable: true, description: 'Template override og:description SEO Book.' })
+  seoOgDescription: string | null;
+
+  @ApiPropertyOptional({ example: 'book', enum: ['website', 'book', 'profile'], nullable: true, description: 'Override og:type SEO Book.' })
+  seoOgType: 'website' | 'book' | 'profile' | null;
+
+  @ApiPropertyOptional({ example: 'Novel', nullable: true, description: 'Prefix SEO Book.' })
+  seoPrefix: string | null;
+
+  @ApiPropertyOptional({ example: 'Bahasa Indonesia', nullable: true, description: 'Suffix SEO Book.' })
+  seoSuffix: string | null;
+
   @ApiProperty({ example: 1234, description: 'Fase 7 — total dibaca (SUM view_count semua Chapter Book ini), info read-only untuk penulis pantau performa.' })
   viewCount: number;
 

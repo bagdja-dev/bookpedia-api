@@ -106,6 +106,14 @@ export class PublicService {
       enableLike: platform.enable_like,
       enableComment: platform.enable_comment,
       enableShare: platform.enable_share,
+      seoDefaultH1: platform.seo_default_h1,
+      seoDefaultTitle: platform.seo_default_title,
+      seoDefaultDescription: platform.seo_default_description,
+      seoDefaultOgTitle: platform.seo_default_og_title,
+      seoDefaultOgDescription: platform.seo_default_og_description,
+      seoDefaultOgType: platform.seo_default_og_type,
+      seoPrefix: platform.seo_prefix,
+      seoSuffix: platform.seo_suffix,
     };
   }
 
@@ -451,6 +459,14 @@ export class PublicService {
       slug: library.slug,
       deskripsi: library.deskripsi,
       coverUrl: library.cover_url,
+      seoTitle: library.seo_title,
+      seoDescription: library.seo_description,
+      seoH1: library.seo_h1,
+      seoOgTitle: library.seo_og_title,
+      seoOgDescription: library.seo_og_description,
+      seoOgType: library.seo_og_type,
+      seoPrefix: library.seo_prefix,
+      seoSuffix: library.seo_suffix,
       createdAt: library.created_at,
       books: books.map((book) =>
         this.toCatalogDto(
@@ -512,6 +528,14 @@ export class PublicService {
       status: book.status,
       bookType: book.book_type,
       originalAuthor: book.original_author,
+      seoTitle: book.seo_title,
+      seoDescription: book.seo_description,
+      seoH1: book.seo_h1,
+      seoOgTitle: book.seo_og_title,
+      seoOgDescription: book.seo_og_description,
+      seoOgType: book.seo_og_type,
+      seoPrefix: book.seo_prefix,
+      seoSuffix: book.seo_suffix,
       library: {
         id: library?.id ?? '',
         nama: library?.nama ?? '',

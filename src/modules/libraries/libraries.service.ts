@@ -84,6 +84,14 @@ export class LibrariesService {
     if (dto.nama !== undefined) library.nama = dto.nama;
     if (dto.deskripsi !== undefined) library.deskripsi = dto.deskripsi;
     if (dto.coverUrl !== undefined) library.cover_url = dto.coverUrl;
+    if (dto.seoH1 !== undefined) library.seo_h1 = dto.seoH1;
+    if (dto.seoTitle !== undefined) library.seo_title = dto.seoTitle;
+    if (dto.seoDescription !== undefined) library.seo_description = dto.seoDescription;
+    if (dto.seoOgTitle !== undefined) library.seo_og_title = dto.seoOgTitle;
+    if (dto.seoOgDescription !== undefined) library.seo_og_description = dto.seoOgDescription;
+    if (dto.seoOgType !== undefined) library.seo_og_type = dto.seoOgType ?? 'profile';
+    if (dto.seoPrefix !== undefined) library.seo_prefix = dto.seoPrefix;
+    if (dto.seoSuffix !== undefined) library.seo_suffix = dto.seoSuffix;
 
     return this.libraryRepo.save(library);
   }
@@ -97,6 +105,14 @@ export class LibrariesService {
       slug: library.slug,
       deskripsi: library.deskripsi,
       coverUrl: library.cover_url,
+      seoTitle: library.seo_title,
+      seoDescription: library.seo_description,
+      seoH1: library.seo_h1,
+      seoOgTitle: library.seo_og_title,
+      seoOgDescription: library.seo_og_description,
+      seoOgType: library.seo_og_type,
+      seoPrefix: library.seo_prefix,
+      seoSuffix: library.seo_suffix,
       createdAt: library.created_at,
       updatedAt: library.updated_at,
     };
