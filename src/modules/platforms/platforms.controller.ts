@@ -9,6 +9,7 @@ import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformListResponseDto } from './dto/platform-list-response.dto';
 import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
+import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
 
 interface RequestWithPlatformAccess extends Request {
   platformAccess?: { isOwner: boolean; organizationId?: string };
@@ -66,6 +67,16 @@ export class PlatformsController {
     const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);
     const limit = Math.min(100, Math.max(1, Number.parseInt(limitParam ?? '25', 10) || 25));
     return this.platformsService.listUserActivity(id, page, limit, search?.trim() ?? '');
+  }
+
+  @Get(':id/users/:userId/reading')
+  @ApiOperation({ summary: 'Detail reading list user pada Platform' })
+  @ApiOkResponse({ type: PlatformUserReadingResponseDto })
+  async getUserReading(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+  ): Promise<PlatformUserReadingResponseDto> {
+    return this.platformsService.getUserReading(id, userId);
   }
 
   @Patch(':id')

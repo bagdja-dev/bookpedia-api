@@ -9,6 +9,7 @@ import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
+import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -140,6 +141,50 @@ export class PlatformsService {
       total: Number(totalRows[0]?.total ?? 0),
       page,
       limit,
+    };
+  }
+
+  async getUserReading(platformId: string, userId: string): Promise<PlatformUserReadingResponseDto> {
+    const rows = await this.dataSource.query(
+      `SELECT
+         rp.user_id AS "userId",
+         u.email,
+         u.username,
+         u.display_name AS "displayName",
+         u.avatar_url AS "avatarUrl",
+         b.id AS "bookId",
+         b.slug AS "bookSlug",
+         b.judul AS "bookTitle",
+         b.cover_url AS "bookCoverUrl",
+         c.id AS "lastChapterId",
+         c.order_index AS "lastChapterOrderIndex",
+         c.judul AS "lastChapterTitle",
+         rp.updated_at AS "lastReadAt"
+       FROM reading_progress rp
+       JOIN books b ON b.id = rp.book_id AND b.platform_id = $1
+       JOIN chapters c ON c.id = rp.last_chapter_id
+       LEFT JOIN users u ON u.external_user_id = rp.user_id
+       WHERE rp.user_id = $2
+       ORDER BY rp.updated_at DESC`,
+      [platformId, userId],
+    );
+
+    return {
+      userId,
+      email: rows[0]?.email ?? null,
+      username: rows[0]?.username ?? null,
+      displayName: rows[0]?.displayName ?? null,
+      avatarUrl: rows[0]?.avatarUrl ?? null,
+      readingList: rows.map((row) => ({
+        bookId: row.bookId,
+        bookSlug: row.bookSlug,
+        bookTitle: row.bookTitle,
+        bookCoverUrl: row.bookCoverUrl ?? null,
+        lastChapterId: row.lastChapterId,
+        lastChapterOrderIndex: Number(row.lastChapterOrderIndex),
+        lastChapterTitle: row.lastChapterTitle,
+        lastReadAt: row.lastReadAt,
+      })),
     };
   }
 
