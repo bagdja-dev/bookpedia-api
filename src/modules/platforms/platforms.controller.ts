@@ -10,6 +10,7 @@ import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformListResponseDto } from './dto/platform-list-response.dto';
 import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
 import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
+import { PlatformAnalyticsResponseDto } from './dto/platform-analytics.dto';
 
 interface RequestWithPlatformAccess extends Request {
   platformAccess?: { isOwner: boolean; organizationId?: string };
@@ -67,6 +68,17 @@ export class PlatformsController {
     const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);
     const limit = Math.min(100, Math.max(1, Number.parseInt(limitParam ?? '25', 10) || 25));
     return this.platformsService.listUserActivity(id, page, limit, search?.trim() ?? '');
+  }
+
+  @Get(':id/analytics')
+  @ApiOperation({ summary: 'Analytics pertumbuhan user dan aktivitas membaca harian' })
+  @ApiOkResponse({ type: PlatformAnalyticsResponseDto })
+  async getAnalytics(
+    @Param('id') id: string,
+    @Query('days') daysParam?: string,
+  ): Promise<PlatformAnalyticsResponseDto> {
+    const days = Math.min(31, Math.max(1, Number.parseInt(daysParam ?? '7', 10) || 7));
+    return this.platformsService.getAnalytics(id, days);
   }
 
   @Get(':id/users/:userId/reading')

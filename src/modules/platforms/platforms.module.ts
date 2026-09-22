@@ -5,11 +5,12 @@ import { Genre } from '../../entities/genre.entity';
 import { Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { AuthModule } from '../../common/auth';
+import { ChatServiceModule } from '../../common/chat-service/chat-service.module';
 import { PlatformsController } from './platforms.controller';
 import { PlatformsService } from './platforms.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Platform, PlatformStaff, Genre]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Platform, PlatformStaff, Genre]), AuthModule, ChatServiceModule],
   controllers: [PlatformsController],
   providers: [PlatformsService],
   // Diexport supaya LibrariesModule bisa reuse untuk resolve+validasi

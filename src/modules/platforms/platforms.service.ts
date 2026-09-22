@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
+import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { Genre } from '../../entities/genre.entity';
 import { Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
@@ -10,6 +11,7 @@ import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
 import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
+import { PlatformAnalyticsResponseDto } from './dto/platform-analytics.dto';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -41,6 +43,7 @@ export class PlatformsService {
     @InjectRepository(PlatformStaff)
     private readonly platformStaffRepo: Repository<PlatformStaff>,
     private readonly dataSource: DataSource,
+    private readonly chatService: ChatServiceClient,
   ) {}
 
   /**
@@ -141,6 +144,238 @@ export class PlatformsService {
       total: Number(totalRows[0]?.total ?? 0),
       page,
       limit,
+    };
+  }
+
+  async getAnalytics(platformId: string, days: number): Promise<PlatformAnalyticsResponseDto> {
+    const [rows, statsRows, recentActivityRows, commentTopicRows, topBookRows] = await Promise.all([
+      this.dataSource.query(
+      `WITH activity AS (
+         SELECT l.owner_user_id AS user_id, l.updated_at AS activity_at, 'library' AS activity_type
+         FROM libraries l
+         WHERE l.platform_id = $1
+         UNION ALL
+         SELECT rp.user_id, rp.updated_at, 'reading'
+         FROM reading_progress rp
+         JOIN books b ON b.id = rp.book_id
+         WHERE b.platform_id = $1
+         UNION ALL
+         SELECT br.user_id, br.updated_at, 'rating'
+         FROM book_ratings br
+         JOIN books b ON b.id = br.book_id
+         WHERE b.platform_id = $1
+         UNION ALL
+         SELECT cl.user_id, cl.created_at, 'like'
+         FROM chapter_likes cl
+         JOIN chapters c ON c.id = cl.chapter_id
+         JOIN books b ON b.id = c.book_id
+         WHERE b.platform_id = $1
+         UNION ALL
+         SELECT ch.user_id, ch.created_at, 'highlight'
+         FROM chapter_highlights ch
+         JOIN chapters c ON c.id = ch.chapter_id
+         JOIN books b ON b.id = c.book_id
+         WHERE b.platform_id = $1
+       ), days AS (
+         SELECT generate_series(
+           CURRENT_DATE - (($2::int - 1) * INTERVAL '1 day'),
+           CURRENT_DATE,
+           INTERVAL '1 day'
+         )::date AS day
+       ), daily AS (
+         SELECT
+           d.day,
+           (
+             SELECT COUNT(DISTINCT a.user_id)::int
+             FROM activity a
+             WHERE a.activity_at < d.day + INTERVAL '1 day'
+           ) AS total_users,
+           COUNT(a.user_id) FILTER (WHERE a.activity_type = 'reading')::int AS reading_events
+         FROM days d
+         LEFT JOIN activity a ON a.activity_at >= d.day AND a.activity_at < d.day + INTERVAL '1 day'
+         GROUP BY d.day
+       ), with_previous AS (
+         SELECT
+           day,
+           total_users,
+           reading_events,
+           LAG(total_users) OVER (ORDER BY day) AS previous_total_users,
+           LAG(reading_events) OVER (ORDER BY day) AS previous_reading_events
+         FROM daily
+       )
+       SELECT
+         day::text AS date,
+         ROUND(
+           CASE
+             WHEN COALESCE(previous_total_users, 0) = 0 THEN 0
+             ELSE ((total_users - previous_total_users)::numeric / previous_total_users) * 100
+           END,
+           1
+         )::float AS "userGrowth",
+         ROUND(
+           CASE
+             WHEN COALESCE(previous_reading_events, 0) = 0 THEN 0
+             ELSE ((reading_events - previous_reading_events)::numeric / previous_reading_events) * 100
+           END,
+           1
+         )::float AS "readingGrowth",
+         total_users AS "totalUsers"
+       FROM with_previous
+       ORDER BY day`,
+        [platformId, days],
+      ),
+      this.dataSource.query(
+        `WITH activity AS (
+           SELECT l.owner_user_id AS user_id
+           FROM libraries l
+           WHERE l.platform_id = $1
+           UNION ALL
+           SELECT rp.user_id
+           FROM reading_progress rp
+           JOIN books b ON b.id = rp.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT br.user_id
+           FROM book_ratings br
+           JOIN books b ON b.id = br.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT cl.user_id
+           FROM chapter_likes cl
+           JOIN chapters c ON c.id = cl.chapter_id
+           JOIN books b ON b.id = c.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT ch.user_id
+           FROM chapter_highlights ch
+           JOIN chapters c ON c.id = ch.chapter_id
+           JOIN books b ON b.id = c.book_id
+           WHERE b.platform_id = $1
+         )
+         SELECT
+           (SELECT COUNT(*)::int FROM books WHERE platform_id = $1) AS "totalBooks",
+           (SELECT COUNT(*)::int FROM libraries WHERE platform_id = $1) AS "totalLibraries",
+           (SELECT COUNT(*)::int
+            FROM books book
+            WHERE book.platform_id = $1
+              AND book.published_at IS NOT NULL
+              AND EXISTS (
+                SELECT 1 FROM chapters chapter
+                WHERE chapter.book_id = book.id AND chapter.status = 'published'
+              )) AS "publishedBooks",
+           (SELECT COUNT(DISTINCT user_id)::int FROM activity) AS "totalReaders",
+           (SELECT COALESCE(SUM(view_count), 0)::int FROM books WHERE platform_id = $1) AS "totalViews",
+           (SELECT COALESCE(SUM(like_count), 0)::int FROM books WHERE platform_id = $1) AS "totalLikes",
+           (SELECT COALESCE(AVG(rating), 0)::numeric(3, 2) FROM book_ratings rating_row
+            JOIN books rated_book ON rated_book.id = rating_row.book_id
+            WHERE rated_book.platform_id = $1) AS "averageRating"`,
+        [platformId],
+      ),
+      this.dataSource.query(
+        `SELECT
+           activities.title,
+           activities.detail,
+           activities."activityAt",
+           activities.type,
+           COALESCE(u.display_name, u.username, u.email, 'User') AS "userName",
+           u.avatar_url AS "avatarUrl"
+         FROM (
+           SELECT b.judul AS title, 'Book dipublish' AS detail, b.published_at AS "activityAt", 'Published' AS type, l.owner_user_id AS user_id
+           FROM books b
+           JOIN libraries l ON l.id = b.library_id
+           WHERE b.platform_id = $1 AND b.published_at IS NOT NULL
+           UNION ALL
+           SELECT b.judul AS title, 'Progress membaca diperbarui' AS detail, rp.updated_at AS "activityAt", 'Reading' AS type, rp.user_id
+           FROM reading_progress rp
+           JOIN books b ON b.id = rp.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Rating book diperbarui' AS detail, br.updated_at AS "activityAt", 'Rating' AS type, br.user_id
+           FROM book_ratings br
+           JOIN books b ON b.id = br.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Chapter mendapat like' AS detail, cl.created_at AS "activityAt", 'Like' AS type, cl.user_id
+           FROM chapter_likes cl
+           JOIN chapters c ON c.id = cl.chapter_id
+           JOIN books b ON b.id = c.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Highlight baru dibuat' AS detail, ch.created_at AS "activityAt", 'Highlight' AS type, ch.user_id
+           FROM chapter_highlights ch
+           JOIN chapters c ON c.id = ch.chapter_id
+           JOIN books b ON b.id = c.book_id
+           WHERE b.platform_id = $1
+           UNION ALL
+           SELECT l.nama AS title, 'Library memperbarui profil' AS detail, l.updated_at AS "activityAt", 'Updated' AS type, l.owner_user_id AS user_id
+           FROM libraries l
+           WHERE l.platform_id = $1
+         ) activities
+         LEFT JOIN users u ON u.external_user_id = activities.user_id
+         ORDER BY "activityAt" DESC
+         LIMIT 6`,
+        [platformId],
+      ),
+      this.dataSource.query(
+        `SELECT DISTINCT c.chat_topic_id AS "topicId"
+         FROM chapters c
+         JOIN books b ON b.id = c.book_id
+         WHERE b.platform_id = $1 AND c.chat_topic_id IS NOT NULL`,
+        [platformId],
+      ),
+      this.dataSource.query(
+        `SELECT
+           b.judul AS title,
+           COALESCE(l.nama, 'Tanpa library') AS author,
+           b.view_count::int AS views,
+           CASE
+             WHEN MAX(b.view_count) OVER () = 0 THEN 0
+             ELSE ROUND((b.view_count::numeric / MAX(b.view_count) OVER ()) * 100)::int
+           END AS progress
+         FROM books b
+         LEFT JOIN libraries l ON l.id = b.library_id
+         WHERE b.platform_id = $1
+         ORDER BY b.view_count DESC, b.updated_at DESC
+         LIMIT 3`,
+        [platformId],
+      ),
+    ]);
+
+    const totalComments = await Promise.all(
+      (commentTopicRows as Array<{ topicId: string | null }>)
+        .filter((row): row is { topicId: string } => typeof row.topicId === 'string' && row.topicId.length > 0)
+        .map((row) => this.chatService.getCommentCountForTopic(row.topicId)),
+    ).then((counts) => counts.reduce((sum, count) => sum + count, 0));
+
+    return {
+      items: rows.map((row: { date: string; userGrowth: number | string; readingGrowth: number | string; totalUsers: number | string }) => ({
+        date: row.date,
+        userGrowth: Number(row.userGrowth),
+        readingGrowth: Number(row.readingGrowth),
+        totalUsers: Number(row.totalUsers),
+      })),
+      topBooks: topBookRows.map((row: { title: string; author: string; views: number | string; progress: number | string }) => ({
+        title: row.title,
+        author: row.author,
+        views: Number(row.views),
+        progress: Number(row.progress),
+      })),
+      recentActivities: recentActivityRows.map((row: { title: string; detail: string; activityAt: Date | string; type: string; userName: string; avatarUrl: string | null }) => ({
+        title: row.title,
+        detail: row.detail,
+        activityAt: row.activityAt,
+        type: row.type,
+        userName: row.userName,
+        avatarUrl: row.avatarUrl,
+      })),
+      totalBooks: Number(statsRows[0]?.totalBooks ?? 0),
+      totalLibraries: Number(statsRows[0]?.totalLibraries ?? 0),
+      publishedBooks: Number(statsRows[0]?.publishedBooks ?? 0),
+      totalReaders: Number(statsRows[0]?.totalReaders ?? 0),
+      totalViews: Number(statsRows[0]?.totalViews ?? 0),
+      totalComments,
+      totalLikes: Number(statsRows[0]?.totalLikes ?? 0),
+      averageRating: Number(statsRows[0]?.averageRating ?? 0),
     };
   }
 
