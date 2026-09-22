@@ -1,12 +1,16 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
+import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
+import { Book } from '../../entities/book.entity';
+import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
 import { PlatformsService } from '../platforms/platforms.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { UpdateLibraryDto } from './dto/update-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
+import { LibraryAnalyticsResponseDto } from './dto/library-analytics.dto';
 
 @Injectable()
 export class LibrariesService {
@@ -14,6 +18,8 @@ export class LibrariesService {
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
     private readonly platformsService: PlatformsService,
+    private readonly dataSource: DataSource,
+    private readonly chatService: ChatServiceClient,
   ) {}
 
   /**
@@ -94,6 +100,123 @@ export class LibrariesService {
     if (dto.seoSuffix !== undefined) library.seo_suffix = dto.seoSuffix;
 
     return this.libraryRepo.save(library);
+  }
+
+  async getAnalytics(ownerUserId: string): Promise<LibraryAnalyticsResponseDto> {
+    const library = await this.findLibraryByOwner(ownerUserId);
+    if (!library) throw new NotFoundException('User belum punya Library');
+
+    const [statsRows, activityRows, topBookRows, dailyRows, topicRows] = await Promise.all([
+      this.dataSource.query(
+        `SELECT
+           COUNT(*)::int AS "totalBooks",
+           COUNT(*) FILTER (WHERE published_at IS NOT NULL)::int AS "publishedBooks",
+           COALESCE(SUM(view_count), 0)::int AS "totalViews",
+           COALESCE(SUM(like_count), 0)::int AS "totalLikes",
+           COALESCE(AVG(rating_average) FILTER (WHERE rating_count > 0), 0)::numeric(3, 2) AS "averageRating"
+         FROM books
+         WHERE library_id = $1`,
+        [library.id],
+      ),
+      this.dataSource.query(
+        `SELECT * FROM (
+           SELECT b.judul AS title, 'Book dipublish' AS detail, b.published_at AS "activityAt", 'Published' AS type
+           FROM books b WHERE b.library_id = $1 AND b.published_at IS NOT NULL
+           UNION ALL
+           SELECT b.judul AS title, 'Progress membaca diperbarui' AS detail, rp.updated_at AS "activityAt", 'Reading' AS type
+           FROM reading_progress rp JOIN books b ON b.id = rp.book_id WHERE b.library_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Rating book diperbarui' AS detail, br.updated_at AS "activityAt", 'Rating' AS type
+           FROM book_ratings br JOIN books b ON b.id = br.book_id WHERE b.library_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Chapter mendapat like' AS detail, cl.created_at AS "activityAt", 'Like' AS type
+           FROM chapter_likes cl JOIN chapters c ON c.id = cl.chapter_id JOIN books b ON b.id = c.book_id WHERE b.library_id = $1
+           UNION ALL
+           SELECT b.judul AS title, 'Highlight baru dibuat' AS detail, ch.created_at AS "activityAt", 'Highlight' AS type
+           FROM chapter_highlights ch JOIN chapters c ON c.id = ch.chapter_id JOIN books b ON b.id = c.book_id WHERE b.library_id = $1
+         ) activities ORDER BY "activityAt" DESC LIMIT 6`,
+        [library.id],
+      ),
+      this.dataSource.query(
+        `SELECT id AS "bookId", judul AS title, COALESCE(view_count, 0)::int AS views, (published_at IS NOT NULL) AS published
+         FROM books
+         WHERE library_id = $1
+         ORDER BY view_count DESC, updated_at DESC
+         LIMIT 5`,
+        [library.id],
+      ),
+      this.dataSource.query(
+        `WITH days AS (
+           SELECT generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day')::date AS day
+         ), reading AS (
+           SELECT DATE(rp.updated_at) AS day,
+             COUNT(DISTINCT rp.user_id)::int AS readers,
+             COUNT(*)::int AS reading_sessions
+           FROM reading_progress rp
+           JOIN books b ON b.id = rp.book_id
+           WHERE b.library_id = $1 AND rp.updated_at >= CURRENT_DATE - INTERVAL '6 days'
+           GROUP BY DATE(rp.updated_at)
+         ), daily AS (
+           SELECT d.day, COALESCE(r.readers, 0)::int AS readers,
+             COALESCE(r.reading_sessions, 0)::int AS reading_sessions
+           FROM days d LEFT JOIN reading r ON r.day = d.day
+         ), with_previous AS (
+           SELECT *, LAG(readers) OVER (ORDER BY day) AS previous_readers,
+             LAG(reading_sessions) OVER (ORDER BY day) AS previous_reading_sessions
+           FROM daily
+         )
+         SELECT day::text AS date, 0::int AS views, readers, reading_sessions AS "readingSessions",
+           ROUND(CASE WHEN COALESCE(previous_readers, 0) = 0 THEN 0 ELSE ((readers - previous_readers)::numeric / previous_readers) * 100 END, 1)::float AS "readerGrowth",
+           ROUND(CASE WHEN COALESCE(previous_reading_sessions, 0) = 0 THEN 0 ELSE ((reading_sessions - previous_reading_sessions)::numeric / previous_reading_sessions) * 100 END, 1)::float AS "readingGrowth"
+         FROM with_previous ORDER BY day`,
+        [library.id],
+      ),
+      this.dataSource.query(
+        `SELECT DISTINCT c.chat_topic_id AS "topicId"
+         FROM chapters c JOIN books b ON b.id = c.book_id
+         WHERE b.library_id = $1 AND c.chat_topic_id IS NOT NULL`,
+        [library.id],
+      ),
+    ]);
+
+    const totalComments = await Promise.all(
+      (topicRows as Array<{ topicId: string }>).filter((row) => row.topicId).map((row) => this.chatService.getCommentCountForTopic(row.topicId)),
+    ).then((counts) => counts.reduce((sum, count) => sum + count, 0));
+    const totalReadersRows = await this.dataSource.query(
+      `SELECT COUNT(DISTINCT rp.user_id)::int AS total
+       FROM reading_progress rp JOIN books b ON b.id = rp.book_id WHERE b.library_id = $1`,
+      [library.id],
+    );
+
+    return {
+      totalBooks: Number(statsRows[0]?.totalBooks ?? 0),
+      publishedBooks: Number(statsRows[0]?.publishedBooks ?? 0),
+      totalReaders: Number(totalReadersRows[0]?.total ?? 0),
+      totalViews: Number(statsRows[0]?.totalViews ?? 0),
+      totalLikes: Number(statsRows[0]?.totalLikes ?? 0),
+      totalComments,
+      averageRating: Number(statsRows[0]?.averageRating ?? 0),
+      topBooks: topBookRows.map((row: { bookId: string; title: string; views: number | string; published: boolean }) => ({
+        bookId: row.bookId,
+        title: row.title,
+        views: Number(row.views),
+        published: row.published,
+      })),
+      daily: dailyRows.map((row: { date: string; views: number | string; readers: number | string; readingSessions: number | string; readerGrowth: number | string; readingGrowth: number | string }) => ({
+        date: row.date,
+        views: Number(row.views),
+        readers: Number(row.readers),
+        readingSessions: Number(row.readingSessions),
+        readerGrowth: Number(row.readerGrowth),
+        readingGrowth: Number(row.readingGrowth),
+      })),
+      recentActivities: activityRows.map((row: { title: string; detail: string; activityAt: Date | string; type: string }) => ({
+        title: row.title,
+        detail: row.detail,
+        activityAt: row.activityAt,
+        type: row.type,
+      })),
+    };
   }
 
   toResponseDto(library: Library): LibraryResponseDto {

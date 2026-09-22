@@ -7,6 +7,7 @@ import { LibrariesService } from './libraries.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { UpdateLibraryDto } from './dto/update-library.dto';
 import { LibraryResponseDto } from './dto/library-response.dto';
+import { LibraryAnalyticsResponseDto } from './dto/library-analytics.dto';
 
 @ApiTags('Libraries')
 @Controller('libraries')
@@ -44,6 +45,13 @@ export class LibrariesController {
     // mengirim teks "null" 4-byte yang valid di-parse JSON.
     const library = await this.librariesService.findLibraryByOwner(user.userId);
     res.status(HttpStatus.OK).json(library ? this.librariesService.toResponseDto(library) : null);
+  }
+
+  @Get('me/analytics')
+  @ApiOperation({ summary: 'Statistik agregat Library milik user login' })
+  @ApiOkResponse({ type: LibraryAnalyticsResponseDto })
+  async analytics(@CurrentUser() user: AuthUser): Promise<LibraryAnalyticsResponseDto> {
+    return this.librariesService.getAnalytics(user.userId);
   }
 
   @Patch('me')
