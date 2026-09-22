@@ -5,12 +5,13 @@ import { In, Repository } from 'typeorm';
 import { Book } from '../../entities/book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
-import { Platform } from '../../entities/platform.entity';
+import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
 import { ReadingProgress } from '../../entities/reading-progress.entity';
 import { PlatformsService } from '../platforms/platforms.service';
 import { BookCatalogDto } from './dto/book-catalog.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
+import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
@@ -193,6 +194,81 @@ export class PublicService {
     const items = await this.toCatalogDtos(books);
 
     return { items, total, page, limit };
+  }
+
+  async getHomepage(platform: Platform): Promise<CatalogHomeResponseDto> {
+    const sections = Array.isArray(platform.homepage_sections) ? platform.homepage_sections : [];
+    const enabledSections = sections.filter((section) => section.enabled);
+    const renderedSections = await Promise.all(
+      enabledSections.map(async (section) => ({
+        key: section.key,
+        type: section.predefinedQuery ?? section.type,
+        title: section.title,
+        layout: section.layout,
+        ...(await this.getHomepageSectionBooks(platform.id, section)),
+      })),
+    );
+
+    return { sections: renderedSections };
+  }
+
+  private async getHomepageSectionBooks(
+    platformId: string,
+    section: CatalogSectionConfig,
+  ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
+    const pageSize = Math.min(Math.max(section.pageSize ?? section.limit ?? 10, 4), 50);
+    const qb = this.bookRepo
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.genre', 'genre')
+      .leftJoinAndSelect('book.category', 'category')
+      .where('book.platform_id = :platformId', { platformId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
+
+    const queryType = section.queryType ?? 'predefined';
+    const predefinedQuery = section.predefinedQuery ?? section.type ?? 'new_updated';
+    if (queryType === 'custom') {
+      const customQuery = section.customQuery ?? {};
+      const genres = Array.isArray(customQuery.genre) ? customQuery.genre : customQuery.genre ? [customQuery.genre] : [];
+      const categories = Array.isArray(customQuery.category) ? customQuery.category : customQuery.category ? [customQuery.category] : [];
+      if (genres.length > 0) qb.andWhere('genre.slug IN (:...sectionGenres)', { sectionGenres: genres });
+      if (categories.length > 0) qb.andWhere('category.slug IN (:...sectionCategories)', { sectionCategories: categories });
+      if (customQuery.library) {
+        qb.andWhere('EXISTS (SELECT 1 FROM libraries section_library WHERE section_library.id = book.library_id AND section_library.slug = :sectionLibrary)', {
+          sectionLibrary: customQuery.library,
+        });
+      }
+      if (customQuery.search) qb.andWhere('book.judul ILIKE :sectionSearch', { sectionSearch: `%${customQuery.search}%` });
+      if (customQuery.tag) {
+        qb.andWhere('EXISTS (SELECT 1 FROM book_tags section_bt JOIN tags section_tag ON section_tag.id = section_bt.tag_id WHERE section_bt.book_id = book.id AND section_tag.slug = :sectionTag)', {
+          sectionTag: customQuery.tag,
+        });
+      }
+    }
+
+    const legacySort = section.customQuery?.sort;
+    const sortRules = section.customQuery?.sortRules?.length
+      ? section.customQuery.sortRules
+      : legacySort
+        ? [{ field: legacySort, direction: legacySort === 'title' ? 'asc' : 'desc' }]
+        : predefinedQuery === 'top'
+          ? [{ field: 'views' as const, direction: 'desc' as const }]
+          : [{ field: 'updated' as const, direction: 'desc' as const }];
+    const sortColumns = {
+      updated: 'book.updated_at',
+      views: 'book.view_count',
+      title: 'book.judul',
+    } as const;
+    sortRules.forEach((rule, index) => {
+      const column = sortColumns[rule.field];
+      if (!column) return;
+      if (index === 0) qb.orderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
+      else qb.addOrderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
+    });
+    qb.addOrderBy('book.id', 'ASC');
+
+    const [books, total] = await qb.take(pageSize).skip(0).getManyAndCount();
+    return { items: await this.toCatalogDtos(books), page: 1, pageSize, total, lazyLoad: section.lazyLoad };
   }
 
   private async getCommentCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {

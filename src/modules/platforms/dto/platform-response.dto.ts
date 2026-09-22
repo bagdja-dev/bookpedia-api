@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { RatingMode } from '../../../entities/platform.entity';
+import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 export class PlatformResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -26,6 +27,9 @@ export class PlatformResponseDto {
 
   @ApiProperty({ example: 'reader' })
   rendererKey: string;
+
+  @ApiProperty({ type: CatalogSectionConfigDto, isArray: true })
+  homepageSections: CatalogSectionConfigDto[];
 
   @ApiPropertyOptional({ example: 'teknobuku.com', nullable: true })
   domain: string | null;

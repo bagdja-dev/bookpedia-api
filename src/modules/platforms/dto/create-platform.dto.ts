@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 import type { RatingMode } from '../../../entities/platform.entity';
+import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 export class CreatePlatformDto {
   @ApiProperty({ example: 'Teknobuku', description: 'Nama Platform, tampil di header/tab browser/footer' })
@@ -58,6 +60,13 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsString()
   rendererKey?: string;
+
+  @ApiPropertyOptional({ type: CatalogSectionConfigDto, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CatalogSectionConfigDto)
+  homepageSections?: CatalogSectionConfigDto[];
 
   @ApiPropertyOptional({
     example: 0,

@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 import type { RatingMode } from '../../../entities/platform.entity';
+import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
 // lewat update) — slug Platform BOLEH diubah lewat admin console (dikonfirmasi
@@ -52,6 +54,13 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsString()
   rendererKey?: string;
+
+  @ApiPropertyOptional({ type: CatalogSectionConfigDto, isArray: true })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CatalogSectionConfigDto)
+  homepageSections?: CatalogSectionConfigDto[];
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

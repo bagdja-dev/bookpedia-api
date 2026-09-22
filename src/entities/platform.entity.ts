@@ -7,6 +7,42 @@ import {
 } from 'typeorm';
 
 export type RatingMode = 'book' | 'chapter';
+export type CatalogSectionType = 'top' | 'new_updated';
+export type CatalogSectionQueryType = 'predefined' | 'custom';
+export type CatalogSectionLayout = 'grid' | 'slider';
+export type CatalogSectionSortField = 'updated' | 'views' | 'title';
+export type CatalogSectionSortDirection = 'asc' | 'desc';
+
+export interface CatalogSectionSortRule {
+  field: CatalogSectionSortField;
+  direction: CatalogSectionSortDirection;
+}
+
+export interface CatalogSectionCustomQuery {
+  genre?: string | string[];
+  category?: string | string[];
+  tag?: string;
+  library?: string;
+  search?: string;
+  /** Legacy single sort field. */
+  sort?: CatalogSectionSortField;
+  sortRules?: CatalogSectionSortRule[];
+}
+
+export interface CatalogSectionConfig {
+  key: string;
+  /** Legacy alias for predefinedQuery; kept for existing stored JSON. */
+  type?: CatalogSectionType;
+  title: string;
+  enabled: boolean;
+  queryType?: CatalogSectionQueryType;
+  predefinedQuery?: CatalogSectionType;
+  customQuery?: CatalogSectionCustomQuery;
+  layout: CatalogSectionLayout;
+  limit: number;
+  lazyLoad?: boolean;
+  pageSize?: number;
+}
 
 /**
  * Tenant baru di ATAS Library — 1 row = 1 "toko"/target pasar (mis. Platform
@@ -57,6 +93,9 @@ export class Platform {
    */
   @Column({ type: 'varchar', default: 'reader' })
   renderer_key: string;
+
+  @Column({ type: 'jsonb', default: () => `'[{"key":"top","type":"top","title":"Top / Hot","enabled":true,"layout":"slider","limit":10},{"key":"new-updated","type":"new_updated","title":"New Updated","enabled":true,"layout":"slider","limit":10}]'` })
+  homepage_sections: CatalogSectionConfig[];
 
   /**
    * Custom domain opsional milik Platform Owner sendiri — nullable, diisi

@@ -4,7 +4,7 @@ import { DataSource, In, Repository } from 'typeorm';
 
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { Genre } from '../../entities/genre.entity';
-import { Platform } from '../../entities/platform.entity';
+import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
@@ -34,6 +34,13 @@ const DEFAULT_GENRES: ReadonlyArray<{ nama: string; slug: string }> = [
   { nama: 'Slice of Life', slug: 'slice-of-life' },
   { nama: 'Thriller', slug: 'thriller' },
 ];
+
+function defaultHomepageSections(): CatalogSectionConfig[] {
+  return [
+    { key: 'top', type: 'top', title: 'Top / Hot', enabled: true, layout: 'slider', limit: 10 },
+    { key: 'new-updated', type: 'new_updated', title: 'New Updated', enabled: true, layout: 'slider', limit: 10 },
+  ];
+}
 
 @Injectable()
 export class PlatformsService {
@@ -485,6 +492,7 @@ export class PlatformsService {
         colors: dto.colors,
         lock_studio: dto.lockStudio ?? false,
         renderer_key: dto.rendererKey ?? 'reader',
+        homepage_sections: dto.homepageSections ?? defaultHomepageSections(),
         max_free_chapters: dto.maxFreeChapters ?? 0,
         show_book_status: dto.showBookStatus ?? true,
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
@@ -532,6 +540,7 @@ export class PlatformsService {
     if (dto.colors !== undefined) platform.colors = dto.colors;
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
+    if (dto.homepageSections !== undefined) platform.homepage_sections = dto.homepageSections;
     if (dto.isActive !== undefined) platform.is_active = dto.isActive;
     if (dto.domain !== undefined && dto.domain !== platform.domain) {
       const existingDomain = await this.platformRepo.findOne({ where: { domain: dto.domain } });
@@ -576,6 +585,7 @@ export class PlatformsService {
       colors: platform.colors,
       lockStudio: platform.lock_studio,
       rendererKey: platform.renderer_key,
+      homepageSections: platform.homepage_sections ?? defaultHomepageSections(),
       domain: platform.domain,
       domainVerifiedAt: platform.domain_verified_at,
       isActive: platform.is_active,

@@ -4,6 +4,7 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PublicService } from './public.service';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
+import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
@@ -72,6 +73,14 @@ export class PublicController {
   ): Promise<CatalogResponseDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getCatalog(platform.id, query);
+  }
+
+  @Get('platforms/:platformSlug/home')
+  @ApiOperation({ summary: 'Homepage katalog berbasis section Platform' })
+  @ApiOkResponse({ type: CatalogHomeResponseDto })
+  async getHome(@Param('platformSlug') platformSlug: string): Promise<CatalogHomeResponseDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getHomepage(platform);
   }
 
   @Get('platforms/:platformSlug/sitemap-entries')
