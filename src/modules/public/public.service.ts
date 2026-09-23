@@ -94,6 +94,7 @@ export class PublicService {
       slug: platform.slug,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
+      notificationSoundUrl: platform.notification_sound_url,
       colors: platform.colors,
       lockStudio: platform.lock_studio,
       rendererKey: platform.renderer_key,

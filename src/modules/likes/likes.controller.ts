@@ -38,6 +38,6 @@ export class LikesController {
     @CurrentUser() user: AuthUser,
     @Param('chapterId') chapterId: string,
   ): Promise<ToggleLikeResponseDto> {
-    return this.likesService.toggle(user.userId, chapterId);
+    return this.likesService.toggle(user, chapterId);
   }
 }

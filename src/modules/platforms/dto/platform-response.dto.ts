@@ -19,6 +19,9 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/favicon.png', nullable: true })
   faviconUrl: string | null;
 
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/notification.mp3', nullable: true })
+  notificationSoundUrl: string | null;
+
   @ApiProperty({ description: 'JSON color scheme Platform ini' })
   colors: Record<string, string>;
 

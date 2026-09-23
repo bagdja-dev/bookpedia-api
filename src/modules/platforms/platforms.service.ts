@@ -489,6 +489,7 @@ export class PlatformsService {
         slug: dto.slug,
         logo_url: dto.logoUrl ?? null,
         favicon_url: dto.faviconUrl ?? null,
+        notification_sound_url: dto.notificationSoundUrl ?? null,
         colors: dto.colors,
         lock_studio: dto.lockStudio ?? false,
         renderer_key: dto.rendererKey ?? 'reader',
@@ -537,6 +538,7 @@ export class PlatformsService {
     }
     if (dto.logoUrl !== undefined) platform.logo_url = dto.logoUrl;
     if (dto.faviconUrl !== undefined) platform.favicon_url = dto.faviconUrl;
+    if (dto.notificationSoundUrl !== undefined) platform.notification_sound_url = dto.notificationSoundUrl;
     if (dto.colors !== undefined) platform.colors = dto.colors;
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
@@ -582,6 +584,7 @@ export class PlatformsService {
       slug: platform.slug,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
+      notificationSoundUrl: platform.notification_sound_url,
       colors: platform.colors,
       lockStudio: platform.lock_studio,
       rendererKey: platform.renderer_key,

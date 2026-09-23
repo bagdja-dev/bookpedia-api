@@ -10,4 +10,8 @@ export class UploadsService {
   async uploadImage(file: Express.Multer.File, folder: string): Promise<UploadImageResponseDto> {
     return this.storage.uploadFile(file.buffer, file.originalname, file.mimetype, folder);
   }
+
+  async uploadAudio(file: Express.Multer.File, folder: string): Promise<UploadImageResponseDto> {
+    return this.storage.uploadFile(file.buffer, file.originalname, file.mimetype, folder);
+  }
 }

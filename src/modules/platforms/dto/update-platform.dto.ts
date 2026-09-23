@@ -40,6 +40,11 @@ export class UpdatePlatformDto {
   @IsString()
   faviconUrl?: string;
 
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/notification.mp3' })
+  @IsOptional()
+  @IsString()
+  notificationSoundUrl?: string;
+
   @ApiPropertyOptional({ description: 'JSON color scheme Platform ini' })
   @IsOptional()
   @IsObject()

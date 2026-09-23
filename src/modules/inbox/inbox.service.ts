@@ -13,6 +13,7 @@ import { ChatConversation } from '../../entities/chat-conversation.entity';
 import { Library } from '../../entities/library.entity';
 import { ConversationSummaryDto } from './dto/conversation-summary.dto';
 import { LibraryConversationSummaryDto } from './dto/library-conversation-summary.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 function isUniqueViolation(err: unknown): boolean {
   return typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505';
@@ -34,6 +35,7 @@ export class InboxService {
     @InjectRepository(Library)
     private readonly libraryRepo: Repository<Library>,
     private readonly chatService: ChatServiceClient,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private displayNameOf(user: AuthUser): string | null {
@@ -201,7 +203,12 @@ export class InboxService {
    */
   async markRead(topicId: string, userId: string): Promise<{ topicId: string; lastReadMessageId: string | null }> {
     await this.ensureMyConversation(topicId, userId);
-    return this.chatService.markTopicRead(topicId, userId);
+    const result = await this.chatService.markTopicRead(topicId, userId);
+    // Sinkronkan notifikasi `message.created` percakapan ini (lihat
+    // InboxService.sendMessage) — tanpa ini badge Notification Bell tetap
+    // unread walau user sudah baca pesannya langsung dari Inbox.
+    void this.notificationsService.markReadByEntity(userId, 'conversation', topicId).catch(() => undefined);
+    return result;
   }
 
   /**
@@ -293,12 +300,52 @@ export class InboxService {
       }
     }
 
-    return this.chatService.createMessage(topicId, {
+    const message = await this.chatService.createMessage(topicId, {
       senderUserId: user.userId,
       senderDisplayName,
       senderAvatarUrl,
       body,
       parentMessageId,
     });
+
+    const recipientUserId = await this.getMessageRecipient(conversation, user.userId);
+    if (recipientUserId) {
+      void this.notificationsService.create({
+        userId: recipientUserId,
+        type: 'message.created',
+        title: 'Pesan baru',
+        message: `${senderDisplayName ?? 'Seseorang'} mengirim pesan kepada Anda\n${this.excerpt(body)}`.slice(0, 500),
+        severity: 'info',
+        actionLabel: 'Buka pesan',
+        actionUrl: `/inbox?topic=${encodeURIComponent(conversation.topicId)}`,
+        entityType: 'conversation',
+        entityId: conversation.topicId,
+      }).catch(() => undefined);
+    }
+
+    return message;
+  }
+
+  /** Potong isi pesan DM buat ditampilkan di row notifikasi Bell — sisakan ruang buat baris "pengirim" di atasnya dalam limit `message` (500 char). */
+  private excerpt(body: string, maxLength = 200): string {
+    const trimmed = body.trim().replace(/\s+/g, ' ');
+    if (trimmed.length <= maxLength) return trimmed;
+    return `${trimmed.slice(0, maxLength).trimEnd()}…`;
+  }
+
+  private async getMessageRecipient(conversation: ChatConversation, senderUserId: string): Promise<string | null> {
+    if (conversation.contextType === 'peer') {
+      if (conversation.initiatorUserId === senderUserId) return conversation.counterpartUserId ?? null;
+      if (conversation.counterpartUserId === senderUserId) return conversation.initiatorUserId;
+      return null;
+    }
+
+    if (!conversation.libraryId) return null;
+    const library = await this.libraryRepo.findOne({ where: { id: conversation.libraryId } });
+    if (!library) return null;
+    if (library.owner_user_id === senderUserId) {
+      return conversation.initiatorUserId === senderUserId ? null : conversation.initiatorUserId;
+    }
+    return library.owner_user_id === senderUserId ? null : library.owner_user_id;
   }
 }

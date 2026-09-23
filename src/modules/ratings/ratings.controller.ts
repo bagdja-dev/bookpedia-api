@@ -32,7 +32,7 @@ export class RatingsController {
     @CurrentUser() user: AuthUser,
     @Body() dto: PutBookRatingDto,
   ): Promise<BookRatingResponseDto> {
-    return this.ratingsService.upsertBookRating(user.userId, dto);
+    return this.ratingsService.upsertBookRating(user, dto);
   }
 
   @Get('book/:bookId')
@@ -55,7 +55,7 @@ export class RatingsController {
     @CurrentUser() user: AuthUser,
     @Body() dto: PutChapterRatingDto,
   ): Promise<ChapterRatingResponseDto> {
-    return this.ratingsService.upsertChapterRating(user.userId, dto);
+    return this.ratingsService.upsertChapterRating(user, dto);
   }
 
   @Get('chapter/:chapterId')

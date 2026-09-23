@@ -21,6 +21,9 @@ export class PlatformPublicProfileDto {
   @ApiPropertyOptional({ nullable: true })
   faviconUrl: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Suara toast notifikasi in-app; null = pakai default sintesis client-side' })
+  notificationSoundUrl: string | null;
+
   @ApiProperty({ description: 'JSON color scheme Platform ini' })
   colors: Record<string, string>;
 

@@ -15,6 +15,7 @@ import { assertValidBookMaxFreeChapters } from '../../common/utils/free-chapters
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { BookResponseDto } from './dto/book-response.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BooksService {
@@ -29,6 +30,7 @@ export class BooksService {
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -221,6 +223,7 @@ export class BooksService {
 
   async update(ownerUserId: string, bookId: string, dto: UpdateBookDto): Promise<Book> {
     const book = await this.findOneForOwner(ownerUserId, bookId);
+    const wasPublished = !!book.published_at;
 
     if (dto.judul !== undefined) book.judul = dto.judul;
     if (dto.sinopsis !== undefined) book.sinopsis = dto.sinopsis;
@@ -266,11 +269,24 @@ export class BooksService {
 
     const tagIds = await this.resolveTagIds(book.platform_id, dto.tags);
 
-    await this.bookRepo.save(book);
-    if (tagIds !== undefined) {
-      await this.tagsService.replaceBookTags(book.id, tagIds);
+    const saved = await this.bookRepo.save(book);
+    if (!wasPublished && saved.published_at) {
+      void this.notificationsService.create({
+        userId: ownerUserId,
+        type: 'book.published',
+        title: 'Book berhasil diterbitkan',
+        message: `${saved.judul} sekarang tampil di katalog publik`,
+        severity: 'success',
+        actionLabel: 'Lihat book',
+        actionUrl: `/book/${encodeURIComponent(saved.slug)}`,
+        entityType: 'book',
+        entityId: saved.id,
+      }).catch(() => undefined);
     }
-    return this.findOneForOwner(ownerUserId, bookId);
+    if (tagIds !== undefined) {
+      await this.tagsService.replaceBookTags(saved.id, tagIds);
+    }
+    return this.findOneForOwner(ownerUserId, saved.id);
   }
 
   async remove(ownerUserId: string, bookId: string): Promise<void> {

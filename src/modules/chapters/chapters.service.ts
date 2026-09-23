@@ -9,6 +9,7 @@ import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ReorderChaptersDto } from './dto/reorder-chapters.dto';
 import { ChapterResponseDto } from './dto/chapter-response.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ChaptersService {
@@ -18,6 +19,7 @@ export class ChaptersService {
     private readonly chapterRepo: Repository<Chapter>,
     private readonly booksService: BooksService,
     private readonly chatService: ChatServiceClient,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -80,6 +82,7 @@ export class ChaptersService {
    */
   async update(ownerUserId: string, bookId: string, chapterId: string, dto: UpdateChapterDto): Promise<Chapter> {
     const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId);
+    const wasPublished = chapter.status === 'published';
 
     if (dto.judul !== undefined) {
       chapter.judul = dto.judul;
@@ -99,7 +102,22 @@ export class ChaptersService {
       chapter.status = dto.status;
     }
 
-    return this.chapterRepo.save(chapter);
+    const saved = await this.chapterRepo.save(chapter);
+    if (!wasPublished && saved.status === 'published') {
+      const book = await this.booksService.findOneForOwner(ownerUserId, bookId);
+      void this.notificationsService.create({
+        userId: ownerUserId,
+        type: 'chapter.published',
+        title: 'Chapter berhasil diterbitkan',
+        message: `${saved.judul} dari ${book.judul} sekarang tersedia untuk dibaca`,
+        severity: 'success',
+        actionLabel: 'Lihat chapter',
+        actionUrl: `/book/${encodeURIComponent(book.slug)}/chapter/${saved.order_index}`,
+        entityType: 'chapter',
+        entityId: saved.id,
+      }).catch(() => undefined);
+    }
+    return saved;
   }
 
   /**

@@ -19,6 +19,11 @@ const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+/** Suara notifikasi Platform sengaja dibatasi lebih ketat dari gambar — cukup untuk klip pendek 1-3 detik. */
+const MAX_AUDIO_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
+
+const AUDIO_MIME_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/webm'];
+
 /**
  * Endpoint upload gambar generik (cover Library, nanti Book) — hanya
  * menyimpan file & mengembalikan URL, TIDAK terikat ke resource manapun
@@ -86,6 +91,62 @@ export class UploadsController {
       throw new BadRequestException(
         `Ukuran file (${(file.size / (1024 * 1024)).toFixed(2)}MB) melebihi batas maksimal ` +
           `${(MAX_IMAGE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
+      );
+    }
+  }
+
+  @Post('audio')
+  @ApiOperation({
+    summary: 'Upload suara notifikasi Platform ke bagdja-storage-service',
+    description:
+      'Validasi tipe & ukuran file dilakukan di sini (storage-service tidak validasi apapun). ' +
+      `Audio (${AUDIO_MIME_TYPES.join(', ')}) maks 1MB.`,
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        folder: {
+          type: 'string',
+          description: "Kind/metadata di storage-service, default: 'platforms'",
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOkResponse({ type: UploadImageResponseDto })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: MAX_AUDIO_SIZE_BYTES },
+    }),
+  )
+  async uploadAudio(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('folder') folder?: string,
+  ): Promise<UploadImageResponseDto> {
+    if (!file) {
+      throw new BadRequestException('File wajib diunggah');
+    }
+
+    this.assertIsAudio(file);
+
+    return this.uploadsService.uploadAudio(file, folder || 'platforms');
+  }
+
+  private assertIsAudio(file: Express.Multer.File): void {
+    if (!AUDIO_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Tipe file tidak didukung (mime: '${file.mimetype}', nama: '${file.originalname}'). ` +
+          `Gunakan audio (${AUDIO_MIME_TYPES.join(', ')}).`,
+      );
+    }
+
+    if (file.size > MAX_AUDIO_SIZE_BYTES) {
+      throw new BadRequestException(
+        `Ukuran file (${(file.size / (1024 * 1024)).toFixed(2)}MB) melebihi batas maksimal ` +
+          `${(MAX_AUDIO_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB.`,
       );
     }
   }

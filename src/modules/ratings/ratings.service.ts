@@ -2,10 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 
+import type { AuthUser } from '../../common/auth';
 import { Book } from '../../entities/book.entity';
 import { Chapter } from '../../entities/chapter.entity';
+import { Library } from '../../entities/library.entity';
 import { BookRating } from '../../entities/book-rating.entity';
 import { Platform } from '../../entities/platform.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PlatformsService } from '../platforms/platforms.service';
 import { PutBookRatingDto } from './dto/put-book-rating.dto';
 import { PutChapterRatingDto } from './dto/put-chapter-rating.dto';
@@ -30,7 +33,10 @@ export class RatingsService {
     private readonly bookRepo: Repository<Book>,
     @InjectRepository(Chapter)
     private readonly chapterRepo: Repository<Chapter>,
+    @InjectRepository(Library)
+    private readonly libraryRepo: Repository<Library>,
     private readonly platformsService: PlatformsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async getPublishedBookOrThrow(bookId: string): Promise<Book> {
@@ -49,7 +55,7 @@ export class RatingsService {
     return platform;
   }
 
-  async upsertBookRating(userId: string, dto: PutBookRatingDto): Promise<BookRatingResponseDto> {
+  async upsertBookRating(user: AuthUser, dto: PutBookRatingDto): Promise<BookRatingResponseDto> {
     const book = await this.getPublishedBookOrThrow(dto.bookId);
     const platform = await this.getPlatformOfBookOrThrow(book);
 
@@ -60,20 +66,25 @@ export class RatingsService {
       throw new BadRequestException('Platform ini menggunakan mode rating per-Chapter, bukan per-Book');
     }
 
-    let row = await this.ratingRepo.findOne({ where: { user_id: userId, book_id: book.id, chapter_id: IsNull() } });
+    let row = await this.ratingRepo.findOne({ where: { user_id: user.userId, book_id: book.id, chapter_id: IsNull() } });
+    const isNew = !row;
     if (row) {
       row.rating = dto.rating;
     } else {
-      row = this.ratingRepo.create({ user_id: userId, book_id: book.id, chapter_id: null, rating: dto.rating });
+      row = this.ratingRepo.create({ user_id: user.userId, book_id: book.id, chapter_id: null, rating: dto.rating });
     }
     row = await this.ratingRepo.save(row);
 
     await this.recomputeBookAggregate(book.id, 'null');
 
+    if (isNew) {
+      void this.notifyBookRated(book, user, dto.rating, null).catch(() => undefined);
+    }
+
     return { bookId: book.id, rating: row.rating, updatedAt: row.updated_at };
   }
 
-  async upsertChapterRating(userId: string, dto: PutChapterRatingDto): Promise<ChapterRatingResponseDto> {
+  async upsertChapterRating(user: AuthUser, dto: PutChapterRatingDto): Promise<ChapterRatingResponseDto> {
     const chapter = await this.chapterRepo.findOne({ where: { id: dto.chapterId, status: 'published' } });
     if (!chapter) {
       throw new NotFoundException('Chapter not found');
@@ -88,11 +99,12 @@ export class RatingsService {
       throw new BadRequestException('Platform ini menggunakan mode rating per-Book, bukan per-Chapter');
     }
 
-    let row = await this.ratingRepo.findOne({ where: { user_id: userId, chapter_id: chapter.id } });
+    let row = await this.ratingRepo.findOne({ where: { user_id: user.userId, chapter_id: chapter.id } });
+    const isNew = !row;
     if (row) {
       row.rating = dto.rating;
     } else {
-      row = this.ratingRepo.create({ user_id: userId, book_id: book.id, chapter_id: chapter.id, rating: dto.rating });
+      row = this.ratingRepo.create({ user_id: user.userId, book_id: book.id, chapter_id: chapter.id, rating: dto.rating });
     }
     row = await this.ratingRepo.save(row);
 
@@ -101,7 +113,40 @@ export class RatingsService {
     // rata-rata-dari-rata-rata per-Chapter) — lihat overview.md §13.2.
     await this.recomputeBookAggregate(book.id, 'notNull');
 
+    if (isNew) {
+      void this.notifyBookRated(book, user, dto.rating, chapter).catch(() => undefined);
+    }
+
     return { chapterId: chapter.id, rating: row.rating, updatedAt: row.updated_at };
+  }
+
+  /**
+   * Notifikasi cuma dikirim saat rating BARU (`isNew`), bukan tiap kali user
+   * mengubah rating-nya (upsert) — supaya owner tidak di-spam kalau reader
+   * gonta-ganti bintang. Ditargetkan ke owner Library (belum ada konsep
+   * "pemilik" lain di Book/Chapter), self-rating (owner rating karyanya
+   * sendiri) sengaja diabaikan.
+   */
+  private async notifyBookRated(book: Book, actor: AuthUser, rating: number, chapter: Chapter | null): Promise<void> {
+    const library = await this.libraryRepo.findOne({ where: { id: book.library_id } });
+    if (!library || library.owner_user_id === actor.userId) return;
+
+    const actorName = actor.username ?? actor.email ?? 'Seseorang';
+    const actionUrl = chapter
+      ? `/book/${encodeURIComponent(book.slug)}/chapter/${chapter.order_index}`
+      : `/book/${encodeURIComponent(book.slug)}`;
+
+    await this.notificationsService.create({
+      userId: library.owner_user_id,
+      type: 'book.rated',
+      title: 'Ada rating baru',
+      message: `${actorName} memberi rating ${rating}/5 untuk ${book.judul}`,
+      severity: 'info',
+      actionLabel: 'Lihat Book',
+      actionUrl,
+      entityType: chapter ? 'chapter' : 'book',
+      entityId: chapter ? chapter.id : book.id,
+    });
   }
 
   async findUserBookRating(userId: string, bookId: string): Promise<BookRatingResponseDto> {

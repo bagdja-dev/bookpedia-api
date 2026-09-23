@@ -34,6 +34,11 @@ export class CreatePlatformDto {
   @IsString()
   faviconUrl?: string;
 
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/notification.mp3' })
+  @IsOptional()
+  @IsString()
+  notificationSoundUrl?: string;
+
   @ApiProperty({
     example: {
       bg: '#fbf6ee',

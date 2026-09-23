@@ -26,6 +26,7 @@ import { TagsModule } from './modules/tags/tags.module';
 import { ChatServiceModule } from './common/chat-service/chat-service.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { InboxModule } from './modules/inbox/inbox.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -100,6 +101,7 @@ import { InboxModule } from './modules/inbox/inbox.module';
     TagsModule,
     CommentsModule,
     InboxModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

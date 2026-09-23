@@ -4,8 +4,10 @@ import { DataSource, Repository } from 'typeorm';
 
 import { Chapter } from '../../entities/chapter.entity';
 import { Book } from '../../entities/book.entity';
+import { Library } from '../../entities/library.entity';
 import { ChatServiceClient, ChatMessageListResponse, ChatMessageResponse } from '../../common/chat-service/chat-service.client';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CommentsService {
@@ -15,7 +17,10 @@ export class CommentsService {
     private readonly chapterRepo: Repository<Chapter>,
     @InjectRepository(Book)
     private readonly bookRepo: Repository<Book>,
+    @InjectRepository(Library)
+    private readonly libraryRepo: Repository<Library>,
     private readonly chatService: ChatServiceClient,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private async findPublishedChapter(chapterId: string): Promise<Chapter> {
@@ -98,13 +103,67 @@ export class CommentsService {
     const chapter = await this.findPublishedChapter(chapterId);
     if (chapter.status !== 'published') throw new BadRequestException('Chapter is not published');
     const topicId = await this.getOrCreateTopicForChapter(chapterId, userId);
-    return this.chatService.createMessage(topicId, {
+    const message = await this.chatService.createMessage(topicId, {
       senderUserId: userId,
       senderDisplayName,
       senderAvatarUrl,
       body: dto.body,
       parentMessageId: dto.parentMessageId ?? null,
     });
+
+    void this.createCommentNotification(chapter, message, userId).catch(() => undefined);
+    return message;
+  }
+
+  private async createCommentNotification(chapter: Chapter, message: ChatMessageResponse, actorUserId: string): Promise<void> {
+    const book = await this.bookRepo.findOne({ where: { id: chapter.book_id } });
+    if (!book) return;
+
+    const library = await this.libraryRepo.findOne({ where: { id: book.library_id } });
+    if (!library) return;
+
+    let recipientUserId: string | null = null;
+    let type: 'comment.created' | 'comment.replied';
+    let title: string;
+    let messageText: string;
+    let entityId = message.id;
+
+    const commentExcerpt = this.excerpt(message.body);
+
+    if (message.parentMessageId) {
+      const parent = await this.chatService.getMessage(message.topicId, message.parentMessageId);
+      recipientUserId = parent.senderUserId;
+      type = 'comment.replied';
+      title = 'Ada balasan komentar';
+      messageText = `${message.senderDisplayName ?? 'Seseorang'} membalas komentar Anda: "${commentExcerpt}"`;
+      entityId = parent.id;
+    } else {
+      recipientUserId = library.owner_user_id;
+      type = 'comment.created';
+      title = 'Ada komentar baru';
+      messageText = `${message.senderDisplayName ?? 'Seseorang'} mengomentari ${book.judul}: "${commentExcerpt}"`;
+    }
+
+    if (!recipientUserId || recipientUserId === actorUserId) return;
+
+    await this.notificationsService.create({
+      userId: recipientUserId,
+      type,
+      title,
+      message: messageText.slice(0, 500),
+      severity: 'info',
+      actionLabel: 'Lihat komentar',
+      actionUrl: `/book/${encodeURIComponent(book.slug)}/chapter/${chapter.order_index}#comment-${encodeURIComponent(entityId)}`,
+      entityType: 'comment',
+      entityId,
+    });
+  }
+
+  /** Potong isi komentar buat kutipan di notifikasi — sisakan ruang buat prefix nama pengirim dalam limit `message` (500 char). */
+  private excerpt(body: string, maxLength = 200): string {
+    const trimmed = body.trim().replace(/\s+/g, ' ');
+    if (trimmed.length <= maxLength) return trimmed;
+    return `${trimmed.slice(0, maxLength).trimEnd()}…`;
   }
 
   async remove(chapterId: string, messageId: string, userId: string): Promise<ChatMessageResponse> {

@@ -71,6 +71,10 @@ export class Platform {
   @Column({ type: 'varchar', nullable: true })
   favicon_url: string | null;
 
+  /** Suara toast notifikasi in-app (bell/DM) — null berarti pakai default sintesis client-side. */
+  @Column({ type: 'varchar', nullable: true })
+  notification_sound_url: string | null;
+
   /**
    * JSON color scheme (bg/surface/foreground/muted/border/terracotta/
    * terracottaForeground/mustard/olive) — gantinya `platform_config.colors`
