@@ -27,6 +27,7 @@ import { ChatServiceModule } from './common/chat-service/chat-service.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { InboxModule } from './modules/inbox/inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     LibrariesModule,
     GenresModule,
     BooksModule,
+    PromotionsModule,
     ChaptersModule,
     PublicModule,
     ReadingProgressModule,

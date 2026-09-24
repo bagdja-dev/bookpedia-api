@@ -12,6 +12,8 @@ import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto'
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
+import { SimilarBooksQueryDto } from './dto/similar-books-query.dto';
+import { SimilarBooksResponseDto } from './dto/similar-books-response.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
@@ -122,6 +124,22 @@ export class PublicController {
   ): Promise<BookDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getBookBySlug(platform, bookSlug);
+  }
+
+  @Get('platforms/:platformSlug/books/:bookSlug/similar')
+  @ApiOperation({
+    summary: 'Dua grup Book "Cerita Serupa"/"Cerita Lainnya" (random) untuk 1 Book — section SEO di bagian bawah halaman detail Book',
+    description:
+      'Diacak (RANDOM()), BUKAN daftar statis. `related` = genre/category sama atau berbagi minimal 1 Tag (bisa kosong). `others` = random murni dari Platform yang sama, exclude Book ini + exclude `related` (tidak tumpang tindih). Book itu sendiri tidak pernah ikut muncul di keduanya.',
+  })
+  @ApiOkResponse({ type: SimilarBooksResponseDto })
+  async getSimilarBooks(
+    @Param('platformSlug') platformSlug: string,
+    @Param('bookSlug') bookSlug: string,
+    @Query() query: SimilarBooksQueryDto,
+  ): Promise<SimilarBooksResponseDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getSimilarBooks(platform, bookSlug, query.limit);
   }
 
   @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex')

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { BookPromotion } from '../../entities/book-promotion.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
 import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
 import { ReadingProgress } from '../../entities/reading-progress.entity';
 import { PlatformsService } from '../platforms/platforms.service';
 import { BookCatalogDto } from './dto/book-catalog.dto';
+import { SimilarBooksResponseDto } from './dto/similar-books-response.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
 import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
@@ -23,18 +25,7 @@ import { TagsService } from '../tags/tags.service';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { isChapterFree } from '../../common/utils/free-chapters.util';
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
-
-/** SQL fragment: Book ini "discoverable" publik kalau punya minimal 1 Chapter published. */
-const HAS_PUBLISHED_CHAPTER_SQL =
-  "EXISTS (SELECT 1 FROM chapters c WHERE c.book_id = book.id AND c.status = 'published')";
-
-/**
- * Book "discoverable" publik butuh DUA syarat sekaligus: saklar publikasi
- * level Book aktif (`published_at IS NOT NULL`) DAN minimal 1 Chapter
- * published. Revisi 9 Sep 2026 — sebelumnya hanya syarat kedua, Book
- * otomatis "hidup" begitu 1 chapter dipublish tanpa momen rilis eksplisit.
- */
-const IS_BOOK_PUBLISHED_SQL = 'book.published_at IS NOT NULL';
+import { HAS_PUBLISHED_CHAPTER_SQL, IS_BOOK_PUBLISHED_SQL } from '../../common/book-visibility.sql';
 
 /**
  * Fase 4 (§4.1, 10 Sep 2026): semua method di bawah sekarang butuh
@@ -56,6 +47,8 @@ export class PublicService {
     private readonly libraryRepo: Repository<Library>,
     @InjectRepository(ReadingProgress)
     private readonly readingProgressRepo: Repository<ReadingProgress>,
+    @InjectRepository(BookPromotion)
+    private readonly promotionRepo: Repository<BookPromotion>,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
@@ -195,6 +188,101 @@ export class PublicService {
     const items = await this.toCatalogDtos(books);
 
     return { items, total, page, limit };
+  }
+
+  /**
+   * Dua grup slider "Cerita Serupa"/"Cerita Lainnya" di bagian bawah halaman
+   * detail Book (SEO — internal linking antar halaman Book, bukan fitur
+   * pembaca). Diacak (`ORDER BY RANDOM()`) SENGAJA, bukan `created_at DESC`
+   * seperti `getCatalog` — daftar statis yang sama tiap render kurang
+   * berguna untuk SEO (link equity numpuk ke Book yang sama terus).
+   *
+   * - `related`: genre/category sama ATAU berbagi minimal 1 Tag dengan Book
+   *   ini. Bisa saja sedikit/kosong (Book tanpa genre/category/tag sama
+   *   sekali) — itu wajar, TIDAK diisi filler lagi di sini.
+   * - `others`: random murni dari Platform yang sama, EXCLUDE Book ini +
+   *   EXCLUDE apa pun yang sudah masuk `related` (supaya 2 grup tidak
+   *   tumpang tindih). Grup inilah yang menjamin section SEO ini tidak
+   *   pernah benar-benar kosong selama Platform punya Book lain published.
+   */
+  async getSimilarBooks(platform: Platform, bookSlug: string, limit = 8): Promise<SimilarBooksResponseDto> {
+    const target = await this.bookRepo.findOne({ where: { platform_id: platform.id, slug: bookSlug } });
+    if (!target) {
+      throw new NotFoundException('Book not found');
+    }
+
+    const take = Math.min(Math.max(limit, 1), 20);
+
+    // Query builder ID-SAJA, TANPA join — `ORDER BY RANDOM()` + `.take()`
+    // dibarengi `leftJoinAndSelect` membuat TypeORM diam-diam menambahkan
+    // `SELECT DISTINCT` (heuristik standar TypeORM buat cegah row
+    // terduplikasi kalau ada join), dan Postgres MENOLAK `SELECT DISTINCT`
+    // yang `ORDER BY`-nya bukan ekspresi di select list — `RANDOM()` jelas
+    // bukan. Hydrasi entity penuh (incl. genre/category) dilakukan
+    // TERPISAH lewat `In(ids)` setelah urutan random-nya didapat, supaya
+    // query yang butuh `ORDER BY RANDOM()` selalu bebas join/DISTINCT.
+    const idsBaseQb = () =>
+      this.bookRepo
+        .createQueryBuilder('book')
+        .select('book.id')
+        .where('book.platform_id = :platformId', { platformId: platform.id })
+        .andWhere('book.id != :targetId', { targetId: target.id })
+        .andWhere(IS_BOOK_PUBLISHED_SQL)
+        .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
+
+    // Kurasi manual penulis ("Rekomendasi Penulis") — prioritas TERTINGGI,
+    // urut posisi yang diatur penulis (BUKAN random), TIDAK butuh fix di
+    // atas (tidak ada `ORDER BY RANDOM()` di sini). Difilter ulang ke
+    // syarat "discoverable" yang sama (defensive — kalau Book yang
+    // dipromosikan belakangan di-unpublish, jangan ikut bocor ke publik).
+    const promotions = await this.promotionRepo.find({ where: { book_id: target.id }, order: { position: 'ASC' } });
+    let promoted: Book[] = [];
+    if (promotions.length > 0) {
+      const promotedIds = promotions.map((p) => p.promoted_book_id);
+      const promotedBooks = await this.bookRepo.find({
+        where: { id: In(promotedIds), platform_id: platform.id },
+        relations: ['genre', 'category'],
+      });
+      const promotedById = new Map(promotedBooks.map((b) => [b.id, b]));
+      promoted = promotedIds.map((id) => promotedById.get(id)).filter((b): b is Book => !!b);
+    }
+
+    const relatedConditions = ['book.id IN (SELECT bt.book_id FROM book_tags bt WHERE bt.tag_id IN (SELECT tag_id FROM book_tags WHERE book_id = :targetId))'];
+    if (target.genre_id) relatedConditions.push('book.genre_id = :genreId');
+    if (target.category_id) relatedConditions.push('book.category_id = :categoryId');
+
+    const excludePromotedIds = promoted.map((b) => b.id);
+    const relatedIdsQb = idsBaseQb().andWhere(`(${relatedConditions.join(' OR ')})`, {
+      targetId: target.id,
+      genreId: target.genre_id,
+      categoryId: target.category_id,
+    });
+    if (excludePromotedIds.length > 0) {
+      relatedIdsQb.andWhere('book.id NOT IN (:...excludePromotedIds)', { excludePromotedIds });
+    }
+    const relatedIds = (await relatedIdsQb.orderBy('RANDOM()').take(take).getMany()).map((b) => b.id);
+
+    const excludeIds = [target.id, ...excludePromotedIds, ...relatedIds];
+    const otherIds = (
+      await idsBaseQb().andWhere('book.id NOT IN (:...excludeIds)', { excludeIds }).orderBy('RANDOM()').take(take).getMany()
+    ).map((b) => b.id);
+
+    const [related, others] = await Promise.all([this.hydrateBooksInOrder(relatedIds), this.hydrateBooksInOrder(otherIds)]);
+
+    const [promotedDtos, relatedDtos, othersDtos] = await Promise.all([
+      this.toCatalogDtos(promoted),
+      this.toCatalogDtos(related),
+      this.toCatalogDtos(others),
+    ]);
+    return { promoted: promotedDtos, related: relatedDtos, others: othersDtos };
+  }
+
+  /** Fetch entity penuh (+ genre/category) buat daftar ID, JAGA URUTAN sesuai `ids` — `In()` TtypeORM tidak menjamin urutan. */
+  private async hydrateBooksInOrder(ids: string[]): Promise<Book[]> {
+    if (ids.length === 0) return [];
+    const books = await this.bookRepo.find({ where: { id: In(ids) }, relations: ['genre', 'category'] });
+    const bookById = new Map(books.map((b) => [b.id, b]));
+    return ids.map((id) => bookById.get(id)).filter((b): b is Book => !!b);
   }
 
   async getHomepage(platform: Platform): Promise<CatalogHomeResponseDto> {
