@@ -14,6 +14,7 @@ import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
 import { SimilarBooksQueryDto } from './dto/similar-books-query.dto';
 import { SimilarBooksResponseDto } from './dto/similar-books-response.dto';
+import { SeriesPublicDto } from './dto/series-public.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
@@ -140,6 +141,20 @@ export class PublicController {
   ): Promise<SimilarBooksResponseDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getSimilarBooks(platform, bookSlug, query.limit);
+  }
+
+  @Get('platforms/:platformSlug/series/:seriesId')
+  @ApiOperation({
+    summary: 'Daftar buku publik untuk satu Series di Platform tertentu',
+    description: 'Mengembalikan nama series dan seluruh buku publik yang masuk ke series tersebut, dengan urutan sesuai posisi dalam series.',
+  })
+  @ApiOkResponse({ type: SeriesPublicDto })
+  async getSeriesById(
+    @Param('platformSlug') platformSlug: string,
+    @Param('seriesId') seriesId: string,
+  ): Promise<SeriesPublicDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getSeriesById(platform.id, seriesId);
   }
 
   @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex')

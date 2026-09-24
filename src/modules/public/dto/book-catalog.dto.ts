@@ -5,6 +5,14 @@ import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
 import { TagResponseDto } from '../../tags/dto/tag-response.dto';
 
+export class SeriesSummaryDto {
+  @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
+  id: string;
+
+  @ApiProperty({ example: 'The Last Journey' })
+  nama: string;
+}
+
 export class LibrarySummaryDto {
   @ApiProperty({ example: 'Kisah Senja' })
   nama: string;
@@ -39,6 +47,9 @@ export class BookCatalogDto {
 
   @ApiProperty({ type: TagResponseDto, isArray: true, description: 'Fase 6 — Tag bebas milik Book ini.' })
   tags: TagResponseDto[];
+
+  @ApiPropertyOptional({ type: SeriesSummaryDto, nullable: true, description: 'Series milik Book ini, jika sudah ditambahkan di Studio.' })
+  series: SeriesSummaryDto | null;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/book/kisah-di-ujung-senja/cover.jpg', nullable: true })
   coverUrl: string | null;

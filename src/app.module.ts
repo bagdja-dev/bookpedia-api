@@ -28,6 +28,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { InboxModule } from './modules/inbox/inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
+import { SeriesModule } from './modules/series/series.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
     GenresModule,
     BooksModule,
     PromotionsModule,
+    SeriesModule,
     ChaptersModule,
     PublicModule,
     ReadingProgressModule,

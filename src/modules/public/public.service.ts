@@ -4,10 +4,12 @@ import { In, Repository } from 'typeorm';
 
 import { Book } from '../../entities/book.entity';
 import { BookPromotion } from '../../entities/book-promotion.entity';
+import { BookSeries } from '../../entities/book-series.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
 import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
 import { ReadingProgress } from '../../entities/reading-progress.entity';
+import { Series } from '../../entities/series.entity';
 import { PlatformsService } from '../platforms/platforms.service';
 import { BookCatalogDto } from './dto/book-catalog.dto';
 import { SimilarBooksResponseDto } from './dto/similar-books-response.dto';
@@ -51,6 +53,10 @@ export class PublicService {
     private readonly readingProgressRepo: Repository<ReadingProgress>,
     @InjectRepository(BookPromotion)
     private readonly promotionRepo: Repository<BookPromotion>,
+    @InjectRepository(BookSeries)
+    private readonly bookSeriesRepo: Repository<BookSeries>,
+    @InjectRepository(Series)
+    private readonly seriesRepo: Repository<Series>,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
@@ -589,11 +595,12 @@ export class PublicService {
     }
 
     const libraryIds = [...new Set(books.map((book) => book.library_id))];
-    const [libraries, tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
+    const [libraries, tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook] = await Promise.all([
       this.libraryRepo.find({ where: { id: In(libraryIds) } }),
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
       this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
+      this.getSeriesForBooks(books.map((book) => book.id)),
     ]);
     const libraryById = new Map(libraries.map((library) => [library.id, library]));
 
@@ -604,6 +611,7 @@ export class PublicService {
         (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
         commentCountsByBook.get(book.id) ?? 0,
         latestChapterByBook.get(book.id) ?? null,
+        seriesByBook.get(book.id) ?? null,
       ),
     );
   }
@@ -621,12 +629,33 @@ export class PublicService {
     return latestByBook;
   }
 
+  private async getSeriesForBooks(bookIds: string[]): Promise<Map<string, { id: string; nama: string }>> {
+    if (bookIds.length === 0) {
+      return new Map();
+    }
+
+    const links = await this.bookSeriesRepo.find({
+      where: { book_id: In(bookIds) },
+      relations: ['series'],
+      order: { position: 'ASC' },
+    });
+
+    const seriesByBook = new Map<string, { id: string; nama: string }>();
+    for (const link of links) {
+      if (seriesByBook.has(link.book_id) || !link.series) continue;
+      seriesByBook.set(link.book_id, { id: link.series.id, nama: link.series.nama });
+    }
+
+    return seriesByBook;
+  }
+
   private toCatalogDto(
     book: Book,
     library: Library | undefined,
     tags: TagResponseDto[],
     commentCount: number,
     latestChapterTitle: string | null,
+    series: { id: string; nama: string } | null,
   ): BookCatalogDto {
     return {
       id: book.id,
@@ -640,6 +669,7 @@ export class PublicService {
         ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
         : null,
       tags,
+      series,
       coverUrl: book.cover_url,
       status: book.status,
       latestChapterTitle,
@@ -713,10 +743,11 @@ export class PublicService {
       .orderBy('book.created_at', 'DESC')
       .getMany();
 
-    const [tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
+    const [tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook] = await Promise.all([
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
       this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
+      this.getSeriesForBooks(books.map((book) => book.id)),
     ]);
 
     return {
@@ -741,6 +772,7 @@ export class PublicService {
           (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
           commentCountsByBook.get(book.id) ?? 0,
           latestChapterByBook.get(book.id) ?? null,
+          seriesByBook.get(book.id) ?? null,
         ),
       ),
     };
@@ -752,6 +784,64 @@ export class PublicService {
    * published sama sekali (tidak "discoverable" publik, meski row-nya ada
    * di DB). `chapters` HANYA yang published, urut order_index ASC.
    */
+  async getSeriesById(platformId: string, seriesId: string): Promise<{ id: string; nama: string; books: BookCatalogDto[] }> {
+    const series = await this.seriesRepo.findOne({
+      where: { id: seriesId, platform_id: platformId },
+    });
+    if (!series) {
+      throw new NotFoundException('Series not found');
+    }
+
+    const links = await this.bookSeriesRepo.find({
+      where: { series_id: series.id },
+      relations: ['book'],
+      order: { position: 'ASC' },
+    });
+
+    const bookIds = links.map((link) => link.book_id);
+    if (bookIds.length === 0) {
+      return { id: series.id, nama: series.nama, books: [] };
+    }
+
+    const books = await this.bookRepo
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.genre', 'genre')
+      .leftJoinAndSelect('book.category', 'category')
+      .where('book.id IN (:...bookIds)', { bookIds })
+      .andWhere('book.platform_id = :platformId', { platformId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+      .orderBy('book.created_at', 'DESC')
+      .getMany();
+
+    const bookMap = new Map(books.map((book) => [book.id, book]));
+    const orderedBooks = bookIds.map((bookId) => bookMap.get(bookId)).filter((book): book is Book => !!book);
+    const [tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
+      this.tagsService.findTagsForBooks(orderedBooks.map((book) => book.id)),
+      this.getCommentCountsForBooks(orderedBooks.map((book) => book.id)),
+      this.getLatestPublishedChapterTitles(orderedBooks.map((book) => book.id)),
+    ]);
+
+    const libraryIds = [...new Set(orderedBooks.map((book) => book.library_id))];
+    const libraries = libraryIds.length > 0 ? await this.libraryRepo.find({ where: { id: In(libraryIds) } }) : [];
+    const libraryById = new Map(libraries.map((library) => [library.id, library]));
+
+    return {
+      id: series.id,
+      nama: series.nama,
+      books: orderedBooks.map((book) =>
+        this.toCatalogDto(
+          book,
+          libraryById.get(book.library_id),
+          (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
+          commentCountsByBook.get(book.id) ?? 0,
+          latestChapterByBook.get(book.id) ?? null,
+          null,
+        ),
+      ),
+    };
+  }
+
   async getBookBySlug(platform: Platform, bookSlug: string): Promise<BookDetailDto> {
     const book = await this.bookRepo.findOne({
       where: { slug: bookSlug, platform_id: platform.id },
@@ -770,11 +860,12 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const [library, tags, chapterCommentCounts, libraryStats] = await Promise.all([
+    const [library, tags, chapterCommentCounts, libraryStats, series] = await Promise.all([
       this.libraryRepo.findOne({ where: { id: book.library_id } }),
       this.tagsService.findTagsForBook(book.id),
       this.getCommentCountsForChapters(chapters),
       this.getLibraryAggregateStats(book.library_id),
+      this.getSeriesForBooks([book.id]).then((map) => map.get(book.id) ?? null),
     ]);
     const commentCount = [...chapterCommentCounts.values()].reduce((sum, count) => sum + count, 0);
 
@@ -790,6 +881,7 @@ export class PublicService {
         ? { id: book.category.id, platformId: book.category.platform_id, nama: book.category.nama, slug: book.category.slug }
         : null,
       tags: tags.map((t) => this.tagsService.toResponseDto(t)),
+      series,
       coverUrl: book.cover_url,
       status: book.status,
       bookType: book.book_type,
