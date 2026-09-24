@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-import type { RatingMode } from '../../../entities/platform.entity';
+import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 export class CreatePlatformDto {
@@ -60,6 +60,11 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsBoolean()
   lockStudio?: boolean;
+
+  @ApiPropertyOptional({ example: 'auto', enum: ['auto', 'manual'], description: 'Mode penyimpanan editor Studio. Default auto.' })
+  @IsOptional()
+  @IsIn(['auto', 'manual'])
+  studioEditMode?: StudioEditMode;
 
   @ApiPropertyOptional({ example: 'reader', description: "Template reader Platform ini. Default 'reader' (route group (reader)/ yang sudah ada)." })
   @IsOptional()

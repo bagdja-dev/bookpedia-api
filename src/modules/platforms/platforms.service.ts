@@ -492,6 +492,7 @@ export class PlatformsService {
         notification_sound_url: dto.notificationSoundUrl ?? null,
         colors: dto.colors,
         lock_studio: dto.lockStudio ?? false,
+        studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
         homepage_sections: dto.homepageSections ?? defaultHomepageSections(),
         max_free_chapters: dto.maxFreeChapters ?? 0,
@@ -541,6 +542,7 @@ export class PlatformsService {
     if (dto.notificationSoundUrl !== undefined) platform.notification_sound_url = dto.notificationSoundUrl;
     if (dto.colors !== undefined) platform.colors = dto.colors;
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
+    if (dto.studioEditMode !== undefined) platform.studio_edit_mode = dto.studioEditMode;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
     if (dto.homepageSections !== undefined) platform.homepage_sections = dto.homepageSections;
     if (dto.isActive !== undefined) platform.is_active = dto.isActive;
@@ -587,6 +589,7 @@ export class PlatformsService {
       notificationSoundUrl: platform.notification_sound_url,
       colors: platform.colors,
       lockStudio: platform.lock_studio,
+      studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
       homepageSections: platform.homepage_sections ?? defaultHomepageSections(),
       domain: platform.domain,

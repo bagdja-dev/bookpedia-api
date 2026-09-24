@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import type { RatingMode } from '../../../entities/platform.entity';
+import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 
 /**
  * Profil Platform yang aman diekspos publik tanpa auth — pengganti langsung
@@ -29,6 +29,9 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ example: false })
   lockStudio: boolean;
+
+  @ApiProperty({ example: 'auto', enum: ['auto', 'manual'], description: 'Mode penyimpanan editor Studio.' })
+  studioEditMode: StudioEditMode;
 
   @ApiProperty({ example: 'reader' })
   rendererKey: string;

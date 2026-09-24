@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 
 export type RatingMode = 'book' | 'chapter';
+export type StudioEditMode = 'auto' | 'manual';
 export type CatalogSectionType = 'top' | 'new_updated';
 export type CatalogSectionQueryType = 'predefined' | 'custom';
 export type CatalogSectionLayout = 'grid' | 'slider';
@@ -89,6 +90,9 @@ export class Platform {
    */
   @Column({ type: 'boolean', default: false })
   lock_studio: boolean;
+
+  @Column({ type: 'varchar', length: 10, default: 'auto' })
+  studio_edit_mode: StudioEditMode;
 
   /**
    * Satu Platform = tepat SATU template. Nilai default 'reader' = route

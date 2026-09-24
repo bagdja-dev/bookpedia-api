@@ -92,6 +92,7 @@ export class PublicService {
       notificationSoundUrl: platform.notification_sound_url,
       colors: platform.colors,
       lockStudio: platform.lock_studio,
+      studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,

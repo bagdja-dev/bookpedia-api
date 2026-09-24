@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-import type { RatingMode } from '../../../entities/platform.entity';
+import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
@@ -54,6 +54,11 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsBoolean()
   lockStudio?: boolean;
+
+  @ApiPropertyOptional({ example: 'auto', enum: ['auto', 'manual'], description: 'Mode penyimpanan editor Studio.' })
+  @IsOptional()
+  @IsIn(['auto', 'manual'])
+  studioEditMode?: StudioEditMode;
 
   @ApiPropertyOptional({ example: 'reader' })
   @IsOptional()

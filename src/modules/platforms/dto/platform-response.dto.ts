@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-import type { RatingMode } from '../../../entities/platform.entity';
+import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
 
 export class PlatformResponseDto {
@@ -27,6 +27,9 @@ export class PlatformResponseDto {
 
   @ApiProperty({ example: false })
   lockStudio: boolean;
+
+  @ApiProperty({ example: 'auto', enum: ['auto', 'manual'] })
+  studioEditMode: StudioEditMode;
 
   @ApiProperty({ example: 'reader' })
   rendererKey: string;
