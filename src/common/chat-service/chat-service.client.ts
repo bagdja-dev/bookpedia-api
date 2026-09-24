@@ -44,6 +44,12 @@ export interface ChatReadStateItem {
   unreadCount: number;
 }
 
+/** Respons `POST /topics/comment-stats` (batch) — dipakai skor "Hot" Bookpedia. */
+export interface ChatCommentStatsItem {
+  topicId: string;
+  uniqueCommenterCount: number;
+}
+
 /**
  * Client proxy ke `bagdja-chat-service` — pola auth PORT PERSIS
  * `StorageClientService` (exchange `CLIENT_APP_ID`/`CLIENT_APP_SECRET` yang
@@ -252,6 +258,17 @@ export class ChatServiceClient {
     return this.request<ChatReadStateItem[]>('/topics/read-state', {
       method: 'POST',
       body: JSON.stringify({ userId, topicIds }),
+    });
+  }
+
+  /** Batch unique commenter count (COUNT DISTINCT senderUserId) per topic — dipakai skor "Hot". */
+  async getCommentStats(topicIds: string[]): Promise<ChatCommentStatsItem[]> {
+    if (topicIds.length === 0) {
+      return [];
+    }
+    return this.request<ChatCommentStatsItem[]>('/topics/comment-stats', {
+      method: 'POST',
+      body: JSON.stringify({ topicIds }),
     });
   }
 

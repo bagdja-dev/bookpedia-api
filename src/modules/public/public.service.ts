@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
@@ -38,6 +38,8 @@ import { HAS_PUBLISHED_CHAPTER_SQL, IS_BOOK_PUBLISHED_SQL } from '../../common/b
  */
 @Injectable()
 export class PublicService {
+  private readonly logger = new Logger(PublicService.name);
+
   constructor(
     @InjectRepository(Book)
     private readonly bookRepo: Repository<Book>,
@@ -306,6 +308,17 @@ export class PublicService {
     section: CatalogSectionConfig,
   ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
     const pageSize = Math.min(Math.max(section.pageSize ?? section.limit ?? 10, 4), 50);
+    const queryType = section.queryType ?? 'predefined';
+    const predefinedQuery = section.predefinedQuery ?? section.type ?? 'new_updated';
+    const hasExplicitSort = !!(section.customQuery?.sortRules?.length || section.customQuery?.sort);
+
+    // "Top / Hot" bawaan (bukan custom query/sort override) — SKOR gabungan,
+    // bukan sekadar `ORDER BY view_count DESC` (itu "all-time most viewed",
+    // Book lama tidak pernah tergeser). Lihat `getHotBooks()`.
+    if (queryType !== 'custom' && predefinedQuery === 'top' && !hasExplicitSort) {
+      return this.getHotBooks(platformId, pageSize, section.lazyLoad);
+    }
+
     const qb = this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
@@ -314,8 +327,6 @@ export class PublicService {
       .andWhere(IS_BOOK_PUBLISHED_SQL)
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL);
 
-    const queryType = section.queryType ?? 'predefined';
-    const predefinedQuery = section.predefinedQuery ?? section.type ?? 'new_updated';
     if (queryType === 'custom') {
       const customQuery = section.customQuery ?? {};
       const genres = Array.isArray(customQuery.genre) ? customQuery.genre : customQuery.genre ? [customQuery.genre] : [];
@@ -358,6 +369,95 @@ export class PublicService {
 
     const [books, total] = await qb.take(pageSize).skip(0).getManyAndCount();
     return { items: await this.toCatalogDtos(books), page: 1, pageSize, total, lazyLoad: section.lazyLoad };
+  }
+
+  /**
+   * Skor "Hot" (24 Sep 2026, ganti `ORDER BY view_count DESC` yang cuma
+   * "all-time most viewed" dan tidak pernah bisa disaingi Book baru):
+   *
+   *   score = (view_count × 1) + (like_count × 10) + (uniqueCommenterCount × 20)
+   *
+   * `view_count` tetap MENTAH (bukan unique visitor — lihat komentar
+   * endpoint `POST .../chapters/:orderIndex/view`, belum ada skema
+   * unique-view). `like_count` SUDAH otomatis unique-per-user (Like itu
+   * toggle 1x per `(user_id, chapter_id)`). `uniqueCommenterCount` dihitung
+   * `COUNT(DISTINCT senderUserId)` PER TOPIC lewat `bagdja-chat-service`
+   * (`ChatServiceClient.getCommentStats`, batch — bukan N+1), lalu DIJUMLAH
+   * lintas Chapter per Book — konsisten dengan cara `view_count`/`like_count`
+   * Book sendiri juga SUM dari seluruh Chapter-nya (bukan di-dedupe lintas
+   * Chapter kalau 1 user komentar di beberapa Chapter Book yang sama).
+   *
+   * Bobot (1/10/20) konstanta tetap, belum dibuat setting per-Platform —
+   * lihat komentar bobot di bawah kalau perlu di-tuning nanti.
+   *
+   * Skala: fetch SEMUA Book eligible di Platform buat dihitung skornya
+   * (bukan cuma `pageSize`), karena ranking butuh bandingkan SEMUA
+   * kandidat dulu baru dipotong `pageSize` teratas. Wajar untuk skala
+   * Platform saat ini; kalau katalog sudah sangat besar, pertimbangkan
+   * skor pre-computed/cache alih-alih hitung ulang tiap request homepage.
+   */
+  private async getHotBooks(
+    platformId: string,
+    pageSize: number,
+    lazyLoad?: boolean,
+  ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
+    const HOT_WEIGHTS = { view: 1, like: 10, uniqueCommenter: 20 };
+
+    const eligibleBooks = await this.bookRepo
+      .createQueryBuilder('book')
+      .select(['book.id', 'book.view_count', 'book.like_count'])
+      .where('book.platform_id = :platformId', { platformId })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+      .getMany();
+
+    if (eligibleBooks.length === 0) {
+      return { items: [], page: 1, pageSize, total: 0, lazyLoad };
+    }
+
+    const bookIds = eligibleBooks.map((book) => book.id);
+    const chapters = await this.chapterRepo.find({
+      where: { book_id: In(bookIds), status: 'published' },
+      select: ['book_id', 'chat_topic_id'],
+    });
+    const topicIds = [...new Set(chapters.filter((chapter) => chapter.chat_topic_id).map((chapter) => chapter.chat_topic_id!))];
+    // Chat-service down/lambat TIDAK BOLEH menjatuhkan homepage — degradasi
+    // ke skor view+like saja (uniqueCommenterCount=0 buat semua Book) lebih
+    // baik daripada 502 total. Beda dari behavior sebelumnya (view_count
+    // murni) yang memang tidak pernah bergantung ke chat-service sama sekali.
+    let commentStats: { topicId: string; uniqueCommenterCount: number }[] = [];
+    if (topicIds.length > 0) {
+      try {
+        commentStats = await this.chatService.getCommentStats(topicIds);
+      } catch (err) {
+        this.logger.warn(
+          `getCommentStats gagal, skor Hot degradasi ke view+like saja: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    const uniqueCommenterByTopic = new Map(commentStats.map((stat) => [stat.topicId, stat.uniqueCommenterCount]));
+
+    const uniqueCommenterByBook = new Map<string, number>();
+    for (const chapter of chapters) {
+      if (!chapter.chat_topic_id) continue;
+      const count = uniqueCommenterByTopic.get(chapter.chat_topic_id) ?? 0;
+      uniqueCommenterByBook.set(chapter.book_id, (uniqueCommenterByBook.get(chapter.book_id) ?? 0) + count);
+    }
+
+    const scored = eligibleBooks
+      .map((book) => ({
+        id: book.id,
+        score:
+          book.view_count * HOT_WEIGHTS.view +
+          book.like_count * HOT_WEIGHTS.like +
+          (uniqueCommenterByBook.get(book.id) ?? 0) * HOT_WEIGHTS.uniqueCommenter,
+      }))
+      .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+
+    const topIds = scored.slice(0, pageSize).map((entry) => entry.id);
+    const hydrated = await this.hydrateBooksInOrder(topIds);
+
+    return { items: await this.toCatalogDtos(hydrated), page: 1, pageSize, total: eligibleBooks.length, lazyLoad };
   }
 
   private async getCommentCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {
