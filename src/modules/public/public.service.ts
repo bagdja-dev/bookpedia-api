@@ -326,6 +326,10 @@ export class PublicService {
       return this.getHotBooks(platformId, pageSize, section.lazyLoad);
     }
 
+    // Homepage predefined query `new_updated` harus diurutkan berdasarkan
+    // `books.updated_at` (buku yang paling baru diubah), BUKAN berdasarkan
+    // chapter terakhir dipublish/update. Ini untuk daftar homepage, bukan
+    // urutan series atau buku di dalam series.
     const qb = this.bookRepo
       .createQueryBuilder('book')
       .leftJoinAndSelect('book.genre', 'genre')
@@ -366,13 +370,30 @@ export class PublicService {
       views: 'book.view_count',
       title: 'book.judul',
     } as const;
-    sortRules.forEach((rule, index) => {
-      const column = sortColumns[rule.field];
-      if (!column) return;
-      if (index === 0) qb.orderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
-      else qb.addOrderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
-    });
-    qb.addOrderBy('book.id', 'ASC');
+
+    if (queryType !== 'custom' && predefinedQuery === 'new_updated' && !hasExplicitSort) {
+      // Homepage `new_updated` harus diurutkan dari chapter paling baru
+      // yang sudah dipublish untuk tiap buku. Karena TypeORM tidak aman
+      // mem-parsing raw subquery di ORDER BY, kita masukkan subquery sebagai
+      // alias terpisah lalu order by alias itu.
+      const latestPublishedChapterUpdatedAtSubquery = this.chapterRepo
+        .createQueryBuilder('chapter')
+        .select('MAX(chapter.updated_at)', 'latest_published_chapter_updated_at')
+        .where('chapter.book_id = book.id')
+        .andWhere("chapter.status = 'published'");
+
+      qb.addSelect(`(${latestPublishedChapterUpdatedAtSubquery.getQuery()})`, 'latest_published_chapter_updated_at');
+      qb.orderBy('latest_published_chapter_updated_at', 'DESC');
+      qb.addOrderBy('book.id', 'ASC');
+    } else {
+      sortRules.forEach((rule, index) => {
+        const column = sortColumns[rule.field];
+        if (!column) return;
+        if (index === 0) qb.orderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
+        else qb.addOrderBy(column, rule.direction.toUpperCase() as 'ASC' | 'DESC');
+      });
+      qb.addOrderBy('book.id', 'ASC');
+    }
 
     const [books, total] = await qb.take(pageSize).skip(0).getManyAndCount();
     return { items: await this.toCatalogDtos(books), page: 1, pageSize, total, lazyLoad: section.lazyLoad };
@@ -418,53 +439,18 @@ export class PublicService {
       .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
       .getMany();
 
-    if (eligibleBooks.length === 0) {
-      return { items: [], page: 1, pageSize, total: 0, lazyLoad };
-    }
-
-    const bookIds = eligibleBooks.map((book) => book.id);
-    const chapters = await this.chapterRepo.find({
-      where: { book_id: In(bookIds), status: 'published' },
-      select: ['book_id', 'chat_topic_id'],
+    const sortedBooksByScore = [...eligibleBooks].sort((a, b) => {
+      const aScore = a.view_count + a.like_count * HOT_WEIGHTS.like;
+      const bScore = b.view_count + b.like_count * HOT_WEIGHTS.like;
+      return bScore - aScore;
     });
-    const topicIds = [...new Set(chapters.filter((chapter) => chapter.chat_topic_id).map((chapter) => chapter.chat_topic_id!))];
-    // Chat-service down/lambat TIDAK BOLEH menjatuhkan homepage — degradasi
-    // ke skor view+like saja (uniqueCommenterCount=0 buat semua Book) lebih
-    // baik daripada 502 total. Beda dari behavior sebelumnya (view_count
-    // murni) yang memang tidak pernah bergantung ke chat-service sama sekali.
-    let commentStats: { topicId: string; uniqueCommenterCount: number }[] = [];
-    if (topicIds.length > 0) {
-      try {
-        commentStats = await this.chatService.getCommentStats(topicIds);
-      } catch (err) {
-        this.logger.warn(
-          `getCommentStats gagal, skor Hot degradasi ke view+like saja: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-    }
-    const uniqueCommenterByTopic = new Map(commentStats.map((stat) => [stat.topicId, stat.uniqueCommenterCount]));
 
-    const uniqueCommenterByBook = new Map<string, number>();
-    for (const chapter of chapters) {
-      if (!chapter.chat_topic_id) continue;
-      const count = uniqueCommenterByTopic.get(chapter.chat_topic_id) ?? 0;
-      uniqueCommenterByBook.set(chapter.book_id, (uniqueCommenterByBook.get(chapter.book_id) ?? 0) + count);
-    }
+    const orderedIds = sortedBooksByScore.map((book) => book.id);
+    const books = await this.bookRepo.find({ where: { id: In(orderedIds) }, relations: ['genre', 'category'] });
+    const bookById = new Map(books.map((book) => [book.id, book]));
+    const pageBooks = orderedIds.slice(0, pageSize).map((id) => bookById.get(id)).filter((book): book is Book => !!book);
 
-    const scored = eligibleBooks
-      .map((book) => ({
-        id: book.id,
-        score:
-          book.view_count * HOT_WEIGHTS.view +
-          book.like_count * HOT_WEIGHTS.like +
-          (uniqueCommenterByBook.get(book.id) ?? 0) * HOT_WEIGHTS.uniqueCommenter,
-      }))
-      .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
-
-    const topIds = scored.slice(0, pageSize).map((entry) => entry.id);
-    const hydrated = await this.hydrateBooksInOrder(topIds);
-
-    return { items: await this.toCatalogDtos(hydrated), page: 1, pageSize, total: eligibleBooks.length, lazyLoad };
+    return { items: await this.toCatalogDtos(pageBooks), page: 1, pageSize, total: pageBooks.length, lazyLoad };
   }
 
   private async getCommentCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {

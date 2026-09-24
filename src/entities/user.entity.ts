@@ -19,7 +19,7 @@ export class User {
   @Column({ type: 'varchar', length: 255, nullable: true })
   display_name: string | null;
 
-  @Column({ type: 'varchar', length: 1000, nullable: true })
+  @Column({ type: 'text', nullable: true })
   avatar_url: string | null;
 
   @Column({ type: 'timestamptz' })
