@@ -69,8 +69,6 @@ export class ChatServiceClient {
   private readonly authApiUrl: string;
   private readonly clientAppId: string;
   private readonly clientAppSecret: string;
-  private readonly appId: string;
-  private readonly orgId: string;
   private readonly eventServiceUrl: string;
   private tokenCache: { token: string; expiresAt: number } | null = null;
 
@@ -79,8 +77,6 @@ export class ChatServiceClient {
     this.authApiUrl = (config.get<string>('BAGDJA_AUTH_API') ?? 'http://localhost:4001').replace(/\/$/, '');
     this.clientAppId = config.get<string>('CLIENT_APP_ID') ?? '';
     this.clientAppSecret = config.get<string>('CLIENT_APP_SECRET') ?? '';
-    this.appId = config.get<string>('CLIENT_APP_ID', 'bagdja-bookpedia');
-    this.orgId = config.get<string>('CHAT_SERVICE_ORG_ID', 'bagdja');
     this.eventServiceUrl = (config.get<string>('EVENT_SERVICE_URL') ?? 'http://localhost:4085').replace(/\/$/, '');
   }
 
@@ -312,13 +308,5 @@ export class ChatServiceClient {
     }
 
     return (await response.json()) as { access_token: string; expires_in: number; channels: string[] };
-  }
-
-  getClientAppId(): string {
-    return this.appId;
-  }
-
-  getOrgId(): string {
-    return this.orgId;
   }
 }
