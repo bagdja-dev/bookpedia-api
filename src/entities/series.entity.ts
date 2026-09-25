@@ -19,6 +19,10 @@ export class Series {
   @Column({ type: 'uuid' })
   platform_id: string;
 
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  library_id: string | null;
+
   @Column({ type: 'varchar', length: 120 })
   nama: string;
 

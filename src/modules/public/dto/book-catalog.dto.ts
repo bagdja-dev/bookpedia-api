@@ -81,6 +81,9 @@ export class BookCatalogDto {
   @ApiProperty({ example: 89, description: 'Fase 8 (susulan, 15 Sep 2026) — total Like (SUM like_count semua Chapter Book ini), ditampilkan juga di card katalog.' })
   likeCount: number;
 
+  @ApiProperty({ example: 512, description: 'Jumlah reader unik yang pernah menyimpan progress baca pada Book ini.' })
+  uniqueReaderCount: number;
+
   @ApiProperty({ example: 132, description: 'Jumlah komentar sungguhan pada semua Chapter published Book ini (termasuk balasan, dihitung dari topic chat tiap Chapter).' })
   commentCount: number;
 }

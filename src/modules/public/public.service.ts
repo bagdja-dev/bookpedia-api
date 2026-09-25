@@ -581,12 +581,13 @@ export class PublicService {
     }
 
     const libraryIds = [...new Set(books.map((book) => book.library_id))];
-    const [libraries, tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook] = await Promise.all([
+    const [libraries, tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook, uniqueReaderCountsByBook] = await Promise.all([
       this.libraryRepo.find({ where: { id: In(libraryIds) } }),
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
       this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
       this.getSeriesForBooks(books.map((book) => book.id)),
+      this.getUniqueReaderCountsForBooks(books.map((book) => book.id)),
     ]);
     const libraryById = new Map(libraries.map((library) => [library.id, library]));
 
@@ -598,6 +599,7 @@ export class PublicService {
         commentCountsByBook.get(book.id) ?? 0,
         latestChapterByBook.get(book.id) ?? null,
         seriesByBook.get(book.id) ?? null,
+        uniqueReaderCountsByBook.get(book.id) ?? 0,
       ),
     );
   }
@@ -635,6 +637,22 @@ export class PublicService {
     return seriesByBook;
   }
 
+  private async getUniqueReaderCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {
+    if (bookIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.readingProgressRepo
+      .createQueryBuilder('reading_progress')
+      .select('reading_progress.book_id', 'book_id')
+      .addSelect('COUNT(DISTINCT reading_progress.user_id)', 'reader_count')
+      .where('reading_progress.book_id IN (:...bookIds)', { bookIds })
+      .groupBy('reading_progress.book_id')
+      .getRawMany<{ book_id: string; reader_count: string }>();
+
+    return new Map(rows.map((row) => [row.book_id, Number(row.reader_count ?? 0)]));
+  }
+
   private toCatalogDto(
     book: Book,
     library: Library | undefined,
@@ -642,6 +660,7 @@ export class PublicService {
     commentCount: number,
     latestChapterTitle: string | null,
     series: { id: string; nama: string } | null,
+    uniqueReaderCount: number,
   ): BookCatalogDto {
     return {
       id: book.id,
@@ -666,6 +685,7 @@ export class PublicService {
       ratingAverage: Number(book.rating_average),
       ratingCount: book.rating_count,
       likeCount: book.like_count,
+      uniqueReaderCount,
       commentCount,
     };
   }
@@ -729,11 +749,12 @@ export class PublicService {
       .orderBy('book.created_at', 'DESC')
       .getMany();
 
-    const [tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook] = await Promise.all([
+    const [tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook, uniqueReaderCountsByBook] = await Promise.all([
       this.tagsService.findTagsForBooks(books.map((book) => book.id)),
       this.getCommentCountsForBooks(books.map((book) => book.id)),
       this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
       this.getSeriesForBooks(books.map((book) => book.id)),
+      this.getUniqueReaderCountsForBooks(books.map((book) => book.id)),
     ]);
 
     return {
@@ -759,6 +780,7 @@ export class PublicService {
           commentCountsByBook.get(book.id) ?? 0,
           latestChapterByBook.get(book.id) ?? null,
           seriesByBook.get(book.id) ?? null,
+          uniqueReaderCountsByBook.get(book.id) ?? 0,
         ),
       ),
     };
@@ -802,10 +824,11 @@ export class PublicService {
 
     const bookMap = new Map(books.map((book) => [book.id, book]));
     const orderedBooks = bookIds.map((bookId) => bookMap.get(bookId)).filter((book): book is Book => !!book);
-    const [tagsByBook, commentCountsByBook, latestChapterByBook] = await Promise.all([
+    const [tagsByBook, commentCountsByBook, latestChapterByBook, uniqueReaderCountsByBook] = await Promise.all([
       this.tagsService.findTagsForBooks(orderedBooks.map((book) => book.id)),
       this.getCommentCountsForBooks(orderedBooks.map((book) => book.id)),
       this.getLatestPublishedChapterTitles(orderedBooks.map((book) => book.id)),
+      this.getUniqueReaderCountsForBooks(orderedBooks.map((book) => book.id)),
     ]);
 
     const libraryIds = [...new Set(orderedBooks.map((book) => book.library_id))];
@@ -823,6 +846,7 @@ export class PublicService {
           commentCountsByBook.get(book.id) ?? 0,
           latestChapterByBook.get(book.id) ?? null,
           null,
+          uniqueReaderCountsByBook.get(book.id) ?? 0,
         ),
       ),
     };
@@ -846,12 +870,13 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const [library, tags, chapterCommentCounts, libraryStats, series] = await Promise.all([
+    const [library, tags, chapterCommentCounts, libraryStats, series, uniqueReaderCount] = await Promise.all([
       this.libraryRepo.findOne({ where: { id: book.library_id } }),
       this.tagsService.findTagsForBook(book.id),
       this.getCommentCountsForChapters(chapters),
       this.getLibraryAggregateStats(book.library_id),
       this.getSeriesForBooks([book.id]).then((map) => map.get(book.id) ?? null),
+      this.getUniqueReaderCountsForBooks([book.id]).then((map) => map.get(book.id) ?? 0),
     ]);
     const commentCount = [...chapterCommentCounts.values()].reduce((sum, count) => sum + count, 0);
 
@@ -904,6 +929,7 @@ export class PublicService {
       ratingAverage: Number(book.rating_average),
       ratingCount: book.rating_count,
       likeCount: book.like_count,
+      uniqueReaderCount,
       commentCount,
     };
   }

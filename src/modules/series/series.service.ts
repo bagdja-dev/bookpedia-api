@@ -29,9 +29,9 @@ export class SeriesService {
   ) {}
 
   async listForOwner(ownerUserId: string): Promise<Array<{ id: string; nama: string; bookCount: number; createdAt: string; updatedAt: string }>> {
-    const platformId = await this.getPlatformIdForOwner(ownerUserId);
+    const { platformId, libraryId } = await this.getOwnerScope(ownerUserId);
     const series = await this.seriesRepo.find({
-      where: { platform_id: platformId },
+      where: { platform_id: platformId, library_id: libraryId },
       order: { created_at: 'DESC' },
     });
 
@@ -57,26 +57,26 @@ export class SeriesService {
   }
 
   async createForOwner(ownerUserId: string, dto: CreateSeriesDto): Promise<SeriesDetailDto> {
-    const platformId = await this.getPlatformIdForOwner(ownerUserId);
+    const { platformId, libraryId } = await this.getOwnerScope(ownerUserId);
     const nama = dto.nama.trim();
 
     if (!nama) {
       throw new BadRequestException('Nama series tidak boleh kosong.');
     }
 
-    const series = this.seriesRepo.create({ platform_id: platformId, nama });
+    const series = this.seriesRepo.create({ platform_id: platformId, library_id: libraryId, nama });
     const saved = await this.seriesRepo.save(series);
 
     if (dto.bookIds && dto.bookIds.length > 0) {
-      await this.replaceBookLinks(platformId, saved.id, dto.bookIds);
+      await this.replaceBookLinks(platformId, libraryId, saved.id, dto.bookIds);
     }
 
     return this.getForOwner(ownerUserId, saved.id);
   }
 
   async getForOwner(ownerUserId: string, seriesId: string): Promise<SeriesDetailDto> {
-    const platformId = await this.getPlatformIdForOwner(ownerUserId);
-    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId } });
+    const { platformId, libraryId } = await this.getOwnerScope(ownerUserId);
+    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId, library_id: libraryId } });
     if (!series) {
       throw new NotFoundException('Series tidak ditemukan');
     }
@@ -100,8 +100,8 @@ export class SeriesService {
   }
 
   async updateForOwner(ownerUserId: string, seriesId: string, dto: UpdateSeriesDto): Promise<SeriesDetailDto> {
-    const platformId = await this.getPlatformIdForOwner(ownerUserId);
-    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId } });
+    const { platformId, libraryId } = await this.getOwnerScope(ownerUserId);
+    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId, library_id: libraryId } });
     if (!series) {
       throw new NotFoundException('Series tidak ditemukan');
     }
@@ -116,15 +116,15 @@ export class SeriesService {
     }
 
     if (dto.bookIds !== undefined) {
-      await this.replaceBookLinks(platformId, series.id, dto.bookIds);
+      await this.replaceBookLinks(platformId, libraryId, series.id, dto.bookIds);
     }
 
     return this.getForOwner(ownerUserId, series.id);
   }
 
   async removeForOwner(ownerUserId: string, seriesId: string): Promise<void> {
-    const platformId = await this.getPlatformIdForOwner(ownerUserId);
-    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId } });
+    const { platformId, libraryId } = await this.getOwnerScope(ownerUserId);
+    const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: platformId, library_id: libraryId } });
     if (!series) {
       throw new NotFoundException('Series tidak ditemukan');
     }
@@ -132,7 +132,7 @@ export class SeriesService {
     await this.seriesRepo.remove(series);
   }
 
-  private async getPlatformIdForOwner(ownerUserId: string): Promise<string> {
+  private async getOwnerScope(ownerUserId: string): Promise<{ platformId: string; libraryId: string }> {
     const library = await this.librariesService.findLibraryByOwner(ownerUserId);
     if (!library) {
       throw new NotFoundException('Anda belum memiliki Library untuk mengelola series.');
@@ -140,10 +140,10 @@ export class SeriesService {
     if (!library.platform_id) {
       throw new BadRequestException('Library Anda belum terhubung ke Platform aktif.');
     }
-    return library.platform_id;
+    return { platformId: library.platform_id, libraryId: library.id };
   }
 
-  private async replaceBookLinks(platformId: string, seriesId: string, bookIds: string[]): Promise<void> {
+  private async replaceBookLinks(platformId: string, libraryId: string, seriesId: string, bookIds: string[]): Promise<void> {
     const uniqueIds = [...new Set(bookIds.filter(Boolean))];
     if (uniqueIds.length > MAX_SERIES_BOOKS) {
       throw new BadRequestException(`Maksimal ${MAX_SERIES_BOOKS} Book per Series.`);
@@ -154,10 +154,11 @@ export class SeriesService {
         .createQueryBuilder('book')
         .where('book.id IN (:...uniqueIds)', { uniqueIds })
         .andWhere('book.platform_id = :platformId', { platformId })
+        .andWhere('book.library_id = :libraryId', { libraryId })
         .getCount();
 
       if (validCount !== uniqueIds.length) {
-        throw new BadRequestException('Semua Book pada series harus berasal dari Platform Studio yang sama.');
+        throw new BadRequestException('Semua Book pada series harus berasal dari Studio dan Platform yang sama.');
       }
     }
 
