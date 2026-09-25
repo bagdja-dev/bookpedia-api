@@ -8,6 +8,8 @@ export { PlatformStaffInvitation } from './platform-staff-invitation.entity';
 export { Book, type BookStatus } from './book.entity';
 export { Chapter, type ChapterStatus } from './chapter.entity';
 export { ReadingProgress } from './reading-progress.entity';
+export { BookCollection } from './book-collection.entity';
+export { CollectionBook, type CollectionBookStatus } from './collection-book.entity';
 export { BookRating } from './book-rating.entity';
 export { ChapterHighlight } from './chapter-highlight.entity';
 export { ChatConversation, type ChatConversationContextType } from './chat-conversation.entity';

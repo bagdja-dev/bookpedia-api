@@ -29,6 +29,7 @@ import { InboxModule } from './modules/inbox/inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { SeriesModule } from './modules/series/series.module';
+import { CollectionsModule } from './modules/collections/collections.module';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { SeriesModule } from './modules/series/series.module';
     CommentsModule,
     InboxModule,
     NotificationsModule,
+    CollectionsModule,
   ],
 })
 export class AppModule {}
