@@ -273,7 +273,7 @@ export class InboxService {
 
   async listMessages(topicId: string, userId: string, limit = 20, offset = 0): Promise<ChatMessageListResponse> {
     await this.ensureMyConversation(topicId, userId);
-    return this.chatService.listMessages(topicId, limit, offset);
+    return this.chatService.listMessages(topicId, limit, offset, userId);
   }
 
   async sendMessage(
@@ -310,6 +310,7 @@ export class InboxService {
 
     const recipientUserId = await this.getMessageRecipient(conversation, user.userId);
     if (recipientUserId) {
+      const actionUrl = await this.inboxActionUrlFor(conversation, recipientUserId);
       void this.notificationsService.create({
         userId: recipientUserId,
         type: 'message.created',
@@ -317,13 +318,30 @@ export class InboxService {
         message: `${senderDisplayName ?? 'Seseorang'} mengirim pesan kepada Anda\n${this.excerpt(body)}`.slice(0, 500),
         severity: 'info',
         actionLabel: 'Buka pesan',
-        actionUrl: `/inbox?topic=${encodeURIComponent(conversation.topicId)}`,
+        actionUrl,
         entityType: 'conversation',
         entityId: conversation.topicId,
       }).catch(() => undefined);
     }
 
     return message;
+  }
+
+  private async inboxActionUrlFor(conversation: ChatConversation, recipientUserId: string): Promise<string> {
+    const params = `?topic=${encodeURIComponent(conversation.topicId)}`;
+    if (conversation.contextType !== 'library' || !conversation.libraryId) {
+      return `/inbox${params}`;
+    }
+
+    try {
+      const library = await this.libraryRepo.findOne({ where: { id: conversation.libraryId } });
+      if (library && library.owner_user_id === recipientUserId) {
+        return `/dashboard/inbox${params}`;
+      }
+      return `/inbox${params}`;
+    } catch {
+      return `/inbox${params}`;
+    }
   }
 
   /** Potong isi pesan DM buat ditampilkan di row notifikasi Bell — sisakan ruang buat baris "pengirim" di atasnya dalam limit `message` (500 char). */

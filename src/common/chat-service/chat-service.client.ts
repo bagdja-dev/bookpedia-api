@@ -20,6 +20,15 @@ export interface ChatMessageResponse {
   replyCount: number;
   createdAt: string;
   deletedAt: string | null;
+  receiptSummary?: ChatMessageReceiptSummary | null;
+}
+
+export interface ChatMessageReceiptSummary {
+  recipientCount: number;
+  receivedCount: number;
+  readCount: number;
+  receivedAll: boolean;
+  readAll: boolean;
 }
 
 export interface ChatMessageListResponse {
@@ -158,20 +167,26 @@ export class ChatServiceClient {
     });
   }
 
-  async listMessages(topicId: string, limit = 20, offset = 0): Promise<ChatMessageListResponse> {
+  async listMessages(topicId: string, limit = 20, offset = 0, requesterUserId?: string): Promise<ChatMessageListResponse> {
+    const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (requesterUserId) query.set('requesterUserId', requesterUserId);
     return this.request<ChatMessageListResponse>(
-      `/topics/${encodeURIComponent(topicId)}/messages?limit=${limit}&offset=${offset}`,
+      `/topics/${encodeURIComponent(topicId)}/messages?${query.toString()}`,
     );
   }
 
   /** Ambil satu pesan by id — dipakai reader app untuk append realtime tanpa refetch daftar penuh. */
-  async getMessage(topicId: string, messageId: string): Promise<ChatMessageResponse> {
-    return this.request<ChatMessageResponse>(`/topics/${encodeURIComponent(topicId)}/messages/${encodeURIComponent(messageId)}`);
+  async getMessage(topicId: string, messageId: string, requesterUserId?: string): Promise<ChatMessageResponse> {
+    const query = requesterUserId ? `?requesterUserId=${encodeURIComponent(requesterUserId)}` : '';
+    return this.request<ChatMessageResponse>(
+      `/topics/${encodeURIComponent(topicId)}/messages/${encodeURIComponent(messageId)}${query}`,
+    );
   }
 
-  async listReplies(topicId: string, messageId: string): Promise<ChatMessageResponse[]> {
+  async listReplies(topicId: string, messageId: string, requesterUserId?: string): Promise<ChatMessageResponse[]> {
+    const query = requesterUserId ? `?requesterUserId=${encodeURIComponent(requesterUserId)}` : '';
     return this.request<ChatMessageResponse[]>(
-      `/topics/${encodeURIComponent(topicId)}/messages/${encodeURIComponent(messageId)}/replies`,
+      `/topics/${encodeURIComponent(topicId)}/messages/${encodeURIComponent(messageId)}/replies${query}`,
     );
   }
 
