@@ -106,7 +106,8 @@ export class StorageClientService {
     filename: string,
     mimetype: string,
     kind: string,
-  ): Promise<{ url: string; path: string }> {
+    isPublic = true,
+  ): Promise<{ id: string; url: string | null; path: string }> {
     let token: string;
     try {
       token = await this.getAuthToken();
@@ -130,7 +131,7 @@ export class StorageClientService {
       new Blob([buffer as unknown as ArrayBuffer], { type: mimetype }),
       filename,
     );
-    form.append('is_public', 'true');
+    form.append('is_public', String(isPublic));
     form.append('kind', kind);
 
     let response: Response;
@@ -158,9 +159,37 @@ export class StorageClientService {
     }
 
     const data = (await response.json()) as StorageFileResponse;
-    if (!data.public_url) {
+    if (isPublic && !data.public_url) {
       throw new BadGatewayException('Storage service did not return a public URL');
     }
-    return { url: data.public_url, path: data.key };
+    return { id: data.id, url: data.public_url ?? null, path: data.key };
+  }
+
+  async createPrivateDownloadUrl(fileId: string, expirySeconds = 3600): Promise<string> {
+    const token = await this.getAuthToken();
+    let response: Response;
+    try {
+      response = await fetch(`${this.apiUrl}/files/${encodeURIComponent(fileId)}/access-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-token': token,
+        },
+        body: JSON.stringify({ expiry_seconds: expirySeconds }),
+      });
+    } catch {
+      throw new BadGatewayException('Storage service is unreachable while signing the keystore download');
+    }
+
+    if (!response.ok) {
+      const message = await this.parseErrorMessage(response);
+      throw new BadGatewayException(`Storage service could not sign private keystore download: ${message}`);
+    }
+
+    const data = (await response.json()) as { url?: string };
+    if (!data.url) {
+      throw new BadGatewayException('Storage service did not return a private download URL');
+    }
+    return data.url;
   }
 }

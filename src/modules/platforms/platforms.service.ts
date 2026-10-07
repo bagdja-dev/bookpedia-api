@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -34,6 +34,22 @@ const DEFAULT_GENRES: ReadonlyArray<{ nama: string; slug: string }> = [
   { nama: 'Slice of Life', slug: 'slice-of-life' },
   { nama: 'Thriller', slug: 'thriller' },
 ];
+
+/**
+ * Normalisasi SHA-256 fingerprint sertifikat Android ke format Digital Asset
+ * Links (`AA:BB:..`, 32 byte uppercase). Menerima input dengan/tanpa titik dua
+ * (output `keytool`, `apksigner`, atau Play Console), membuang duplikat.
+ */
+export function normalizeSha256Fingerprints(values: string[]): string[] {
+  const normalized = values.map((value) => {
+    const hex = value.replace(/[\s:]/g, '').toUpperCase();
+    if (!/^[0-9A-F]{64}$/.test(hex)) {
+      throw new BadRequestException(`Fingerprint SHA-256 tidak valid: "${value}". Harus 32 byte hex, mis. AA:BB:...`);
+    }
+    return hex.match(/.{2}/g)!.join(':');
+  });
+  return [...new Set(normalized)];
+}
 
 function defaultHomepageSections(): CatalogSectionConfig[] {
   return [
@@ -562,6 +578,10 @@ export class PlatformsService {
     if (dto.searchConsoleVerificationContent !== undefined) {
       platform.search_console_verification_content = dto.searchConsoleVerificationContent;
     }
+    if (dto.androidPackageName !== undefined) platform.android_package_name = dto.androidPackageName;
+    if (dto.androidSha256CertFingerprints !== undefined) {
+      platform.android_sha256_cert_fingerprints = normalizeSha256Fingerprints(dto.androidSha256CertFingerprints);
+    }
     if (dto.enableRating !== undefined) platform.enable_rating = dto.enableRating;
     if (dto.ratingMode !== undefined) platform.rating_mode = dto.ratingMode;
     if (dto.enableLike !== undefined) platform.enable_like = dto.enableLike;
@@ -602,6 +622,8 @@ export class PlatformsService {
       maxTagsPerBook: platform.max_tags_per_book,
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,
+      androidPackageName: platform.android_package_name,
+      androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,
       enableLike: platform.enable_like,

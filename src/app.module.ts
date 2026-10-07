@@ -30,6 +30,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { SeriesModule } from './modules/series/series.module';
 import { CollectionsModule } from './modules/collections/collections.module';
+import { PlatformBuildsModule } from './modules/platform-builds/platform-builds.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { CollectionsModule } from './modules/collections/collections.module';
     InboxModule,
     NotificationsModule,
     CollectionsModule,
+    PlatformBuildsModule,
   ],
 })
 export class AppModule {}

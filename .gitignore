@@ -6,3 +6,4 @@ dist/
 .DS_Store
 .yalc/
 yalc.lock
+sample-keystores/*.jks
