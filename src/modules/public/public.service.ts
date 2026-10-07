@@ -105,6 +105,8 @@ export class PublicService {
       maxTagsPerBook: platform.max_tags_per_book,
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,
+      androidPackageName: platform.android_package_name,
+      androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,
       enableLike: platform.enable_like,

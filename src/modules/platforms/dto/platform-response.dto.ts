@@ -64,6 +64,12 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
   searchConsoleVerificationContent: string | null;
 
+  @ApiPropertyOptional({ example: 'com.bagdja.novello', nullable: true, description: 'TWA Digital Asset Links — package name app Android.' })
+  androidPackageName: string | null;
+
+  @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'TWA Digital Asset Links — SHA-256 sertifikat penanda tangan, format AA:BB:...' })
+  androidSha256CertFingerprints: string[];
+
   @ApiProperty({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter.' })
   enableRating: boolean;
 
