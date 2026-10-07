@@ -12,6 +12,9 @@ import { BuildQueueService, type BuilderJobStatusResponse } from './build-queue.
 import { CreatePlatformBuildConfigDto } from './dto/create-platform-build-config.dto';
 import { CreatePlatformKeystoreProfileDto } from './dto/create-platform-keystore-profile.dto';
 import { CreatePlatformBuildJobDto } from './dto/create-platform-build-job.dto';
+import { KeystorePasswordsDto } from './dto/keystore-passwords.dto';
+import { PlatformKeystoreProfileResponseDto } from './dto/platform-keystore-profile-response.dto';
+import { KeystoreSecretsService } from './keystore-secrets.service';
 
 @Injectable()
 export class PlatformBuildsService {
@@ -26,6 +29,7 @@ export class PlatformBuildsService {
     private readonly keystoreProfileRepo: Repository<PlatformKeystoreProfile>,
     private readonly buildQueueService: BuildQueueService,
     private readonly storageClient: StorageClientService,
+    private readonly keystoreSecrets: KeystoreSecretsService,
   ) {}
 
   async listConfigs(platformId: string) {
@@ -52,11 +56,69 @@ export class PlatformBuildsService {
     return this.buildConfigRepo.save(config);
   }
 
-  async listKeystoreProfiles(platformId: string) {
-    return this.keystoreProfileRepo.find({
+  async listKeystoreProfiles(platformId: string): Promise<PlatformKeystoreProfileResponseDto[]> {
+    const profiles = await this.keystoreProfileRepo.find({
       where: { platform_id: platformId },
       order: { created_at: 'DESC' },
     });
+    return profiles.map((profile) => this.toKeystoreProfileResponse(profile));
+  }
+
+  /** Membuka password terenkripsi untuk dilihat Owner (satu-satunya jalur baca password). */
+  async revealKeystorePasswords(platformId: string, profileId: string): Promise<KeystorePasswordsDto> {
+    const profile = await this.findKeystoreProfile(platformId, profileId);
+    if (!profile.store_password_encrypted || !profile.key_password_encrypted) {
+      throw new NotFoundException('Profil keystore ini belum punya password tersimpan');
+    }
+    const aad = this.keystoreAad(profile);
+    return {
+      storePassword: this.keystoreSecrets.decrypt(profile.store_password_encrypted, aad),
+      keyPassword: this.keystoreSecrets.decrypt(profile.key_password_encrypted, aad),
+    };
+  }
+
+  async updateKeystorePasswords(
+    platformId: string,
+    profileId: string,
+    dto: KeystorePasswordsDto,
+  ): Promise<PlatformKeystoreProfileResponseDto> {
+    const profile = await this.findKeystoreProfile(platformId, profileId);
+    this.applyEncryptedPasswords(profile, dto);
+    return this.toKeystoreProfileResponse(await this.keystoreProfileRepo.save(profile));
+  }
+
+  private async findKeystoreProfile(platformId: string, profileId: string): Promise<PlatformKeystoreProfile> {
+    const profile = await this.keystoreProfileRepo.findOne({ where: { id: profileId, platform_id: platformId } });
+    if (!profile) throw new NotFoundException('Keystore profile not found for this platform');
+    return profile;
+  }
+
+  private keystoreAad(profile: PlatformKeystoreProfile): string {
+    return `platform:${profile.platform_id}`;
+  }
+
+  private applyEncryptedPasswords(profile: PlatformKeystoreProfile, dto: KeystorePasswordsDto): void {
+    const aad = this.keystoreAad(profile);
+    profile.store_password_encrypted = this.keystoreSecrets.encrypt(dto.storePassword, aad);
+    profile.key_password_encrypted = this.keystoreSecrets.encrypt(dto.keyPassword, aad);
+    profile.password_secret_ref = null;
+    profile.key_password_secret_ref = null;
+  }
+
+  private toKeystoreProfileResponse(profile: PlatformKeystoreProfile): PlatformKeystoreProfileResponseDto {
+    return {
+      id: profile.id,
+      platform_id: profile.platform_id,
+      name: profile.name,
+      alias: profile.alias,
+      status: profile.status,
+      has_passwords: Boolean(
+        (profile.store_password_encrypted && profile.key_password_encrypted)
+        || (profile.password_secret_ref && profile.key_password_secret_ref),
+      ),
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
+    };
   }
 
   async uploadKeystoreProfile(
@@ -78,12 +140,11 @@ export class PlatformBuildsService {
       alias: dto.alias,
       file_ref: uploaded.path,
       storage_file_id: uploaded.id,
-      password_secret_ref: dto.passwordSecretRef,
-      key_password_secret_ref: dto.keyPasswordSecretRef,
       status: 'active',
     });
+    this.applyEncryptedPasswords(profile, dto);
 
-    return this.keystoreProfileRepo.save(profile);
+    return this.toKeystoreProfileResponse(await this.keystoreProfileRepo.save(profile));
   }
 
   async listJobs(platformId?: string) {
@@ -236,17 +297,28 @@ export class PlatformBuildsService {
       if (!signingProfile) {
         throw new BadRequestException('Select a keystore profile saved for this platform');
       }
-      signing = {
-        fileUrl: signingProfile.storage_file_id
-          ? await this.storageClient.createPrivateDownloadUrl(signingProfile.storage_file_id)
-          : null,
-        alias: signingProfile.alias,
-        passwordSecretRef: signingProfile.password_secret_ref,
-        keyPasswordSecretRef: signingProfile.key_password_secret_ref,
-      };
-      if (!signing.fileUrl || !signing.passwordSecretRef || !signing.keyPasswordSecretRef) {
+      if (!signingProfile.storage_file_id) {
         throw new BadRequestException('A private keystore profile with a storage file ID is required for signing');
       }
+      // Password didekripsi sesaat sebelum dikirim ke builder (HTTPS); builder mengenkripsinya
+      // lagi selama job antre dan menghapusnya setelah job selesai. Profil lama memakai secret ref.
+      let passwords: Record<string, string | null>;
+      if (signingProfile.store_password_encrypted && signingProfile.key_password_encrypted) {
+        const revealed = await this.revealKeystorePasswords(dto.platformId, signingProfile.id);
+        passwords = { storePassword: revealed.storePassword, keyPassword: revealed.keyPassword };
+      } else if (signingProfile.password_secret_ref && signingProfile.key_password_secret_ref) {
+        passwords = {
+          passwordSecretRef: signingProfile.password_secret_ref,
+          keyPasswordSecretRef: signingProfile.key_password_secret_ref,
+        };
+      } else {
+        throw new BadRequestException('Simpan password keystore di profil ini sebelum build release');
+      }
+      signing = {
+        fileUrl: await this.storageClient.createPrivateDownloadUrl(signingProfile.storage_file_id),
+        alias: signingProfile.alias,
+        ...passwords,
+      };
     }
 
     const dispatchResult = await this.buildQueueService.enqueue({
@@ -268,7 +340,8 @@ export class PlatformBuildsService {
     return this.getJobStatus(dispatchResult.externalJobId);
   }
 
-  async getKeystoreProfiles() {
-    return this.keystoreProfileRepo.find({ order: { created_at: 'DESC' } });
+  async getKeystoreProfiles(): Promise<PlatformKeystoreProfileResponseDto[]> {
+    const profiles = await this.keystoreProfileRepo.find({ order: { created_at: 'DESC' } });
+    return profiles.map((profile) => this.toKeystoreProfileResponse(profile));
   }
 }

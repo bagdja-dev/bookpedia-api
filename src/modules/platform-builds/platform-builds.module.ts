@@ -9,6 +9,7 @@ import { StorageModule } from '../storage/storage.module';
 import { BuildQueueService } from './build-queue.service';
 import { BuildWorkerService } from './build-worker.service';
 import { PlatformBuildsController } from './platform-builds.controller';
+import { KeystoreSecretsService } from './keystore-secrets.service';
 import { PlatformBuildsService } from './platform-builds.service';
 
 @Module({
@@ -18,7 +19,7 @@ import { PlatformBuildsService } from './platform-builds.service';
     StorageModule,
   ],
   controllers: [PlatformBuildsController],
-  providers: [PlatformBuildsService, BuildQueueService, BuildWorkerService],
+  providers: [PlatformBuildsService, BuildQueueService, BuildWorkerService, KeystoreSecretsService],
   exports: [PlatformBuildsService, BuildQueueService],
 })
 export class PlatformBuildsModule {}

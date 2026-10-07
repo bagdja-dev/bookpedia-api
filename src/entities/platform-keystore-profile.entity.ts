@@ -26,11 +26,19 @@ export class PlatformKeystoreProfile {
   @Column({ type: 'uuid', nullable: true })
   storage_file_id: string | null;
 
-  @Column({ type: 'varchar', length: 255 })
-  password_secret_ref: string;
+  /** Legacy: referensi secret di env builder. Profil baru memakai password terenkripsi di bawah. */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  password_secret_ref: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   key_password_secret_ref: string | null;
+
+  /** AES-256-GCM (KeystoreSecretsService), AAD = `platform:<platform_id>`. */
+  @Column({ type: 'text', nullable: true })
+  store_password_encrypted: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  key_password_encrypted: string | null;
 
   @Column({ type: 'varchar', length: 32, default: 'active' })
   status: 'active' | 'inactive';
