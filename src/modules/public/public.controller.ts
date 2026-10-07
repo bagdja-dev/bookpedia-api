@@ -15,6 +15,7 @@ import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
 import { SimilarBooksQueryDto } from './dto/similar-books-query.dto';
 import { SimilarBooksResponseDto } from './dto/similar-books-response.dto';
 import { SeriesPublicDto } from './dto/series-public.dto';
+import { OriginalAuthorProfileDto } from './dto/original-author-profile.dto';
 
 /**
  * Endpoint publik — TANPA autentikasi sama sekali (tidak ada @UseGuards di
@@ -110,6 +111,20 @@ export class PublicController {
   ): Promise<LibraryProfileDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getLibraryBySlug(platform.id, librarySlug);
+  }
+
+  @Get('platforms/:platformSlug/authors/:originalAuthorName')
+  @ApiOperation({
+    summary: 'Profil publik Penulis Asli dan semua buku terjemahan/adaptasinya (di-scope ke satu Platform)',
+    description: 'Mencari buku dengan nama penulis asli yang sama secara exact (case-insensitive), hanya menampilkan Book dengan minimal 1 Chapter published. Nama penulis tidak harus sama dengan Library penyedia buku.',
+  })
+  @ApiOkResponse({ type: OriginalAuthorProfileDto, description: 'Profil Penulis Asli + daftar buku publiknya' })
+  async getOriginalAuthor(
+    @Param('platformSlug') platformSlug: string,
+    @Param('originalAuthorName') originalAuthorName: string,
+  ): Promise<OriginalAuthorProfileDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getOriginalAuthorByName(platform.id, originalAuthorName);
   }
 
   @Get('platforms/:platformSlug/books/:bookSlug')

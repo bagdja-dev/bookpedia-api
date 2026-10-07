@@ -114,4 +114,7 @@ export class PlatformPublicProfileDto {
 
   @ApiPropertyOptional({ nullable: true })
   seoSuffix: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik Platform ini.' })
+  termsAndConditions: string | null;
 }

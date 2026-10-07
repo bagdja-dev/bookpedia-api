@@ -170,4 +170,9 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsString()
   seoSuffix?: string;
+
+  @ApiPropertyOptional({ description: 'Konten Terms & Conditions publik untuk Platform ini.' })
+  @IsOptional()
+  @IsString()
+  termsAndConditions?: string;
 }

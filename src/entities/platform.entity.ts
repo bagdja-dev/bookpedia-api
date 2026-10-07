@@ -233,6 +233,9 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   seo_suffix: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  terms_and_conditions: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

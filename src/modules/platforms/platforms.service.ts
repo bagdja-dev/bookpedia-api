@@ -527,6 +527,7 @@ export class PlatformsService {
         seo_default_og_type: dto.seoDefaultOgType ?? 'website',
         seo_prefix: dto.seoPrefix ?? null,
         seo_suffix: dto.seoSuffix ?? null,
+        terms_and_conditions: dto.termsAndConditions ?? null,
       });
       const saved = await platformRepo.save(platform);
 
@@ -595,6 +596,7 @@ export class PlatformsService {
     if (dto.seoDefaultOgType !== undefined) platform.seo_default_og_type = dto.seoDefaultOgType ?? 'website';
     if (dto.seoPrefix !== undefined) platform.seo_prefix = dto.seoPrefix;
     if (dto.seoSuffix !== undefined) platform.seo_suffix = dto.seoSuffix;
+    if (dto.termsAndConditions !== undefined) platform.terms_and_conditions = dto.termsAndConditions;
 
     return this.platformRepo.save(platform);
   }
@@ -637,6 +639,7 @@ export class PlatformsService {
       seoDefaultOgType: platform.seo_default_og_type,
       seoPrefix: platform.seo_prefix,
       seoSuffix: platform.seo_suffix,
+      termsAndConditions: platform.terms_and_conditions,
     };
   }
 }

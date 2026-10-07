@@ -224,4 +224,9 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsString()
   seoSuffix?: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik. Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @IsString()
+  termsAndConditions?: string | null;
 }

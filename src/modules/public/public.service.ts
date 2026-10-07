@@ -17,6 +17,7 @@ import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
 import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
+import { OriginalAuthorProfileDto } from './dto/original-author-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
@@ -120,6 +121,7 @@ export class PublicService {
       seoDefaultOgType: platform.seo_default_og_type,
       seoPrefix: platform.seo_prefix,
       seoSuffix: platform.seo_suffix,
+      termsAndConditions: platform.terms_and_conditions,
     };
   }
 
@@ -778,6 +780,52 @@ export class PublicService {
         this.toCatalogDto(
           book,
           library,
+          (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
+          commentCountsByBook.get(book.id) ?? 0,
+          latestChapterByBook.get(book.id) ?? null,
+          seriesByBook.get(book.id) ?? null,
+          uniqueReaderCountsByBook.get(book.id) ?? 0,
+        ),
+      ),
+    };
+  }
+
+  async getOriginalAuthorByName(platformId: string, originalAuthorName: string): Promise<OriginalAuthorProfileDto> {
+    const decodedName = decodeURIComponent(originalAuthorName);
+    const safeName = decodedName.trim();
+    if (!safeName) {
+      throw new NotFoundException('Original author not found');
+    }
+
+    const books = await this.bookRepo
+      .createQueryBuilder('book')
+      .leftJoinAndSelect('book.genre', 'genre')
+      .leftJoinAndSelect('book.category', 'category')
+      .where('book.platform_id = :platformId', { platformId })
+      .andWhere('LOWER(book.original_author) = LOWER(:originalAuthorName)', { originalAuthorName: safeName })
+      .andWhere(IS_BOOK_PUBLISHED_SQL)
+      .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+      .orderBy('book.created_at', 'DESC')
+      .getMany();
+
+    const [tagsByBook, commentCountsByBook, latestChapterByBook, seriesByBook, uniqueReaderCountsByBook] = await Promise.all([
+      this.tagsService.findTagsForBooks(books.map((book) => book.id)),
+      this.getCommentCountsForBooks(books.map((book) => book.id)),
+      this.getLatestPublishedChapterTitles(books.map((book) => book.id)),
+      this.getSeriesForBooks(books.map((book) => book.id)),
+      this.getUniqueReaderCountsForBooks(books.map((book) => book.id)),
+    ]);
+
+    const libraryIds = [...new Set(books.map((book) => book.library_id))];
+    const libraries = libraryIds.length > 0 ? await this.libraryRepo.find({ where: { id: In(libraryIds) } }) : [];
+    const libraryById = new Map(libraries.map((library) => [library.id, library]));
+
+    return {
+      nama: safeName,
+      books: books.map((book) =>
+        this.toCatalogDto(
+          book,
+          libraryById.get(book.library_id),
           (tagsByBook.get(book.id) ?? []).map((t) => this.tagsService.toResponseDto(t)),
           commentCountsByBook.get(book.id) ?? 0,
           latestChapterByBook.get(book.id) ?? null,
