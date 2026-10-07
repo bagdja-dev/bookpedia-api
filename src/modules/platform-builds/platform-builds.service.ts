@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -6,14 +6,17 @@ import { PlatformBuildConfig } from '../../entities/platform-build-config.entity
 import type { PlatformBuildJob } from '../../entities/platform-build-job.entity';
 import { PlatformKeystoreProfile } from '../../entities/platform-keystore-profile.entity';
 import { Platform } from '../../entities/platform.entity';
+import { normalizeSha256Fingerprints } from '../platforms/platforms.service';
 import { StorageClientService } from '../storage/storage-client.service';
-import { BuildQueueService } from './build-queue.service';
+import { BuildQueueService, type BuilderJobStatusResponse } from './build-queue.service';
 import { CreatePlatformBuildConfigDto } from './dto/create-platform-build-config.dto';
 import { CreatePlatformKeystoreProfileDto } from './dto/create-platform-keystore-profile.dto';
 import { CreatePlatformBuildJobDto } from './dto/create-platform-build-job.dto';
 
 @Injectable()
 export class PlatformBuildsService {
+  private readonly logger = new Logger(PlatformBuildsService.name);
+
   constructor(
     @InjectRepository(Platform)
     private readonly platformRepo: Repository<Platform>,
@@ -88,6 +91,7 @@ export class PlatformBuildsService {
     const platform = await this.platformRepo.findOne({ where: { id: platformId } });
     if (!platform) throw new NotFoundException('Platform not found');
     const runnerJobs = await this.buildQueueService.listJobs(platform.id, platform.slug);
+    await this.syncAndroidAssetLinks(platform, runnerJobs);
     return runnerJobs.map((job) => ({
       id: job.id,
       platform_id: platform.id,
@@ -98,6 +102,8 @@ export class PlatformBuildsService {
       stage: job.stage,
       build_type: job.buildType ?? null,
       output_format: job.outputFormat ?? null,
+      bundle_id: job.bundleId ?? null,
+      signing_cert_sha256: job.signingCertSha256 ?? null,
       artifact_url: job.artifactUrl,
       log_url: job.logUrl,
       error_message: job.errorMessage,
@@ -114,6 +120,10 @@ export class PlatformBuildsService {
 
   async getJobStatus(jobId: string) {
     const status = await this.buildQueueService.getStatus(jobId);
+    if (status.platformId && status.status === 'success' && status.signingCertSha256) {
+      const platform = await this.platformRepo.findOne({ where: { id: status.platformId } });
+      if (platform) await this.syncAndroidAssetLinks(platform, [status]);
+    }
     return {
       id: status.id,
       external_job_id: status.id,
@@ -122,6 +132,8 @@ export class PlatformBuildsService {
       stage: status.stage,
       build_type: status.buildType ?? null,
       output_format: status.outputFormat ?? null,
+      bundle_id: status.bundleId ?? null,
+      signing_cert_sha256: status.signingCertSha256 ?? null,
       error_message: status.errorMessage,
       artifact_url: status.artifactUrl,
       log_url: status.logUrl,
@@ -130,6 +142,48 @@ export class PlatformBuildsService {
       finished_at: status.finishedAt ?? null,
       updated_at: new Date(status.updatedAt),
     };
+  }
+
+  /**
+   * Android App Links otomatis: setiap build sukses membawa SHA-256 sertifikat
+   * penanda tangannya dari builder. Fingerprint itu ditambahkan ke
+   * `platforms.android_sha256_cert_fingerprints` (tanpa menghapus yang sudah ada,
+   * mis. Play App Signing yang diisi manual), dan `android_package_name` diisi dari
+   * bundle ID build bila masih kosong — supaya `/.well-known/assetlinks.json`
+   * langsung valid tanpa salin-tempel. Build dengan bundle ID berbeda dari package
+   * name yang sudah tersimpan diabaikan (satu Platform = satu app Android).
+   */
+  private async syncAndroidAssetLinks(platform: Platform, jobs: BuilderJobStatusResponse[]): Promise<void> {
+    const candidates = jobs.filter(
+      (job) => job.status === 'success' && job.signingCertSha256 && job.bundleId,
+    );
+    if (!candidates.length) return;
+
+    let packageName = platform.android_package_name;
+    const fingerprints = new Set(platform.android_sha256_cert_fingerprints ?? []);
+    let changed = false;
+    for (const job of candidates) {
+      if (!packageName) {
+        packageName = job.bundleId!;
+        changed = true;
+      }
+      if (job.bundleId !== packageName) continue;
+      try {
+        const [fingerprint] = normalizeSha256Fingerprints([job.signingCertSha256!]);
+        if (!fingerprints.has(fingerprint)) {
+          fingerprints.add(fingerprint);
+          changed = true;
+        }
+      } catch {
+        this.logger.warn(`Builder job ${job.id} returned an invalid signing certificate fingerprint`);
+      }
+    }
+    if (!changed) return;
+
+    platform.android_package_name = packageName;
+    platform.android_sha256_cert_fingerprints = [...fingerprints].slice(0, 10);
+    await this.platformRepo.save(platform);
+    this.logger.log(`Android App Links updated for platform ${platform.slug}: ${packageName} (${fingerprints.size} fingerprint)`);
   }
 
   async queueBuild(dto: CreatePlatformBuildJobDto) {

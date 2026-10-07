@@ -15,6 +15,9 @@ export interface BuilderJobStatusResponse {
   progress: number;
   stage: string | null;
   buildType?: 'release' | 'debug' | null;
+  bundleId?: string | null;
+  signingCertSha256?: string | null;
+  tenantId?: string;
   outputFormat?: 'aab' | 'apk' | null;
   artifactUrl: string | null;
   logUrl: string | null;
