@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 
 import { PlatformStaff } from '../../entities';
 import { AuthProfileService } from '../../modules/user/auth-profile.service';
-import type { AuthUser } from './jwt.strategy';
+import type { AuthUser } from './auth-user';
 import { OWNER_ONLY_KEY } from './owner-only.decorator';
 
 interface ClientAppMeResponse {

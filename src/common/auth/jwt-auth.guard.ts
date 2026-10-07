@@ -4,11 +4,9 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
 
 import { AuthProfileService } from '../../modules/user/auth-profile.service';
-import type { AuthUser, JwtPayload } from './jwt.strategy';
+import type { AuthUser } from './auth-user';
 
 /**
  * Guard login wajib untuk endpoint Studio (penulis) & endpoint reader yang
@@ -17,20 +15,19 @@ import type { AuthUser, JwtPayload } from './jwt.strategy';
  * `CurrentUser` untuk dapat `userId` yang login (lihat execution-plan.md
  * Fase 0).
  *
- * Pola verifikasi 3-jalur sama persis dengan bagdja-website-api:
- * 1) verifikasi lokal HS256 (JWT_SECRET, sesi first-party bagdja-auth)
- * 2) fallback JWKS stateless (token OAuth cross-app EdDSA)
- * 3) fallback panggilan `/auth/me` (kalau JWT_SECRET beda, mis. dev vs prod SSO)
+ * Bookpedia adalah produk pihak ketiga di platform Bagdja: TIDAK memegang
+ * secret platform (`JWT_SECRET`), jadi tidak pernah verifikasi HS256 dengan
+ * key bersama (plan/payment-service/caller-identity-hardening-plan.md S19).
+ * Urutan (sama dengan bagdja-website-api):
+ * 1) JWKS stateless bagdja-auth (token OAuth EdDSA dari SSO) — jalur normal
+ * 2) fallback introspeksi `/auth/me` pakai client token app sendiri
  *
  * Profile lokal di-upsert setelah token valid sebagai projection untuk
  * observability/admin. Source of truth identitas tetap bagdja-auth.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(
-    private readonly config: ConfigService,
-    private readonly authProfile: AuthProfileService,
-  ) {}
+  constructor(private readonly authProfile: AuthProfileService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -40,11 +37,8 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Authentication token is required');
     }
 
-    let authUser = this.verifyLocalJwt(token);
-
-    if (!authUser) {
-      authUser = await this.authProfile.validateTokenViaJwks(token);
-    }
+    let authUser: AuthUser | null =
+      await this.authProfile.validateTokenViaJwks(token);
 
     if (!authUser) {
       authUser = await this.authProfile.validateToken(`Bearer ${token}`);
@@ -63,25 +57,6 @@ export class JwtAuthGuard implements CanActivate {
 
     request.user = authUser;
     return true;
-  }
-
-  private verifyLocalJwt(token: string): AuthUser | null {
-    try {
-      const secret = this.config.get<string>('JWT_SECRET') ?? 'default-secret';
-      const payload = jwt.verify(token, secret) as JwtPayload;
-
-      if (payload.type === 'client_app') {
-        return null;
-      }
-
-      return {
-        userId: payload.sub,
-        email: payload.email,
-        username: payload.username,
-      };
-    } catch {
-      return null;
-    }
   }
 
   private extractToken(request: { headers?: Record<string, string | string[] | undefined>; query?: Record<string, string> }): string | null {
