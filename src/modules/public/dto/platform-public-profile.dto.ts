@@ -62,6 +62,16 @@ export class PlatformPublicProfileDto {
   @ApiPropertyOptional({ example: 'google-site-verification: google9bbe81680154a078.html', nullable: true })
   searchConsoleVerificationContent: string | null;
 
+  @ApiPropertyOptional({
+    example: 'com.bagdja.novello',
+    nullable: true,
+    description: 'TWA Digital Asset Links (7 Okt 2026) — dipakai middleware bookpedia-app membalas /.well-known/assetlinks.json per-Host.',
+  })
+  androidPackageName: string | null;
+
+  @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'SHA-256 sertifikat penanda tangan app TWA, format AA:BB:... Kosong = assetlinks tidak disajikan.' })
+  androidSha256CertFingerprints: string[];
+
   @ApiProperty({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter. false = reader app sembunyikan seluruh UI rating.' })
   enableRating: boolean;
 
