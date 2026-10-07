@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
@@ -132,6 +132,29 @@ export class UpdatePlatformDto {
   @IsString()
   @MaxLength(1000)
   searchConsoleVerificationContent?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'com.bagdja.novello',
+    nullable: true,
+    description: 'TWA Digital Asset Links — package name (applicationId) app Android Platform ini. Dipakai middleware bookpedia-app membalas /.well-known/assetlinks.json. Kirim null untuk mengosongkan.',
+  })
+  @IsOptional()
+  @MaxLength(255)
+  @Matches(/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/, {
+    message: 'androidPackageName harus berformat package Android, mis. com.bagdja.novello',
+  })
+  androidPackageName?: string | null;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['4A:C0:55:7E:8C:7B:9E:BF:EE:37:30:5C:4D:3C:4E:AC:59:E6:19:D7:F2:EC:DA:E0:FC:51:01:F7:69:9F:CA:3D'],
+    description: 'TWA Digital Asset Links — SHA-256 sertifikat penanda tangan (release/upload key, Play App Signing, debug key). Boleh dengan atau tanpa titik dua; disimpan uppercase format AA:BB:... Maks 10.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  androidSha256CertFingerprints?: string[];
 
   @ApiPropertyOptional({ example: true, description: 'Fase 7 — nyala/mati fitur rating Book/Chapter. Saat false, seluruh UI rating publik disembunyikan dan submit baru ditolak backend.' })
   @IsOptional()

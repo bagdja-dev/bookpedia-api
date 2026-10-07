@@ -162,6 +162,18 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   search_console_verification_content: string | null;
 
+  /**
+   * TWA Digital Asset Links (7 Okt 2026) — dibalas dinamis oleh `middleware.ts`
+   * bookpedia-app di `/.well-known/assetlinks.json` sesuai Host yang resolve ke
+   * Platform ini. NULL / array kosong = file tidak disajikan (404).
+   */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  android_package_name: string | null;
+
+  /** SHA-256 sertifikat penanda tangan app TWA, format `AA:BB:...` (32 byte). */
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  android_sha256_cert_fingerprints: string[];
+
   /** Fase 7 (18 Sep 2026) — nyala/mati fitur rating Book/Chapter secara keseluruhan di Platform ini. Saat false, seluruh UI rating publik disembunyikan DAN submit baru ditolak backend (defense in depth) — data lama tetap tersimpan. Lihat plan/bookpedia/overview.md §13. */
   @Column({ type: 'boolean', default: true })
   enable_rating: boolean;
