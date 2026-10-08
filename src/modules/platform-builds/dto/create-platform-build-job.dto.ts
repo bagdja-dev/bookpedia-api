@@ -5,6 +5,8 @@ export const PLATFORM_BUILD_TYPES = ['release', 'debug'] as const;
 export const PLATFORM_BUILD_OUTPUT_FORMATS = ['aab', 'apk'] as const;
 export type PlatformBuildType = (typeof PLATFORM_BUILD_TYPES)[number];
 export type PlatformBuildOutputFormat = (typeof PLATFORM_BUILD_OUTPUT_FORMATS)[number];
+export const PLATFORM_BUILD_DISPLAY_MODES = ['standalone', 'fullscreen', 'fullscreen-sticky'] as const;
+export type PlatformBuildDisplayMode = (typeof PLATFORM_BUILD_DISPLAY_MODES)[number];
 
 export class CreatePlatformBuildJobDto {
   @ApiProperty({ description: 'Platform target build' })
@@ -66,7 +68,21 @@ export class CreatePlatformBuildJobDto {
   @IsUrl({ protocols: ['https'], require_protocol: true })
   splashImageUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Theme metadata', type: 'object', default: {} })
+  @ApiPropertyOptional({
+    enum: PLATFORM_BUILD_DISPLAY_MODES,
+    description: 'Mode tampilan TWA: standalone = status & navigation bar terlihat (default); fullscreen = layar penuh, bar muncul saat diusap; fullscreen-sticky = layar penuh, bar muncul sementara lalu tersembunyi lagi.',
+    example: 'standalone',
+  })
+  @IsOptional()
+  @IsIn(PLATFORM_BUILD_DISPLAY_MODES)
+  displayMode?: PlatformBuildDisplayMode;
+
+  @ApiPropertyOptional({
+    description: 'Warna app: primaryColor (status bar), splashColor (latar splash), navigationBarColor (navigation bar), navigationBarDividerColor (opsional, garis di atas navigation bar). Format #RRGGBB.',
+    type: 'object',
+    default: {},
+    example: { primaryColor: '#7C3AED', splashColor: '#FFFFFF', navigationBarColor: '#FFFFFF', navigationBarDividerColor: '#E5E5E5' },
+  })
   @IsOptional()
   @IsObject()
   theme?: Record<string, unknown>;

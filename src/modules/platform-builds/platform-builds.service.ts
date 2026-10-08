@@ -271,6 +271,7 @@ export class PlatformBuildsService {
     const iconUrl = dto.iconUrl ?? savedFlags.iconUrl;
     const splashImageUrl = dto.splashImageUrl ?? savedFlags.splashImageUrl;
     const theme = dto.theme ?? savedFlags.theme ?? {};
+    const displayMode = dto.displayMode ?? savedFlags.displayMode;
     if (typeof appName !== 'string' || typeof bundleId !== 'string' || typeof targetUrl !== 'string') {
       throw new BadRequestException('Build config must include appName, bundleId, and targetUrl');
     }
@@ -330,6 +331,7 @@ export class PlatformBuildsService {
         targetUrl,
         iconUrl,
         splashImageUrl,
+        displayMode,
         theme,
         buildConfig,
         ...(signing ? { signing } : {}),
