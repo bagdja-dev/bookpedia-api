@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
@@ -28,6 +28,9 @@ import { TagResponseDto } from '../tags/dto/tag-response.dto';
 import { TagsService } from '../tags/tags.service';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { isChapterFree } from '../../common/utils/free-chapters.util';
+import { extractFirstParagraph } from '../../common/utils/chapter-excerpt.util';
+import type { AuthUser } from '../../common/auth';
+import { ChapterPreviewDto } from './dto/chapter-preview.dto';
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { HAS_PUBLISHED_CHAPTER_SQL, IS_BOOK_PUBLISHED_SQL } from '../../common/book-visibility.sql';
 
@@ -119,6 +122,7 @@ export class PublicService {
       blockContentCopy: platform.block_content_copy ?? false,
       copyAttributionEnabled: platform.copy_attribution_enabled ?? true,
       copyAttributionMaxChars: platform.copy_attribution_max_chars ?? 200,
+      chapterPreviewMaxChars: platform.chapter_preview_max_chars ?? 400,
       seoDefaultH1: platform.seo_default_h1,
       seoDefaultTitle: platform.seo_default_title,
       seoDefaultDescription: platform.seo_default_description,
@@ -738,9 +742,11 @@ export class PublicService {
   /**
    * SEO Fase 2 (16 Sep 2026) — daftar Book+Library publik untuk `sitemap.xml`
    * (`bookpedia-app`). TANPA pagination (skala kecil, lihat seo-plan.md §3.4).
-   * Chapter individual SENGAJA tidak disertakan (seo-plan.md §6.2).
+   * Chapter published ikut disertakan beserta `isFree` (10 Okt 2026): Chapter gratis
+   * memakai URL baca, Chapter terkunci memakai URL preview share (yang bisa dibaca crawler).
    */
-  async getSitemapEntries(platformId: string): Promise<SitemapEntriesDto> {
+  async getSitemapEntries(platform: Platform): Promise<SitemapEntriesDto> {
+    const platformId = platform.id;
     const books = await this.bookRepo
       .createQueryBuilder('book')
       .where('book.platform_id = :platformId', { platformId })
@@ -761,6 +767,7 @@ export class PublicService {
         : Promise.resolve([]),
     ]);
     const bookSlugById = new Map(books.map((book) => [book.id, book.slug]));
+    const bookMaxFreeById = new Map(books.map((book) => [book.id, book.max_free_chapters]));
 
     return {
       books: books.map((book) => ({ slug: book.slug, updatedAt: book.updated_at })),
@@ -769,6 +776,11 @@ export class PublicService {
         bookSlug: bookSlugById.get(chapter.book_id) ?? '',
         orderIndex: chapter.order_index,
         updatedAt: chapter.updated_at,
+        isFree: isChapterFree(
+          platform.max_free_chapters,
+          bookMaxFreeById.get(chapter.book_id) ?? null,
+          chapter.order_index,
+        ),
       })),
     };
   }
@@ -1026,6 +1038,40 @@ export class PublicService {
   }
 
   /**
+   * Preview publik untuk halaman share — paragraf pertama saja (teks polos, maks
+   * `chapter_preview_max_chars` Platform), tanpa login. Dipakai juga untuk metadata SEO
+   * halaman Chapter supaya tidak perlu mengambil isi Chapter utuh.
+   */
+  async getChapterPreview(platform: Platform, bookSlug: string, orderIndex: number): Promise<ChapterPreviewDto> {
+    const { book, chapter } = await this.findPublishedChapter(platform, bookSlug, orderIndex);
+    return {
+      id: chapter.id,
+      judul: chapter.judul,
+      orderIndex: chapter.order_index,
+      publishedAt: chapter.published_at,
+      book: { id: book.id, judul: book.judul, slug: book.slug, coverUrl: book.cover_url },
+      excerpt: extractFirstParagraph(chapter.konten, platform.chapter_preview_max_chars ?? 400),
+      isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
+    };
+  }
+
+  /** Book published di Platform ini + Chapter `published` pada orderIndex tsb, atau 404. */
+  private async findPublishedChapter(platform: Platform, bookSlug: string, orderIndex: number) {
+    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platform.id } });
+    if (!book || !book.published_at) {
+      throw new NotFoundException('Book not found');
+    }
+
+    const chapter = await this.chapterRepo.findOne({
+      where: { book_id: book.id, order_index: orderIndex, status: 'published' },
+    });
+    if (!chapter) {
+      throw new NotFoundException('Chapter not found');
+    }
+    return { book, chapter };
+  }
+
+  /**
    * Konten 1 Chapter publik by (platformId, bookSlug, orderIndex). 404
    * kalau Book tidak ditemukan di Platform ini ATAU tidak ada Chapter di
    * order_index tsb ATAU statusnya bukan `published` (draft harus 404,
@@ -1040,17 +1086,15 @@ export class PublicService {
     platform: Platform,
     bookSlug: string,
     orderIndex: number,
+    viewer?: AuthUser,
   ): Promise<ChapterDetailDto> {
-    const book = await this.bookRepo.findOne({ where: { slug: bookSlug, platform_id: platform.id } });
-    if (!book || !book.published_at) {
-      throw new NotFoundException('Book not found');
-    }
+    const { book, chapter } = await this.findPublishedChapter(platform, bookSlug, orderIndex);
 
-    const chapter = await this.chapterRepo.findOne({
-      where: { book_id: book.id, order_index: orderIndex, status: 'published' },
-    });
-    if (!chapter) {
-      throw new NotFoundException('Chapter not found');
+    // Isi Chapter di luar jatah gratis hanya untuk pembaca yang login — sebelumnya hanya
+    // dijaga halaman reader app, sehingga API ini membocorkan Chapter berbayar ke siapa pun.
+    const isFree = isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index);
+    if (!isFree && !viewer) {
+      throw new UnauthorizedException('Login diperlukan untuk membaca Chapter ini.');
     }
 
     const [prev, next] = await Promise.all([
@@ -1079,7 +1123,7 @@ export class PublicService {
       book: { id: book.id, judul: book.judul, slug: book.slug, coverUrl: book.cover_url },
       prevOrderIndex: prev?.order_index ?? null,
       nextOrderIndex: next?.order_index ?? null,
-      isFree: isChapterFree(platform.max_free_chapters, book.max_free_chapters, chapter.order_index),
+      isFree,
       ratingAverage: Number(chapter.rating_average),
       ratingCount: chapter.rating_count,
       likeCount: chapter.like_count,

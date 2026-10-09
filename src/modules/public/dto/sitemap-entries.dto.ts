@@ -23,6 +23,12 @@ export class ChapterSitemapEntryDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiProperty({
+    example: true,
+    description: 'true = Chapter gratis (URL sitemap /book/{slug}/chapter/{n}); false = perlu login, sitemap memakai URL preview /book/{slug}/chapter/{n}/preview.',
+  })
+  isFree: boolean;
 }
 
 /**
