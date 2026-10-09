@@ -6,6 +6,9 @@ export class CatalogHomeSectionDto {
   @ApiProperty()
   key: string;
 
+  @ApiProperty({ example: 'top-hot', description: 'Slug halaman list "Lihat semua" (/list/{slug}).' })
+  slug: string;
+
   @ApiPropertyOptional({ enum: ['top', 'new_updated'] })
   type?: 'top' | 'new_updated';
 

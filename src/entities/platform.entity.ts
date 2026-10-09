@@ -46,6 +46,23 @@ export interface CatalogSectionConfig {
   limit: number;
   lazyLoad?: boolean;
   pageSize?: number;
+  /** URL halaman list /list/{slug} — unik per Platform, dibuat dari judul bila kosong. */
+  slug?: string;
+  /** Slug lama (dikelola server) — /list/{slug-lama} diarahkan permanen ke slug sekarang. */
+  previousSlugs?: string[];
+  /** Deskripsi singkat yang tampil di atas daftar pada halaman list. */
+  description?: string;
+  /** SEO halaman list — pola sama SEO Book; mendukung token {{title}} {{platform}} {{prefix}} {{suffix}}. */
+  seoH1?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoOgTitle?: string;
+  seoOgDescription?: string;
+  seoOgType?: 'website' | 'book' | 'profile';
+  seoPrefix?: string;
+  seoSuffix?: string;
+  /** Gambar og:image kartu sosmed; kosong = cover Book pertama di list. */
+  seoOgImageUrl?: string;
 }
 
 /**

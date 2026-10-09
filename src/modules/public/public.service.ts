@@ -29,6 +29,8 @@ import { TagsService } from '../tags/tags.service';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
 import { isChapterFree } from '../../common/utils/free-chapters.util';
 import { extractFirstParagraph } from '../../common/utils/chapter-excerpt.util';
+import { withSectionSlugs } from '../../common/utils/homepage-sections.util';
+import { ListPageDto } from './dto/list-page.dto';
 import type { AuthUser } from '../../common/auth';
 import { ChapterPreviewDto } from './dto/chapter-preview.dto';
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
@@ -308,6 +310,8 @@ export class PublicService {
   private async getManualSectionBooks(
     platformId: string,
     section: CatalogSectionConfig,
+    page = 1,
+    pageSizeOverride?: number,
   ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
     if (!section.id) return { items: [], page: 1, pageSize: 0, total: 0, lazyLoad: false };
     const rows = await this.homepageSectionBookRepo.find({
@@ -325,10 +329,53 @@ export class PublicService {
         .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
         .getRawMany<{ id: string }>()).map((row) => row.id))
       : new Set<string>();
-    const books = await this.hydrateBooksInOrder(ids.filter((id) => visibleIds.has(id)));
+    const visible = ids.filter((id) => visibleIds.has(id));
+    // Homepage: seluruh list sekaligus (maks 50). Halaman /list: dipotong per halaman.
+    const pageSize = pageSizeOverride ?? Math.max(visible.length, 1);
+    const currentPage = pageSizeOverride ? Math.max(1, page) : 1;
+    const books = await this.hydrateBooksInOrder(visible.slice((currentPage - 1) * pageSize, currentPage * pageSize));
     const items = await this.toCatalogDtos(books);
-    // Seluruh list dikirim sekaligus (maks 50), tanpa lazy load halaman berikutnya.
-    return { items, page: 1, pageSize: items.length, total: items.length, lazyLoad: false };
+    return { items, page: currentPage, pageSize, total: visible.length, lazyLoad: false };
+  }
+
+  /**
+   * Halaman /list/{slug} — satu section homepage aktif beserta Book-nya per halaman dan
+   * data SEO-nya. Slug lama (`previousSlugs`) tetap ditemukan; `section.slug` di respons
+   * adalah slug sekarang supaya reader app bisa redirect permanen. Section nonaktif → 404.
+   */
+  async getListPage(platform: Platform, listSlug: string, page: number, pageSize: number): Promise<ListPageDto> {
+    const sections = withSectionSlugs(Array.isArray(platform.homepage_sections) ? platform.homepage_sections : [])
+      .filter((section) => section.enabled);
+    const section = sections.find((item) => item.slug === listSlug)
+      ?? sections.find((item) => item.previousSlugs?.includes(listSlug));
+    if (!section) {
+      throw new NotFoundException('List not found');
+    }
+
+    const result = await this.getHomepageSectionBooks(platform.id, section, page, pageSize);
+    return {
+      section: {
+        id: section.id ?? null,
+        slug: section.slug!,
+        title: section.title,
+        description: section.description ?? null,
+        layout: section.layout,
+        seoH1: section.seoH1 ?? null,
+        seoTitle: section.seoTitle ?? null,
+        seoDescription: section.seoDescription ?? null,
+        seoOgTitle: section.seoOgTitle ?? null,
+        seoOgDescription: section.seoOgDescription ?? null,
+        seoOgType: section.seoOgType ?? null,
+        seoPrefix: section.seoPrefix ?? null,
+        seoSuffix: section.seoSuffix ?? null,
+        seoOgImageUrl: section.seoOgImageUrl ?? null,
+      },
+      items: result.items,
+      page: result.page,
+      pageSize: result.pageSize,
+      total: result.total,
+      totalPages: Math.max(1, Math.ceil(result.total / Math.max(1, result.pageSize))),
+    };
   }
 
   /** Fetch entity penuh (+ genre/category) buat daftar ID, JAGA URUTAN sesuai `ids` — `In()` TtypeORM tidak menjamin urutan. */
@@ -340,11 +387,12 @@ export class PublicService {
   }
 
   async getHomepage(platform: Platform): Promise<CatalogHomeResponseDto> {
-    const sections = Array.isArray(platform.homepage_sections) ? platform.homepage_sections : [];
+    const sections = withSectionSlugs(Array.isArray(platform.homepage_sections) ? platform.homepage_sections : []);
     const enabledSections = sections.filter((section) => section.enabled);
     const renderedSections = await Promise.all(
       enabledSections.map(async (section) => ({
         key: section.key,
+        slug: section.slug!,
         type: section.predefinedQuery ?? section.type,
         title: section.title,
         layout: section.layout,
@@ -355,15 +403,22 @@ export class PublicService {
     return { sections: renderedSections };
   }
 
+  /**
+   * Book satu section: homepage memakai halaman 1 dengan page size section; halaman
+   * /list/{slug} memakai `page` + `pageSizeOverride` (pagination penuh).
+   */
   private async getHomepageSectionBooks(
     platformId: string,
     section: CatalogSectionConfig,
+    page = 1,
+    pageSizeOverride?: number,
   ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
-    const pageSize = Math.min(Math.max(section.pageSize ?? section.limit ?? 10, 4), 50);
+    const pageSize = Math.min(Math.max(pageSizeOverride ?? section.pageSize ?? section.limit ?? 10, 4), 50);
+    const offset = (Math.max(1, page) - 1) * pageSize;
     const queryType = section.queryType ?? 'predefined';
 
     if (queryType === 'manual') {
-      return this.getManualSectionBooks(platformId, section);
+      return this.getManualSectionBooks(platformId, section, page, pageSizeOverride);
     }
     const predefinedQuery = section.predefinedQuery ?? section.type ?? 'new_updated';
     const hasExplicitSort = !!(section.customQuery?.sortRules?.length || section.customQuery?.sort);
@@ -372,7 +427,7 @@ export class PublicService {
     // bukan sekadar `ORDER BY view_count DESC` (itu "all-time most viewed",
     // Book lama tidak pernah tergeser). Lihat `getHotBooks()`.
     if (queryType !== 'custom' && predefinedQuery === 'top' && !hasExplicitSort) {
-      return this.getHotBooks(platformId, pageSize, section.lazyLoad);
+      return this.getHotBooks(platformId, pageSize, section.lazyLoad, page);
     }
 
     // Homepage predefined query `new_updated` harus diurutkan berdasarkan
@@ -444,8 +499,8 @@ export class PublicService {
       qb.addOrderBy('book.id', 'ASC');
     }
 
-    const [books, total] = await qb.take(pageSize).skip(0).getManyAndCount();
-    return { items: await this.toCatalogDtos(books), page: 1, pageSize, total, lazyLoad: section.lazyLoad };
+    const [books, total] = await qb.take(pageSize).skip(offset).getManyAndCount();
+    return { items: await this.toCatalogDtos(books), page: Math.max(1, page), pageSize, total, lazyLoad: section.lazyLoad };
   }
 
   /**
@@ -477,6 +532,7 @@ export class PublicService {
     platformId: string,
     pageSize: number,
     lazyLoad?: boolean,
+    page = 1,
   ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
     const HOT_WEIGHTS = { view: 1, like: 10, uniqueCommenter: 20 };
 
@@ -494,12 +550,17 @@ export class PublicService {
       return bScore - aScore;
     });
 
-    const orderedIds = sortedBooksByScore.map((book) => book.id);
-    const books = await this.bookRepo.find({ where: { id: In(orderedIds) }, relations: ['genre', 'category'] });
-    const bookById = new Map(books.map((book) => [book.id, book]));
-    const pageBooks = orderedIds.slice(0, pageSize).map((id) => bookById.get(id)).filter((book): book is Book => !!book);
+    const currentPage = Math.max(1, page);
+    const pageIds = sortedBooksByScore.map((book) => book.id).slice((currentPage - 1) * pageSize, currentPage * pageSize);
+    const pageBooks = await this.hydrateBooksInOrder(pageIds);
 
-    return { items: await this.toCatalogDtos(pageBooks), page: 1, pageSize, total: pageBooks.length, lazyLoad };
+    return {
+      items: await this.toCatalogDtos(pageBooks),
+      page: currentPage,
+      pageSize,
+      total: sortedBooksByScore.length,
+      lazyLoad,
+    };
   }
 
   private async getCommentCountsForBooks(bookIds: string[]): Promise<Map<string, number>> {
@@ -772,6 +833,9 @@ export class PublicService {
     return {
       books: books.map((book) => ({ slug: book.slug, updatedAt: book.updated_at })),
       libraries: libraries.map((library) => ({ slug: library.slug, updatedAt: library.updated_at })),
+      lists: withSectionSlugs(Array.isArray(platform.homepage_sections) ? platform.homepage_sections : [])
+        .filter((section) => section.enabled)
+        .map((section) => ({ slug: section.slug!, updatedAt: platform.updated_at })),
       chapters: chapters.map((chapter) => ({
         bookSlug: bookSlugById.get(chapter.book_id) ?? '',
         orderIndex: chapter.order_index,

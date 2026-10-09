@@ -47,4 +47,11 @@ export class SitemapEntriesDto {
 
   @ApiProperty({ type: ChapterSitemapEntryDto, isArray: true })
   chapters: ChapterSitemapEntryDto[];
+
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'object', properties: { slug: { type: 'string', example: 'top-hot' }, updatedAt: { type: 'string', format: 'date-time' } } },
+    description: 'Halaman list (section homepage aktif) — /list/{slug}.',
+  })
+  lists: { slug: string; updatedAt: Date }[];
 }

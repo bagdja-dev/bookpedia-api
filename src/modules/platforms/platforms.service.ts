@@ -1,9 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Not, Repository } from 'typeorm';
-import { randomUUID } from 'node:crypto';
 
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
+import { normalizeHomepageSections, withSectionSlugs } from '../../common/utils/homepage-sections.util';
 import { Genre } from '../../entities/genre.entity';
 import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
@@ -51,22 +51,6 @@ export function normalizeSha256Fingerprints(values: string[]): string[] {
     return hex.match(/.{2}/g)!.join(':');
   });
   return [...new Set(normalized)];
-}
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-/**
- * Pastikan tiap section punya `id` UUID permanen (section lama/baru tanpa id dibuatkan) —
- * acuan `homepage_section_books.section_id` untuk mode `manual`. Id duplikat dibuatkan baru.
- */
-export function withSectionIds(sections: CatalogSectionConfig[]): CatalogSectionConfig[] {
-  const seen = new Set<string>();
-  return sections.map((section) => {
-    let id = section.id && UUID_PATTERN.test(section.id) ? section.id.toLowerCase() : randomUUID();
-    if (seen.has(id)) id = randomUUID();
-    seen.add(id);
-    return { ...section, id };
-  });
 }
 
 function defaultHomepageSections(): CatalogSectionConfig[] {
@@ -530,7 +514,7 @@ export class PlatformsService {
         lock_studio: dto.lockStudio ?? false,
         studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
-        homepage_sections: withSectionIds(dto.homepageSections ?? defaultHomepageSections()),
+        homepage_sections: normalizeHomepageSections(dto.homepageSections ?? defaultHomepageSections()),
         max_free_chapters: dto.maxFreeChapters ?? 0,
         show_book_status: dto.showBookStatus ?? true,
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
@@ -587,7 +571,7 @@ export class PlatformsService {
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
     let keptSectionIds: string[] | null = null;
     if (dto.homepageSections !== undefined) {
-      platform.homepage_sections = withSectionIds(dto.homepageSections);
+      platform.homepage_sections = normalizeHomepageSections(dto.homepageSections, platform.homepage_sections ?? []);
       keptSectionIds = platform.homepage_sections.map((section) => section.id!);
     }
     if (dto.isActive !== undefined) platform.is_active = dto.isActive;
@@ -654,7 +638,7 @@ export class PlatformsService {
       lockStudio: platform.lock_studio,
       studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
-      homepageSections: platform.homepage_sections ?? defaultHomepageSections(),
+      homepageSections: withSectionSlugs(platform.homepage_sections ?? defaultHomepageSections()),
       domain: platform.domain,
       domainVerifiedAt: platform.domain_verified_at,
       isActive: platform.is_active,

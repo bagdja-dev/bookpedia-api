@@ -11,6 +11,7 @@ import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { ChapterPreviewDto } from './dto/chapter-preview.dto';
+import { ListPageDto, ListPageQueryDto } from './dto/list-page.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
@@ -173,6 +174,22 @@ export class PublicController {
   ): Promise<SeriesPublicDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.getSeriesById(platform.id, seriesId);
+  }
+
+  @Get('platforms/:platformSlug/lists/:listSlug')
+  @ApiOperation({
+    summary: 'Halaman list (section homepage) by slug — "Lihat semua" dari homepage',
+    description:
+      'Section homepage aktif sebagai halaman /list/{slug} dengan pagination penuh (default 24 per halaman) beserta template SEO-nya. Slug lama section tetap ditemukan; bandingkan section.slug dengan slug yang diminta untuk redirect permanen. 404 bila slug tidak ada atau section nonaktif.',
+  })
+  @ApiOkResponse({ type: ListPageDto, description: 'Data section (judul, deskripsi, SEO), Book halaman ini, dan info pagination.' })
+  async getListPage(
+    @Param('platformSlug') platformSlug: string,
+    @Param('listSlug') listSlug: string,
+    @Query() query: ListPageQueryDto,
+  ): Promise<ListPageDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getListPage(platform, listSlug, query.page ?? 1, query.pageSize ?? 24);
   }
 
   @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex/preview')
