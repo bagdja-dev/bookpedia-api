@@ -134,6 +134,9 @@ export class PublicService {
       seoPrefix: platform.seo_prefix,
       seoSuffix: platform.seo_suffix,
       termsAndConditions: platform.terms_and_conditions,
+      contactPhone: platform.contact_phone ?? null,
+      contactWhatsapp: platform.contact_whatsapp ?? null,
+      contactEmail: platform.contact_email ?? null,
     };
   }
 

@@ -272,6 +272,18 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   terms_and_conditions: string | null;
 
+  /** Halaman Kontak (/contact) — nomor telepon. NULL = tidak ditampilkan. */
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  contact_phone: string | null;
+
+  /** Halaman Kontak — nomor WhatsApp (tautan wa.me dibuat reader app). */
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  contact_whatsapp: string | null;
+
+  /** Halaman Kontak — alamat email. */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  contact_email: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

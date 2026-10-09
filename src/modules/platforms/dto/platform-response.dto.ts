@@ -124,6 +124,15 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik Platform ini.' })
   termsAndConditions: string | null;
 
+  @ApiPropertyOptional({ example: '+62 21 555 0123', nullable: true, description: 'Halaman Kontak — nomor telepon.' })
+  contactPhone: string | null;
+
+  @ApiPropertyOptional({ example: '0812 3456 7890', nullable: true, description: 'Halaman Kontak — nomor WhatsApp.' })
+  contactWhatsapp: string | null;
+
+  @ApiPropertyOptional({ example: 'halo@novello.id', nullable: true, description: 'Halaman Kontak — alamat email.' })
+  contactEmail: string | null;
+
   @ApiProperty()
   createdAt: Date;
 

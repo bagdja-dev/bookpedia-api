@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsEmail, ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
@@ -253,4 +253,20 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsString()
   termsAndConditions?: string | null;
+
+  @ApiPropertyOptional({ example: '+62 21 555 0123', nullable: true, description: 'Halaman Kontak — nomor telepon. Angka, spasi, tanda kurung, titik, tanda hubung, boleh diawali +. Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @Matches(/^\+?[0-9(][0-9\s().-]{5,28}$/, { message: 'contactPhone harus berupa nomor telepon (mis. +62 21 555 0123)' })
+  contactPhone?: string | null;
+
+  @ApiPropertyOptional({ example: '0812 3456 7890', nullable: true, description: 'Halaman Kontak — nomor WhatsApp (awalan 0 diubah ke 62 untuk tautan wa.me). Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @Matches(/^\+?[0-9(][0-9\s().-]{5,28}$/, { message: 'contactWhatsapp harus berupa nomor WhatsApp (mis. 0812 3456 7890)' })
+  contactWhatsapp?: string | null;
+
+  @ApiPropertyOptional({ example: 'halo@novello.id', nullable: true, description: 'Halaman Kontak — alamat email. Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
+  contactEmail?: string | null;
 }
