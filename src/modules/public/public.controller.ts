@@ -1,5 +1,7 @@
-import { Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+
+import { CurrentUser, OptionalJwtAuthGuard, type AuthUser } from '../../common/auth';
 
 import { PublicService } from './public.service';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
@@ -8,6 +10,7 @@ import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
 import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
+import { ChapterPreviewDto } from './dto/chapter-preview.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
 import { SitemapEntriesDto } from './dto/sitemap-entries.dto';
@@ -95,7 +98,7 @@ export class PublicController {
   @ApiOkResponse({ type: SitemapEntriesDto })
   async getSitemapEntries(@Param('platformSlug') platformSlug: string): Promise<SitemapEntriesDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
-    return this.publicService.getSitemapEntries(platform.id);
+    return this.publicService.getSitemapEntries(platform);
   }
 
   @Get('platforms/:platformSlug/libraries/:librarySlug')
@@ -172,20 +175,40 @@ export class PublicController {
     return this.publicService.getSeriesById(platform.id, seriesId);
   }
 
+  @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex/preview')
+  @ApiOperation({
+    summary: 'Preview share 1 Chapter — paragraf pertama saja, tanpa login',
+    description:
+      'Untuk halaman /book/{slug}/chapter/{n}/preview (dibagikan tombol Share) dan metadata SEO/sosmed. Hanya potongan paragraf pertama sebagai teks polos (maks chapterPreviewMaxChars Platform) — isi Chapter utuh tidak pernah dikirim. 404 bila Book/Chapter tidak ada atau belum published.',
+  })
+  @ApiOkResponse({ type: ChapterPreviewDto, description: 'Judul Chapter & Book, cover, potongan paragraf pertama, dan status gratis.' })
+  async getChapterPreview(
+    @Param('platformSlug') platformSlug: string,
+    @Param('bookSlug') bookSlug: string,
+    @Param('orderIndex', ParseIntPipe) orderIndex: number,
+  ): Promise<ChapterPreviewDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getChapterPreview(platform, bookSlug, orderIndex);
+  }
+
   @Get('platforms/:platformSlug/books/:bookSlug/chapters/:orderIndex')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Chapter di luar jatah gratis dan request tanpa token login yang valid.' })
   @ApiOperation({
     summary: 'Konten 1 Chapter publik by order_index (bukan chapter id), di-scope ke satu Platform',
     description:
-      'orderIndex adalah angka order_index (bukan UUID) supaya URL publik /book/{slug}/chapter/{n} enak dibaca. 404 kalau Book tidak ditemukan di Platform ini ATAU tidak ada Chapter di orderIndex tsb ATAU statusnya bukan published (draft tidak boleh bocor). prevOrderIndex/nextOrderIndex melompati Chapter draft di antaranya.',
+      'orderIndex adalah angka order_index (bukan UUID) supaya URL publik /book/{slug}/chapter/{n} enak dibaca. 404 kalau Book tidak ditemukan di Platform ini ATAU tidak ada Chapter di orderIndex tsb ATAU statusnya bukan published (draft tidak boleh bocor). Chapter di luar jatah gratis (isFree=false) WAJIB Authorization: Bearer token login — tanpa token valid dibalas 401 tanpa isi. prevOrderIndex/nextOrderIndex melompati Chapter draft di antaranya.',
   })
   @ApiOkResponse({ type: ChapterDetailDto, description: 'Konten Chapter + navigasi next/prev' })
   async getChapter(
     @Param('platformSlug') platformSlug: string,
     @Param('bookSlug') bookSlug: string,
     @Param('orderIndex', ParseIntPipe) orderIndex: number,
+    @CurrentUser() viewer: AuthUser | undefined,
   ): Promise<ChapterDetailDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
-    return this.publicService.getChapterByOrderIndex(platform, bookSlug, orderIndex);
+    return this.publicService.getChapterByOrderIndex(platform, bookSlug, orderIndex, viewer);
   }
 
   @Get('platforms/:platformSlug/users/:userId')

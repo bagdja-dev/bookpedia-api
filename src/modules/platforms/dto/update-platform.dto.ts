@@ -202,6 +202,13 @@ export class UpdatePlatformDto {
   @Max(2000)
   copyAttributionMaxChars?: number;
 
+  @ApiPropertyOptional({ example: 400, minimum: 100, maximum: 2000, description: 'Share Chapter — panjang maksimal potongan paragraf pertama di halaman preview /book/{slug}/chapter/{n}/preview (juga meta description & kartu sosmed).' })
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(2000)
+  chapterPreviewMaxChars?: number;
+
   @ApiPropertyOptional({ example: '{{title}} — {{platform}}', description: 'Template default title SEO Platform.' })
   @IsOptional()
   @IsString()
