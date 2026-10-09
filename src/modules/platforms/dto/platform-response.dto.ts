@@ -94,6 +94,9 @@ export class PlatformResponseDto {
   @ApiProperty({ example: 200, description: 'Panjang maksimal potongan yang tersalin saat atribusi aktif.' })
   copyAttributionMaxChars: number;
 
+  @ApiProperty({ example: 400, description: 'Share Chapter — panjang maksimal potongan paragraf di halaman preview.' })
+  chapterPreviewMaxChars: number;
+
   @ApiPropertyOptional({ example: '{{title}} — {{platform}}', nullable: true, description: 'Template default title SEO Platform.' })
   seoDefaultTitle: string | null;
 

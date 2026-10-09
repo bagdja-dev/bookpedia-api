@@ -223,6 +223,10 @@ export class Platform {
   @Column({ type: 'int', default: 200 })
   copy_attribution_max_chars: number;
 
+  /** Share Chapter — panjang maksimal potongan paragraf pertama di halaman preview (100–2000). */
+  @Column({ type: 'int', default: 400 })
+  chapter_preview_max_chars: number;
+
   /** SEO template default per Platform — root fallback when Library/Book tidak override. */
   @Column({ type: 'text', nullable: true })
   seo_default_h1: string | null;
