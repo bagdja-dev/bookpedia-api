@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { BookPromotion } from '../../entities/book-promotion.entity';
 import { BookSeries } from '../../entities/book-series.entity';
 import { Chapter } from '../../entities/chapter.entity';
@@ -14,7 +15,7 @@ import { PublicController } from './public.controller';
 import { PublicService } from './public.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book, Chapter, Library, ReadingProgress, BookPromotion, BookSeries, Series]), PlatformsModule, TagsModule],
+  imports: [TypeOrmModule.forFeature([Book, Chapter, Library, ReadingProgress, BookPromotion, BookSeries, Series, HomepageSectionBook]), PlatformsModule, TagsModule],
   controllers: [PublicController],
   providers: [PublicService],
 })

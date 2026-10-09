@@ -31,6 +31,7 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
 import { SeriesModule } from './modules/series/series.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { PlatformBuildsModule } from './modules/platform-builds/platform-builds.module';
+import { HomepageSectionsModule } from './modules/homepage-sections/homepage-sections.module';
 
 @Module({
   imports: [
@@ -110,6 +111,7 @@ import { PlatformBuildsModule } from './modules/platform-builds/platform-builds.
     NotificationsModule,
     CollectionsModule,
     PlatformBuildsModule,
+    HomepageSectionsModule,
   ],
 })
 export class AppModule {}

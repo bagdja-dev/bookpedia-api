@@ -1,9 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
 
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { Genre } from '../../entities/genre.entity';
+import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { CreatePlatformDto } from './dto/create-platform.dto';
@@ -51,6 +53,22 @@ export function normalizeSha256Fingerprints(values: string[]): string[] {
   return [...new Set(normalized)];
 }
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * Pastikan tiap section punya `id` UUID permanen (section lama/baru tanpa id dibuatkan) —
+ * acuan `homepage_section_books.section_id` untuk mode `manual`. Id duplikat dibuatkan baru.
+ */
+export function withSectionIds(sections: CatalogSectionConfig[]): CatalogSectionConfig[] {
+  const seen = new Set<string>();
+  return sections.map((section) => {
+    let id = section.id && UUID_PATTERN.test(section.id) ? section.id.toLowerCase() : randomUUID();
+    if (seen.has(id)) id = randomUUID();
+    seen.add(id);
+    return { ...section, id };
+  });
+}
+
 function defaultHomepageSections(): CatalogSectionConfig[] {
   return [
     { key: 'top', type: 'top', title: 'Top / Hot', enabled: true, layout: 'slider', limit: 10 },
@@ -65,6 +83,8 @@ export class PlatformsService {
     private readonly platformRepo: Repository<Platform>,
     @InjectRepository(PlatformStaff)
     private readonly platformStaffRepo: Repository<PlatformStaff>,
+    @InjectRepository(HomepageSectionBook)
+    private readonly homepageSectionBookRepo: Repository<HomepageSectionBook>,
     private readonly dataSource: DataSource,
     private readonly chatService: ChatServiceClient,
   ) {}
@@ -510,7 +530,7 @@ export class PlatformsService {
         lock_studio: dto.lockStudio ?? false,
         studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
-        homepage_sections: dto.homepageSections ?? defaultHomepageSections(),
+        homepage_sections: withSectionIds(dto.homepageSections ?? defaultHomepageSections()),
         max_free_chapters: dto.maxFreeChapters ?? 0,
         show_book_status: dto.showBookStatus ?? true,
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
@@ -561,7 +581,11 @@ export class PlatformsService {
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
     if (dto.studioEditMode !== undefined) platform.studio_edit_mode = dto.studioEditMode;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
-    if (dto.homepageSections !== undefined) platform.homepage_sections = dto.homepageSections;
+    let keptSectionIds: string[] | null = null;
+    if (dto.homepageSections !== undefined) {
+      platform.homepage_sections = withSectionIds(dto.homepageSections);
+      keptSectionIds = platform.homepage_sections.map((section) => section.id!);
+    }
     if (dto.isActive !== undefined) platform.is_active = dto.isActive;
     if (dto.domain !== undefined && dto.domain !== platform.domain) {
       const existingDomain = await this.platformRepo.findOne({ where: { domain: dto.domain } });
@@ -598,7 +622,16 @@ export class PlatformsService {
     if (dto.seoSuffix !== undefined) platform.seo_suffix = dto.seoSuffix;
     if (dto.termsAndConditions !== undefined) platform.terms_and_conditions = dto.termsAndConditions;
 
-    return this.platformRepo.save(platform);
+    const saved = await this.platformRepo.save(platform);
+    if (keptSectionIds) {
+      // Section yang dihapus dari homepage → buang juga isi list manual-nya (tidak ada data yatim).
+      await this.homepageSectionBookRepo.delete(
+        keptSectionIds.length
+          ? { platform_id: saved.id, section_id: Not(In(keptSectionIds)) }
+          : { platform_id: saved.id },
+      );
+    }
+    return saved;
   }
 
   toResponseDto(platform: Platform): PlatformResponseDto {

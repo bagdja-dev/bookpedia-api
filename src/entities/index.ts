@@ -6,6 +6,7 @@ export { Platform, type RatingMode } from './platform.entity';
 export { PlatformBuildConfig } from './platform-build-config.entity';
 export { PlatformBuildJob } from './platform-build-job.entity';
 export { PlatformKeystoreProfile } from './platform-keystore-profile.entity';
+export { HomepageSectionBook } from './homepage-section-book.entity';
 export { PlatformStaff } from './platform-staff.entity';
 export { PlatformStaffInvitation } from './platform-staff-invitation.entity';
 export { Book, type BookStatus } from './book.entity';

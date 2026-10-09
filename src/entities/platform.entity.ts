@@ -9,7 +9,8 @@ import {
 export type RatingMode = 'book' | 'chapter';
 export type StudioEditMode = 'auto' | 'manual';
 export type CatalogSectionType = 'top' | 'new_updated';
-export type CatalogSectionQueryType = 'predefined' | 'custom';
+/** `manual` = Book dipilih satu per satu (tabel `homepage_section_books`, diacu lewat `id` section). */
+export type CatalogSectionQueryType = 'predefined' | 'custom' | 'manual';
 export type CatalogSectionLayout = 'grid' | 'slider';
 export type CatalogSectionSortField = 'updated' | 'views' | 'title';
 export type CatalogSectionSortDirection = 'asc' | 'desc';
@@ -31,6 +32,8 @@ export interface CatalogSectionCustomQuery {
 }
 
 export interface CatalogSectionConfig {
+  /** UUID permanen section — acuan `homepage_section_books.section_id` untuk mode `manual`. */
+  id?: string;
   key: string;
   /** Legacy alias for predefinedQuery; kept for existing stored JSON. */
   type?: CatalogSectionType;

@@ -5,6 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Book } from '../../entities/book.entity';
 import { BookPromotion } from '../../entities/book-promotion.entity';
 import { BookSeries } from '../../entities/book-series.entity';
+import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
 import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
@@ -58,6 +59,8 @@ export class PublicService {
     private readonly bookSeriesRepo: Repository<BookSeries>,
     @InjectRepository(Series)
     private readonly seriesRepo: Repository<Series>,
+    @InjectRepository(HomepageSectionBook)
+    private readonly homepageSectionBookRepo: Repository<HomepageSectionBook>,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
@@ -290,6 +293,37 @@ export class PublicService {
     return { promoted: promotedDtos, related: relatedDtos, others: othersDtos };
   }
 
+  /**
+   * Section mode "manual": Book pilihan Owner/Staff dari `homepage_section_books`, urut
+   * `position`. Book yang dihapus sudah hilang lewat FK cascade; yang tidak published /
+   * tanpa Chapter published dilewati di sini (tetap tersimpan, tampil lagi saat dipublish).
+   */
+  private async getManualSectionBooks(
+    platformId: string,
+    section: CatalogSectionConfig,
+  ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
+    if (!section.id) return { items: [], page: 1, pageSize: 0, total: 0, lazyLoad: false };
+    const rows = await this.homepageSectionBookRepo.find({
+      where: { platform_id: platformId, section_id: section.id },
+      order: { position: 'ASC' },
+    });
+    const ids = rows.map((row) => row.book_id);
+    const visibleIds = ids.length
+      ? new Set((await this.bookRepo
+        .createQueryBuilder('book')
+        .select('book.id', 'id')
+        .where('book.id IN (:...ids)', { ids })
+        .andWhere('book.platform_id = :platformId', { platformId })
+        .andWhere(IS_BOOK_PUBLISHED_SQL)
+        .andWhere(HAS_PUBLISHED_CHAPTER_SQL)
+        .getRawMany<{ id: string }>()).map((row) => row.id))
+      : new Set<string>();
+    const books = await this.hydrateBooksInOrder(ids.filter((id) => visibleIds.has(id)));
+    const items = await this.toCatalogDtos(books);
+    // Seluruh list dikirim sekaligus (maks 50), tanpa lazy load halaman berikutnya.
+    return { items, page: 1, pageSize: items.length, total: items.length, lazyLoad: false };
+  }
+
   /** Fetch entity penuh (+ genre/category) buat daftar ID, JAGA URUTAN sesuai `ids` — `In()` TtypeORM tidak menjamin urutan. */
   private async hydrateBooksInOrder(ids: string[]): Promise<Book[]> {
     if (ids.length === 0) return [];
@@ -320,6 +354,10 @@ export class PublicService {
   ): Promise<{ items: BookCatalogDto[]; page: number; pageSize: number; total: number; lazyLoad?: boolean }> {
     const pageSize = Math.min(Math.max(section.pageSize ?? section.limit ?? 10, 4), 50);
     const queryType = section.queryType ?? 'predefined';
+
+    if (queryType === 'manual') {
+      return this.getManualSectionBooks(platformId, section);
+    }
     const predefinedQuery = section.predefinedQuery ?? section.type ?? 'new_updated';
     const hasExplicitSort = !!(section.customQuery?.sortRules?.length || section.customQuery?.sort);
 

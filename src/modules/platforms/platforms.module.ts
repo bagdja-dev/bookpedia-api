@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Genre } from '../../entities/genre.entity';
+import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { AuthModule } from '../../common/auth';
@@ -10,7 +11,7 @@ import { PlatformsController } from './platforms.controller';
 import { PlatformsService } from './platforms.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Platform, PlatformStaff, Genre]), AuthModule, ChatServiceModule],
+  imports: [TypeOrmModule.forFeature([Platform, PlatformStaff, Genre, HomepageSectionBook]), AuthModule, ChatServiceModule],
   controllers: [PlatformsController],
   providers: [PlatformsService],
   // Diexport supaya LibrariesModule bisa reuse untuk resolve+validasi
