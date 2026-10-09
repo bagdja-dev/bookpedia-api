@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlatformStaff } from '../../entities';
 import { UserModule } from '../../modules/user/user.module';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { PlatformAccessGuard } from './platform-access.guard';
 
 // Di-assign ke variabel supaya bisa di-`exports` juga (bukan cuma `imports`)
@@ -17,7 +18,7 @@ const PlatformStaffTypeOrmModule = TypeOrmModule.forFeature([PlatformStaff]);
 
 @Module({
   imports: [ConfigModule, UserModule, PlatformStaffTypeOrmModule],
-  providers: [JwtAuthGuard, PlatformAccessGuard],
-  exports: [JwtAuthGuard, PlatformAccessGuard, UserModule, PlatformStaffTypeOrmModule],
+  providers: [JwtAuthGuard, OptionalJwtAuthGuard, PlatformAccessGuard],
+  exports: [JwtAuthGuard, OptionalJwtAuthGuard, PlatformAccessGuard, UserModule, PlatformStaffTypeOrmModule],
 })
 export class AuthModule {}

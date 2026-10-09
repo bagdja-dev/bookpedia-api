@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
@@ -130,6 +130,30 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsBoolean()
   enableShare?: boolean;
+
+  @ApiPropertyOptional({ example: false, description: 'Perlindungan konten — blok klik kanan serta aksi salin/potong di isi Chapter. Seleksi teks tetap aktif (fitur highlight). Bila aktif, mengalahkan atribusi.' })
+  @IsOptional()
+  @IsBoolean()
+  blockContentCopy?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Perlindungan konten — saat isi Chapter disalin, clipboard hanya berisi potongan teks + tautan sumber.' })
+  @IsOptional()
+  @IsBoolean()
+  copyAttributionEnabled?: boolean;
+
+  @ApiPropertyOptional({ example: 200, minimum: 20, maximum: 2000, description: 'Panjang maksimal potongan yang ikut tersalin saat atribusi aktif.' })
+  @IsOptional()
+  @IsInt()
+  @Min(20)
+  @Max(2000)
+  copyAttributionMaxChars?: number;
+
+  @ApiPropertyOptional({ example: 400, minimum: 100, maximum: 2000, description: 'Share Chapter — panjang maksimal potongan paragraf pertama di halaman preview /book/{slug}/chapter/{n}/preview (juga meta description & kartu sosmed).' })
+  @IsOptional()
+  @IsInt()
+  @Min(100)
+  @Max(2000)
+  chapterPreviewMaxChars?: number;
 
   @ApiPropertyOptional({ example: '{{title}} — {{platform}}', description: 'Template default title SEO pada Platform.' })
   @IsOptional()

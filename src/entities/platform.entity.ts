@@ -211,6 +211,22 @@ export class Platform {
   @Column({ type: 'boolean', default: true })
   enable_share: boolean;
 
+  /** Perlindungan konten — blok klik kanan + salin/potong di isi Chapter (reader app). */
+  @Column({ type: 'boolean', default: false })
+  block_content_copy: boolean;
+
+  /** Perlindungan konten — saat disalin, clipboard berisi potongan + tautan sumber. Kalah oleh `block_content_copy`. */
+  @Column({ type: 'boolean', default: true })
+  copy_attribution_enabled: boolean;
+
+  /** Panjang maksimal potongan yang ikut tersalin saat atribusi aktif (20–2000). */
+  @Column({ type: 'int', default: 200 })
+  copy_attribution_max_chars: number;
+
+  /** Share Chapter — panjang maksimal potongan paragraf pertama di halaman preview (100–2000). */
+  @Column({ type: 'int', default: 400 })
+  chapter_preview_max_chars: number;
+
   /** SEO template default per Platform — root fallback when Library/Book tidak override. */
   @Column({ type: 'text', nullable: true })
   seo_default_h1: string | null;

@@ -539,6 +539,10 @@ export class PlatformsService {
         enable_like: dto.enableLike ?? true,
         enable_comment: dto.enableComment ?? true,
         enable_share: dto.enableShare ?? true,
+        block_content_copy: dto.blockContentCopy ?? false,
+        copy_attribution_enabled: dto.copyAttributionEnabled ?? true,
+        copy_attribution_max_chars: dto.copyAttributionMaxChars ?? 200,
+        chapter_preview_max_chars: dto.chapterPreviewMaxChars ?? 400,
         seo_default_h1: dto.seoDefaultH1 ?? null,
         seo_default_title: dto.seoDefaultTitle ?? null,
         seo_default_description: dto.seoDefaultDescription ?? null,
@@ -612,6 +616,10 @@ export class PlatformsService {
     if (dto.enableLike !== undefined) platform.enable_like = dto.enableLike;
     if (dto.enableComment !== undefined) platform.enable_comment = dto.enableComment;
     if (dto.enableShare !== undefined) platform.enable_share = dto.enableShare;
+    if (dto.blockContentCopy !== undefined) platform.block_content_copy = dto.blockContentCopy;
+    if (dto.copyAttributionEnabled !== undefined) platform.copy_attribution_enabled = dto.copyAttributionEnabled;
+    if (dto.copyAttributionMaxChars !== undefined) platform.copy_attribution_max_chars = dto.copyAttributionMaxChars;
+    if (dto.chapterPreviewMaxChars !== undefined) platform.chapter_preview_max_chars = dto.chapterPreviewMaxChars;
     if (dto.seoDefaultH1 !== undefined) platform.seo_default_h1 = dto.seoDefaultH1;
     if (dto.seoDefaultTitle !== undefined) platform.seo_default_title = dto.seoDefaultTitle;
     if (dto.seoDefaultDescription !== undefined) platform.seo_default_description = dto.seoDefaultDescription;
@@ -664,6 +672,10 @@ export class PlatformsService {
       enableLike: platform.enable_like,
       enableComment: platform.enable_comment,
       enableShare: platform.enable_share,
+      blockContentCopy: platform.block_content_copy ?? false,
+      copyAttributionEnabled: platform.copy_attribution_enabled ?? true,
+      copyAttributionMaxChars: platform.copy_attribution_max_chars ?? 200,
+      chapterPreviewMaxChars: platform.chapter_preview_max_chars ?? 400,
       seoDefaultH1: platform.seo_default_h1,
       seoDefaultTitle: platform.seo_default_title,
       seoDefaultDescription: platform.seo_default_description,
