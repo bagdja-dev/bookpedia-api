@@ -91,6 +91,15 @@ export class PlatformPublicProfileDto {
   @ApiProperty({ example: true, description: 'Fase 8 — nyala/mati tombol Share di ChapterEngagementBar. Kalau enableLike, enableComment, DAN enableShare ketiganya false, reader app menyembunyikan seluruh bar.' })
   enableShare: boolean;
 
+  @ApiProperty({ example: false, description: 'Perlindungan konten — blok klik kanan + salin/potong di isi Chapter.' })
+  blockContentCopy: boolean;
+
+  @ApiProperty({ example: true, description: 'Perlindungan konten — atribusi (potongan + tautan sumber) saat isi Chapter disalin.' })
+  copyAttributionEnabled: boolean;
+
+  @ApiProperty({ example: 200, description: 'Panjang maksimal potongan yang tersalin saat atribusi aktif.' })
+  copyAttributionMaxChars: number;
+
   @ApiPropertyOptional({ nullable: true })
   seoDefaultH1: string | null;
 
