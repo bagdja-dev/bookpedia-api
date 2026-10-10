@@ -52,7 +52,7 @@ export class CreatePlatformDto {
       mustard: '#d79a2c',
       olive: '#6b7a4c',
     },
-    description: 'JSON color scheme Platform ini',
+    description: 'Palet warna Platform (hex #rrggbb). Umum: bg, surface, foreground, muted, border, terracotta (aksen/link), terracottaForeground, mustard, olive. Spesifik (opsional, kosong = ikut umum): headerBg, headerText, headerBorder, cardBg, cardBorder, cardTitle, cardText, cardChipBg, footerBg, footerText, buttonBg, buttonText, statusOngoing, statusCompleted, statusDraft, ratingStar, readingBg, readingText.',
   })
   @IsObject()
   colors: Record<string, string>;

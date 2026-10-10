@@ -1,13 +1,24 @@
 /** Font kurasi teks bacaan — key ini juga dipakai reader app (next/font) dan admin. */
 export const READING_FONT_FAMILIES = [
+  // Serif
   'source-serif-4',
   'merriweather',
   'lora',
   'literata',
   'noto-serif',
+  'georgia', // dimuat dengan Gelasio (setara metrik Georgia, tersedia juga di Android)
+  'pt-serif',
+  'crimson-pro',
+  'eb-garamond',
+  'libre-baskerville',
+  // Sans
   'inter',
   'nunito',
   'noto-sans',
+  'roboto',
+  'open-sans',
+  'plus-jakarta-sans',
+  'atkinson-hyperlegible',
 ] as const;
 
 export type ReadingFontFamily = (typeof READING_FONT_FAMILIES)[number];

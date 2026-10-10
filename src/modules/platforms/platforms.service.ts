@@ -15,6 +15,7 @@ import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dt
 import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
 import { PlatformAnalyticsResponseDto } from './dto/platform-analytics.dto';
 import { resolveReadingTypography } from '../../common/utils/reading-typography.util';
+import { sanitizePlatformColors } from '../../common/utils/platform-colors.util';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -511,7 +512,7 @@ export class PlatformsService {
         logo_url: dto.logoUrl ?? null,
         favicon_url: dto.faviconUrl ?? null,
         notification_sound_url: dto.notificationSoundUrl ?? null,
-        colors: dto.colors,
+        colors: sanitizePlatformColors(dto.colors),
         lock_studio: dto.lockStudio ?? false,
         studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
@@ -570,7 +571,7 @@ export class PlatformsService {
     if (dto.logoUrl !== undefined) platform.logo_url = dto.logoUrl;
     if (dto.faviconUrl !== undefined) platform.favicon_url = dto.faviconUrl;
     if (dto.notificationSoundUrl !== undefined) platform.notification_sound_url = dto.notificationSoundUrl;
-    if (dto.colors !== undefined) platform.colors = dto.colors;
+    if (dto.colors !== undefined) platform.colors = sanitizePlatformColors(dto.colors);
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
     if (dto.studioEditMode !== undefined) platform.studio_edit_mode = dto.studioEditMode;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;

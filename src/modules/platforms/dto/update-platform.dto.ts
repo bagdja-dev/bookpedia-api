@@ -46,7 +46,7 @@ export class UpdatePlatformDto {
   @IsString()
   notificationSoundUrl?: string;
 
-  @ApiPropertyOptional({ description: 'JSON color scheme Platform ini' })
+  @ApiPropertyOptional({ description: 'Palet warna Platform (hex #rrggbb). Umum: bg, surface, foreground, muted, border, terracotta (aksen/link), terracottaForeground, mustard, olive. Spesifik (opsional, kosong = ikut umum): headerBg, headerText, headerBorder, cardBg, cardBorder, cardTitle, cardText, cardChipBg, footerBg, footerText, buttonBg, buttonText, statusOngoing, statusCompleted, statusDraft, ratingStar, readingBg, readingText.', example: { bg: '#fbf6ee', surface: '#fffdf8', terracotta: '#c1502e', headerBg: '#2c2114', headerText: '#fdf8f0' } })
   @IsOptional()
   @IsObject()
   colors?: Record<string, string>;
