@@ -35,6 +35,7 @@ import type { AuthUser } from '../../common/auth';
 import { ChapterPreviewDto } from './dto/chapter-preview.dto';
 import { ChatServiceClient } from '../../common/chat-service/chat-service.client';
 import { HAS_PUBLISHED_CHAPTER_SQL, IS_BOOK_PUBLISHED_SQL } from '../../common/book-visibility.sql';
+import { resolveReadingTypography } from '../../common/utils/reading-typography.util';
 
 /**
  * Fase 4 (§4.1, 10 Sep 2026): semua method di bawah sekarang butuh
@@ -137,6 +138,7 @@ export class PublicService {
       contactPhone: platform.contact_phone ?? null,
       contactWhatsapp: platform.contact_whatsapp ?? null,
       contactEmail: platform.contact_email ?? null,
+      readingTypography: resolveReadingTypography(platform.reading_typography),
     };
   }
 

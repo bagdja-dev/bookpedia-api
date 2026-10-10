@@ -14,6 +14,7 @@ import { PlatformResponseDto } from './dto/platform-response.dto';
 import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dto';
 import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
 import { PlatformAnalyticsResponseDto } from './dto/platform-analytics.dto';
+import { resolveReadingTypography } from '../../common/utils/reading-typography.util';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -539,6 +540,7 @@ export class PlatformsService {
         contact_phone: dto.contactPhone?.trim() || null,
         contact_whatsapp: dto.contactWhatsapp?.trim() || null,
         contact_email: dto.contactEmail?.trim() || null,
+        reading_typography: dto.readingTypography ? resolveReadingTypography(dto.readingTypography) : null,
       });
       const saved = await platformRepo.save(platform);
 
@@ -619,6 +621,9 @@ export class PlatformsService {
     if (dto.contactPhone !== undefined) platform.contact_phone = dto.contactPhone?.trim() || null;
     if (dto.contactWhatsapp !== undefined) platform.contact_whatsapp = dto.contactWhatsapp?.trim() || null;
     if (dto.contactEmail !== undefined) platform.contact_email = dto.contactEmail?.trim() || null;
+    if (dto.readingTypography !== undefined) {
+      platform.reading_typography = dto.readingTypography ? resolveReadingTypography(dto.readingTypography) : null;
+    }
 
     const saved = await this.platformRepo.save(platform);
     if (keptSectionIds) {
@@ -678,6 +683,7 @@ export class PlatformsService {
       contactPhone: platform.contact_phone ?? null,
       contactWhatsapp: platform.contact_whatsapp ?? null,
       contactEmail: platform.contact_email ?? null,
+      readingTypography: resolveReadingTypography(platform.reading_typography),
     };
   }
 }

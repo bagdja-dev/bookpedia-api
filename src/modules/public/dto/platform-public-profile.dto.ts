@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
+import { ReadingTypographyDto } from '../../platforms/dto/reading-typography.dto';
 
 /**
  * Profil Platform yang aman diekspos publik tanpa auth — pengganti langsung
@@ -138,4 +139,7 @@ export class PlatformPublicProfileDto {
 
   @ApiPropertyOptional({ example: 'halo@novello.id', nullable: true, description: 'Halaman Kontak — alamat email.' })
   contactEmail: string | null;
+
+  @ApiProperty({ type: ReadingTypographyDto, description: 'Tipografi teks bacaan, selalu lengkap (default bila belum diatur).' })
+  readingTypography: ReadingTypographyDto;
 }

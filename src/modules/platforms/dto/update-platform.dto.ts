@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
+import { ReadingTypographyDto } from './reading-typography.dto';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
 // lewat update) — slug Platform BOLEH diubah lewat admin console (dikonfirmasi
@@ -269,4 +270,10 @@ export class UpdatePlatformDto {
   @IsEmail()
   @MaxLength(255)
   contactEmail?: string | null;
+
+  @ApiPropertyOptional({ type: ReadingTypographyDto, nullable: true, description: 'Tipografi teks bacaan (isi Chapter, sinopsis, preview share, editor Studio). Kirim null untuk kembali ke default.' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReadingTypographyDto)
+  readingTypography?: ReadingTypographyDto | null;
 }

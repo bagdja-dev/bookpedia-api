@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
+import { ReadingTypographyDto } from './reading-typography.dto';
 
 export class CreatePlatformDto {
   @ApiProperty({ example: 'Teknobuku', description: 'Nama Platform, tampil di header/tab browser/footer' })
@@ -215,4 +216,10 @@ export class CreatePlatformDto {
   @IsEmail()
   @MaxLength(255)
   contactEmail?: string;
+
+  @ApiPropertyOptional({ type: ReadingTypographyDto, nullable: true, description: 'Tipografi teks bacaan (isi Chapter, sinopsis, preview share, editor Studio). Kirim null untuk kembali ke default.' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReadingTypographyDto)
+  readingTypography?: ReadingTypographyDto | null;
 }

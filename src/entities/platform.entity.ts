@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import type { ReadingTypography } from '../common/utils/reading-typography.util';
+
 export type RatingMode = 'book' | 'chapter';
 export type StudioEditMode = 'auto' | 'manual';
 export type CatalogSectionType = 'top' | 'new_updated';
@@ -283,6 +285,10 @@ export class Platform {
   /** Halaman Kontak — alamat email. */
   @Column({ type: 'varchar', length: 255, nullable: true })
   contact_email: string | null;
+
+  /** Tipografi teks bacaan (font, ukuran, jarak baris/paragraf, indentasi). NULL = default. */
+  @Column({ type: 'jsonb', nullable: true })
+  reading_typography: Partial<ReadingTypography> | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;

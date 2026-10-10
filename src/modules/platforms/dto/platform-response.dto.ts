@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
+import { ReadingTypographyDto } from './reading-typography.dto';
 
 export class PlatformResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -132,6 +133,9 @@ export class PlatformResponseDto {
 
   @ApiPropertyOptional({ example: 'halo@novello.id', nullable: true, description: 'Halaman Kontak — alamat email.' })
   contactEmail: string | null;
+
+  @ApiProperty({ type: ReadingTypographyDto, description: 'Tipografi teks bacaan, selalu lengkap (default bila belum diatur).' })
+  readingTypography: ReadingTypographyDto;
 
   @ApiProperty()
   createdAt: Date;
