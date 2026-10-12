@@ -274,6 +274,10 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   terms_and_conditions: string | null;
 
+  /** Halaman Kebijakan Privasi (/privacy-policy) — HTML, URL-nya didaftarkan di Google Play Console. */
+  @Column({ type: 'text', nullable: true })
+  privacy_policy: string | null;
+
   /** Halaman Kontak (/contact) — nomor telepon. NULL = tidak ditampilkan. */
   @Column({ type: 'varchar', length: 30, nullable: true })
   contact_phone: string | null;
