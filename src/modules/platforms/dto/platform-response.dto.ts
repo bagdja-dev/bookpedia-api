@@ -125,6 +125,9 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik Platform ini.' })
   termsAndConditions: string | null;
 
+  @ApiPropertyOptional({ nullable: true, example: '<h2>1. Informasi yang Kami Kumpulkan</h2><p>...</p>', description: 'Konten Kebijakan Privasi publik (HTML) Platform ini.' })
+  privacyPolicy: string | null;
+
   @ApiPropertyOptional({ example: '+62 21 555 0123', nullable: true, description: 'Halaman Kontak — nomor telepon.' })
   contactPhone: string | null;
 
