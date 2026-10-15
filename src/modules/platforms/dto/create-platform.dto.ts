@@ -49,6 +49,11 @@ export class CreatePlatformDto {
   faviconUrl?: string;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/notification.mp3' })
+  @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense Platform ini; dirender sebagai meta tag google-adsense-account di <head>.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^ca-pub-\d{16}$/)
+  adsensePublisherId?: string | null;
   @IsOptional()
   @IsString()
   notificationSoundUrl?: string;

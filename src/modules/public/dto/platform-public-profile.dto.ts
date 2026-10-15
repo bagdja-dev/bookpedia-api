@@ -83,6 +83,9 @@ export class PlatformPublicProfileDto {
   @ApiPropertyOptional({ example: 'https://play.google.com/store/apps/details?id=com.bagdja.novello', nullable: true, description: 'URL listing app Android Platform ini di Google Play Store.' })
   playStoreUrl: string | null;
 
+  @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense untuk meta tag kepemilikan situs.' })
+  adsensePublisherId: string | null;
+
   @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'SHA-256 sertifikat penanda tangan app TWA, format AA:BB:... Kosong = assetlinks tidak disajikan.' })
   androidSha256CertFingerprints: string[];
 

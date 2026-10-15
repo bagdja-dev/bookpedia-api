@@ -226,6 +226,10 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   play_store_url: string | null;
 
+  /** Google AdSense publisher ID for per-platform site ownership verification. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  adsense_publisher_id: string | null;
+
   /** SHA-256 sertifikat penanda tangan app TWA, format `AA:BB:...` (32 byte). */
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   android_sha256_cert_fingerprints: string[];

@@ -544,6 +544,7 @@ export class PlatformsService {
         contact_phone: dto.contactPhone?.trim() || null,
         contact_whatsapp: dto.contactWhatsapp?.trim() || null,
         contact_email: dto.contactEmail?.trim() || null,
+        adsense_publisher_id: dto.adsensePublisherId?.trim() || null,
         reading_typography: dto.readingTypography ? resolveReadingTypography(dto.readingTypography) : null,
       });
       const saved = await platformRepo.save(platform);
@@ -605,6 +606,7 @@ export class PlatformsService {
     }
     if (dto.androidPackageName !== undefined) platform.android_package_name = dto.androidPackageName;
     if (dto.playStoreUrl !== undefined) platform.play_store_url = dto.playStoreUrl;
+    if (dto.adsensePublisherId !== undefined) platform.adsense_publisher_id = dto.adsensePublisherId?.trim() || null;
     if (dto.androidSha256CertFingerprints !== undefined) {
       platform.android_sha256_cert_fingerprints = normalizeSha256Fingerprints(dto.androidSha256CertFingerprints);
     }
@@ -673,6 +675,7 @@ export class PlatformsService {
       searchConsoleVerificationContent: platform.search_console_verification_content,
       androidPackageName: platform.android_package_name,
       playStoreUrl: platform.play_store_url,
+      adsensePublisherId: platform.adsense_publisher_id,
       androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,

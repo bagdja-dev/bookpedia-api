@@ -120,6 +120,7 @@ export class PublicService {
       searchConsoleVerificationContent: platform.search_console_verification_content,
       androidPackageName: platform.android_package_name,
       playStoreUrl: platform.play_store_url,
+      adsensePublisherId: platform.adsense_publisher_id,
       androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,
