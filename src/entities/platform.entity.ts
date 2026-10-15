@@ -17,6 +17,27 @@ export type CatalogSectionLayout = 'grid' | 'slider';
 export type CatalogSectionSortField = 'updated' | 'views' | 'title';
 export type CatalogSectionSortDirection = 'asc' | 'desc';
 
+export interface PlatformAdSlot {
+  enabled: boolean;
+  script: string;
+}
+
+export interface PlatformAdSlots {
+  borderColor: string;
+  homepage: PlatformAdSlot;
+  bookDetail: PlatformAdSlot;
+  chapterReader: PlatformAdSlot;
+}
+
+export function defaultPlatformAdSlots(): PlatformAdSlots {
+  return {
+    borderColor: '#f97316',
+    homepage: { enabled: false, script: '' },
+    bookDetail: { enabled: false, script: '' },
+    chapterReader: { enabled: false, script: '' },
+  };
+}
+
 export interface CatalogSectionSortRule {
   field: CatalogSectionSortField;
   direction: CatalogSectionSortDirection;
@@ -132,6 +153,9 @@ export class Platform {
 
   @Column({ type: 'jsonb', default: () => `'[{"key":"top","type":"top","title":"Top / Hot","enabled":true,"layout":"slider","limit":10},{"key":"new-updated","type":"new_updated","title":"New Updated","enabled":true,"layout":"slider","limit":10}]'` })
   homepage_sections: CatalogSectionConfig[];
+
+  @Column({ type: 'jsonb', default: () => "'{\"borderColor\":\"#f97316\",\"homepage\":{\"enabled\":false,\"script\":\"\"},\"bookDetail\":{\"enabled\":false,\"script\":\"\"},\"chapterReader\":{\"enabled\":false,\"script\":\"\"}}'::jsonb" })
+  ad_slots: PlatformAdSlots;
 
   /**
    * Custom domain opsional milik Platform Owner sendiri — nullable, diisi

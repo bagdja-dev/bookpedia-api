@@ -8,7 +8,7 @@ import { BookSeries } from '../../entities/book-series.entity';
 import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { Chapter } from '../../entities/chapter.entity';
 import { Library } from '../../entities/library.entity';
-import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
+import { CatalogSectionConfig, defaultPlatformAdSlots, Platform } from '../../entities/platform.entity';
 import { ReadingProgress } from '../../entities/reading-progress.entity';
 import { Series } from '../../entities/series.entity';
 import { PlatformsService } from '../platforms/platforms.service';
@@ -112,6 +112,7 @@ export class PublicService {
       lockStudio: platform.lock_studio,
       studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
+      adSlots: platform.ad_slots ?? defaultPlatformAdSlots(),
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,
       maxTagsPerBook: platform.max_tags_per_book,

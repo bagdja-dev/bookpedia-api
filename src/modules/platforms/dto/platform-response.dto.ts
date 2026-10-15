@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
+import { PlatformAdSlotsDto } from './platform-ad-slots.dto';
 import { ReadingTypographyDto } from './reading-typography.dto';
 
 export class PlatformResponseDto {
@@ -43,6 +44,9 @@ export class PlatformResponseDto {
 
   @ApiProperty({ type: CatalogSectionConfigDto, isArray: true })
   homepageSections: CatalogSectionConfigDto[];
+
+  @ApiProperty({ type: PlatformAdSlotsDto })
+  adSlots: PlatformAdSlotsDto;
 
   @ApiPropertyOptional({ example: 'teknobuku.com', nullable: true })
   domain: string | null;

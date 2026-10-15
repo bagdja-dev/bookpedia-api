@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { ReadingTypographyDto } from '../../platforms/dto/reading-typography.dto';
+import { PlatformAdSlotsDto } from '../../platforms/dto/platform-ad-slots.dto';
 
 /**
  * Profil Platform yang aman diekspos publik tanpa auth — pengganti langsung
@@ -42,6 +43,9 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ example: 'reader' })
   rendererKey: string;
+
+  @ApiProperty({ type: PlatformAdSlotsDto, description: 'Pengaturan slot iklan publik.' })
+  adSlots: PlatformAdSlotsDto;
 
   @ApiProperty({
     example: 0,

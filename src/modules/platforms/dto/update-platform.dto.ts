@@ -4,6 +4,7 @@ import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { CatalogSectionConfigDto } from './catalog-section-config.dto';
+import { PlatformAdSlotsDto } from './platform-ad-slots.dto';
 import { ReadingTypographyDto } from './reading-typography.dto';
 
 // Beda dari UpdateLibraryDto/UpdateBookDto (yang sengaja tidak menerima slug
@@ -84,6 +85,12 @@ export class UpdatePlatformDto {
   @ValidateNested({ each: true })
   @Type(() => CatalogSectionConfigDto)
   homepageSections?: CatalogSectionConfigDto[];
+
+  @ApiPropertyOptional({ type: PlatformAdSlotsDto, description: 'Pengaturan tiga slot iklan reader.' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlatformAdSlotsDto)
+  adSlots?: PlatformAdSlotsDto;
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

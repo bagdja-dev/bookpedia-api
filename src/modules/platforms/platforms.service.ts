@@ -6,7 +6,7 @@ import { ChatServiceClient } from '../../common/chat-service/chat-service.client
 import { normalizeHomepageSections, withSectionSlugs } from '../../common/utils/homepage-sections.util';
 import { Genre } from '../../entities/genre.entity';
 import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
-import { CatalogSectionConfig, Platform } from '../../entities/platform.entity';
+import { CatalogSectionConfig, defaultPlatformAdSlots, Platform } from '../../entities/platform.entity';
 import { PlatformStaff } from '../../entities/platform-staff.entity';
 import { CreatePlatformDto } from './dto/create-platform.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
@@ -519,6 +519,7 @@ export class PlatformsService {
         studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
         homepage_sections: normalizeHomepageSections(dto.homepageSections ?? defaultHomepageSections()),
+        ad_slots: dto.adSlots ?? defaultPlatformAdSlots(),
         max_free_chapters: dto.maxFreeChapters ?? 0,
         show_book_status: dto.showBookStatus ?? true,
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
@@ -579,6 +580,7 @@ export class PlatformsService {
     if (dto.lockStudio !== undefined) platform.lock_studio = dto.lockStudio;
     if (dto.studioEditMode !== undefined) platform.studio_edit_mode = dto.studioEditMode;
     if (dto.rendererKey !== undefined) platform.renderer_key = dto.rendererKey;
+    if (dto.adSlots !== undefined) platform.ad_slots = dto.adSlots;
     let keptSectionIds: string[] | null = null;
     if (dto.homepageSections !== undefined) {
       platform.homepage_sections = normalizeHomepageSections(dto.homepageSections, platform.homepage_sections ?? []);
@@ -657,6 +659,7 @@ export class PlatformsService {
       lockStudio: platform.lock_studio,
       studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
+      adSlots: platform.ad_slots ?? defaultPlatformAdSlots(),
       homepageSections: withSectionSlugs(platform.homepage_sections ?? defaultHomepageSections()),
       domain: platform.domain,
       domainVerifiedAt: platform.domain_verified_at,

@@ -1,0 +1,2 @@
+ALTER TABLE platforms
+    ADD COLUMN IF NOT EXISTS ad_slots JSONB NOT NULL DEFAULT '{"homepage":{"enabled":false,"script":""},"bookDetail":{"enabled":false,"script":""},"chapterReader":{"enabled":false,"script":""}}'::jsonb;
