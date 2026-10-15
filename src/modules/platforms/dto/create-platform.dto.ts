@@ -25,6 +25,18 @@ export class CreatePlatformDto {
   })
   slug: string;
 
+  @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  tagline?: string | null;
+
+  @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  motto?: string | null;
+
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/logo.png' })
   @IsOptional()
   @IsString()

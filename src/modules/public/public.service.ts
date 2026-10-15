@@ -103,6 +103,8 @@ export class PublicService {
     return {
       nama: platform.nama,
       slug: platform.slug,
+      tagline: platform.tagline,
+      motto: platform.motto,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
       notificationSoundUrl: platform.notification_sound_url,
@@ -116,6 +118,7 @@ export class PublicService {
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,
       androidPackageName: platform.android_package_name,
+      playStoreUrl: platform.play_store_url,
       androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,

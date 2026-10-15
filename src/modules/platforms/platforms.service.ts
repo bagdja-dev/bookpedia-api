@@ -509,6 +509,8 @@ export class PlatformsService {
       const platform = platformRepo.create({
         nama: dto.nama,
         slug: dto.slug,
+        tagline: dto.tagline?.trim() || null,
+        motto: dto.motto?.trim() || null,
         logo_url: dto.logoUrl ?? null,
         favicon_url: dto.faviconUrl ?? null,
         notification_sound_url: dto.notificationSoundUrl ?? null,
@@ -561,6 +563,8 @@ export class PlatformsService {
     }
 
     if (dto.nama !== undefined) platform.nama = dto.nama;
+    if (dto.tagline !== undefined) platform.tagline = dto.tagline?.trim() || null;
+    if (dto.motto !== undefined) platform.motto = dto.motto?.trim() || null;
     if (dto.slug !== undefined && dto.slug !== platform.slug) {
       const existingSlug = await this.platformRepo.findOne({ where: { slug: dto.slug } });
       if (existingSlug) {
@@ -598,6 +602,7 @@ export class PlatformsService {
       platform.search_console_verification_content = dto.searchConsoleVerificationContent;
     }
     if (dto.androidPackageName !== undefined) platform.android_package_name = dto.androidPackageName;
+    if (dto.playStoreUrl !== undefined) platform.play_store_url = dto.playStoreUrl;
     if (dto.androidSha256CertFingerprints !== undefined) {
       platform.android_sha256_cert_fingerprints = normalizeSha256Fingerprints(dto.androidSha256CertFingerprints);
     }
@@ -643,6 +648,8 @@ export class PlatformsService {
       id: platform.id,
       nama: platform.nama,
       slug: platform.slug,
+      tagline: platform.tagline,
+      motto: platform.motto,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
       notificationSoundUrl: platform.notification_sound_url,
@@ -662,6 +669,7 @@ export class PlatformsService {
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,
       androidPackageName: platform.android_package_name,
+      playStoreUrl: platform.play_store_url,
       androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,

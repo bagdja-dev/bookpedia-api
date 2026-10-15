@@ -14,6 +14,12 @@ export class PlatformResponseDto {
   @ApiProperty({ example: 'teknobuku' })
   slug: string;
 
+  @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
+  tagline: string | null;
+
+  @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
+  motto: string | null;
+
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/logo.png', nullable: true })
   logoUrl: string | null;
 
@@ -67,6 +73,9 @@ export class PlatformResponseDto {
 
   @ApiPropertyOptional({ example: 'com.bagdja.novello', nullable: true, description: 'TWA Digital Asset Links — package name app Android.' })
   androidPackageName: string | null;
+
+  @ApiPropertyOptional({ example: 'https://play.google.com/store/apps/details?id=com.bagdja.novello', nullable: true, description: 'URL listing app Android Platform ini di Google Play Store.' })
+  playStoreUrl: string | null;
 
   @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'TWA Digital Asset Links — SHA-256 sertifikat penanda tangan, format AA:BB:...' })
   androidSha256CertFingerprints: string[];

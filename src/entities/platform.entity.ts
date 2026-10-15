@@ -88,6 +88,12 @@ export class Platform {
   @Column({ type: 'varchar', unique: true })
   slug: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  tagline: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  motto: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   logo_url: string | null;
 
@@ -191,6 +197,10 @@ export class Platform {
    */
   @Column({ type: 'varchar', length: 255, nullable: true })
   android_package_name: string | null;
+
+  /** URL listing app Android Platform ini di Google Play Store. */
+  @Column({ type: 'text', nullable: true })
+  play_store_url: string | null;
 
   /** SHA-256 sertifikat penanda tangan app TWA, format `AA:BB:...` (32 byte). */
   @Column({ type: 'text', array: true, default: () => "'{}'" })

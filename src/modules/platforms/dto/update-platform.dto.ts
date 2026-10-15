@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsEmail, ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, IsUrl, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
@@ -18,6 +18,18 @@ export class UpdatePlatformDto {
   @IsString()
   @MaxLength(255)
   nama?: string;
+
+  @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  tagline?: string | null;
+
+  @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  motto?: string | null;
 
   @ApiPropertyOptional({
     example: 'teknobuku',
@@ -145,6 +157,16 @@ export class UpdatePlatformDto {
     message: 'androidPackageName harus berformat package Android, mis. com.bagdja.novello',
   })
   androidPackageName?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'https://play.google.com/store/apps/details?id=com.bagdja.novello',
+    nullable: true,
+    description: 'URL HTTPS listing app Android Platform ini di Google Play Store. Kirim null untuk mengosongkan.',
+  })
+  @IsOptional()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @MaxLength(2048)
+  playStoreUrl?: string | null;
 
   @ApiPropertyOptional({
     type: [String],

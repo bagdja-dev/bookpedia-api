@@ -16,6 +16,12 @@ export class PlatformPublicProfileDto {
   @ApiProperty({ example: 'teknobuku' })
   slug: string;
 
+  @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
+  tagline: string | null;
+
+  @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
+  motto: string | null;
+
   @ApiPropertyOptional({ nullable: true })
   logoUrl: string | null;
 
@@ -69,6 +75,9 @@ export class PlatformPublicProfileDto {
     description: 'TWA Digital Asset Links (7 Okt 2026) — dipakai middleware bookpedia-app membalas /.well-known/assetlinks.json per-Host.',
   })
   androidPackageName: string | null;
+
+  @ApiPropertyOptional({ example: 'https://play.google.com/store/apps/details?id=com.bagdja.novello', nullable: true, description: 'URL listing app Android Platform ini di Google Play Store.' })
+  playStoreUrl: string | null;
 
   @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'SHA-256 sertifikat penanda tangan app TWA, format AA:BB:... Kosong = assetlinks tidak disajikan.' })
   androidSha256CertFingerprints: string[];
