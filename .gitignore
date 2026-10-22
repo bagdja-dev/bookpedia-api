@@ -7,3 +7,6 @@ dist/
 .yalc/
 yalc.lock
 sample-keystores/*.jks
+
+# graphify knowledge graph — generated locally, not committed
+graphify-out/
