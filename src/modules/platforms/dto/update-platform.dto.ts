@@ -122,13 +122,14 @@ export class UpdatePlatformDto {
     description: 'Tampilkan badge status cerita (draft/ongoing/completed) di halaman publik. Tidak mempengaruhi Studio (penulis tetap lihat/ubah status apa pun nilainya).',
   })
   @IsOptional()
-    @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense Platform ini; kirim null untuk menghapus meta tag.' })
-    @IsOptional()
-    @IsString()
-    @Matches(/^ca-pub-\d{16}$/)
-    adsensePublisherId?: string | null;
   @IsBoolean()
   showBookStatus?: boolean;
+
+  @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense Platform ini; kirim null untuk menghapus meta tag.' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^ca-pub-\d{16}$/)
+  adsensePublisherId?: string | null;
 
   @ApiPropertyOptional({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book.' })
   @IsOptional()
