@@ -32,6 +32,7 @@ import { SeriesModule } from './modules/series/series.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { PlatformBuildsModule } from './modules/platform-builds/platform-builds.module';
 import { HomepageSectionsModule } from './modules/homepage-sections/homepage-sections.module';
+import { PlatformContextMiddleware } from './common/middleware/platform-context.middleware';
 
 @Module({
   imports: [
@@ -113,5 +114,6 @@ import { HomepageSectionsModule } from './modules/homepage-sections/homepage-sec
     PlatformBuildsModule,
     HomepageSectionsModule,
   ],
+  providers: [PlatformContextMiddleware],
 })
 export class AppModule {}
