@@ -22,7 +22,8 @@ async function bootstrap() {
 
   // Global middleware: resolve Platform konteks dari header
   // `x-bookpedia-platform-slug` → pasang request.platformId
-  app.use(app.get(PlatformContextMiddleware));
+  const platformMiddleware = app.get(PlatformContextMiddleware);
+  app.use((req, res, next) => platformMiddleware.use(req, res, next));
 
   app.enableCors({
     origin: true,
