@@ -13,11 +13,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as basicAuth from 'express-basic-auth';
 
 import { AppModule } from './app.module';
+import { PlatformContextMiddleware } from './common/middleware/platform-context.middleware';
 
 async function bootstrap() {
   const logger = new Logger('BagdjaBookpediaApi');
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
+
+  // Global middleware: resolve Platform konteks dari header
+  // `x-bookpedia-platform-slug` → pasang request.platformId
+  app.use(app.get(PlatformContextMiddleware));
 
   app.enableCors({
     origin: true,

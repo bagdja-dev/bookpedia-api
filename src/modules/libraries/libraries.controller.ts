@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
 import { LibrariesService } from './libraries.service';
@@ -35,23 +35,23 @@ export class LibrariesController {
       'Dipakai bookpedia-studio untuk cek status onboarding. KONTRAK PENTING: kalau user belum punya Library, response 200 dengan body literal null (BUKAN 404, BUKAN body kosong) — jangan diubah, frontend bergantung pada shape ini.',
   })
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library milik user, atau null kalau belum onboarding' })
-  async findMine(@CurrentUser() user: AuthUser, @Res() res: Response): Promise<void> {
-    // Nest's default Express reply() menganggap return value `null` SAMA
-    // dengan `undefined` (lihat isNil() di @nestjs/common/utils/shared.utils)
-    // dan memanggil response.send() TANPA body sama sekali (Content-Length 0),
-    // bukan literal JSON "null" — merusak kontrak di atas (klien coba
-    // JSON.parse body kosong -> "Unexpected end of JSON input"). @Res()
-    // dipakai supaya kita kontrol body-nya sendiri, res.json(null) memang
-    // mengirim teks "null" 4-byte yang valid di-parse JSON.
-    const library = await this.librariesService.findLibraryByOwner(user.userId);
+  async findMine(
+    @CurrentUser() user: AuthUser,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<void> {
+    const library = await this.librariesService.findLibraryByOwner(
+      user.userId,
+      (req as any).platformId ?? undefined,
+    );
     res.status(HttpStatus.OK).json(library ? this.librariesService.toResponseDto(library) : null);
   }
 
   @Get('me/analytics')
   @ApiOperation({ summary: 'Statistik agregat Library milik user login' })
   @ApiOkResponse({ type: LibraryAnalyticsResponseDto })
-  async analytics(@CurrentUser() user: AuthUser): Promise<LibraryAnalyticsResponseDto> {
-    return this.librariesService.getAnalytics(user.userId);
+  async analytics(@CurrentUser() user: AuthUser, @Req() req: Request): Promise<LibraryAnalyticsResponseDto> {
+    return this.librariesService.getAnalytics(user.userId, (req as any).platformId ?? undefined);
   }
 
   @Patch('me')
@@ -62,9 +62,10 @@ export class LibrariesController {
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library terbaru setelah diupdate' })
   async updateMine(
     @CurrentUser() user: AuthUser,
+    @Req() req: Request,
     @Body() dto: UpdateLibraryDto,
   ): Promise<LibraryResponseDto> {
-    const library = await this.librariesService.update(user.userId, dto);
+    const library = await this.librariesService.update(user.userId, dto, (req as any).platformId ?? undefined);
     return this.librariesService.toResponseDto(library);
   }
 }

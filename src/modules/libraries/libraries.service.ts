@@ -27,9 +27,21 @@ export class LibrariesService {
    * milik user login sebelum scoping query Book/Chapter — cukup sebagai
    * helper service method di Fase 0, belum perlu guard generik terpisah
    * (lihat execution-plan.md Fase 0, poin "Ownership guard dasar").
+   *
+   * Kalau `platformId` disediakan, Library harus juga milik Platform itu
+   * (mencegah library bocor ke Platform lain saat user login lintas
+   * Platform). Kalau `platformId` null/undefined, tidak filter platform_id
+   * (backward-compatible untuk legacy caller tanpa konteks Platform).
    */
-  async findLibraryByOwner(ownerUserId: string): Promise<Library | null> {
-    return this.libraryRepo.findOne({ where: { owner_user_id: ownerUserId } });
+  async findLibraryByOwner(
+    ownerUserId: string,
+    platformId?: string | null,
+  ): Promise<Library | null> {
+    const where: Record<string, unknown> = { owner_user_id: ownerUserId };
+    if (platformId) {
+      where.platform_id = platformId;
+    }
+    return this.libraryRepo.findOne({ where });
   }
 
   async create(ownerUserId: string, dto: CreateLibraryDto): Promise<Library> {
@@ -81,8 +93,8 @@ export class LibrariesService {
     return this.libraryRepo.save(library);
   }
 
-  async update(ownerUserId: string, dto: UpdateLibraryDto): Promise<Library> {
-    const library = await this.findLibraryByOwner(ownerUserId);
+  async update(ownerUserId: string, dto: UpdateLibraryDto, platformId?: string | null): Promise<Library> {
+    const library = await this.findLibraryByOwner(ownerUserId, platformId ?? undefined);
     if (!library) {
       throw new NotFoundException('User belum punya Library');
     }
@@ -102,8 +114,8 @@ export class LibrariesService {
     return this.libraryRepo.save(library);
   }
 
-  async getAnalytics(ownerUserId: string): Promise<LibraryAnalyticsResponseDto> {
-    const library = await this.findLibraryByOwner(ownerUserId);
+  async getAnalytics(ownerUserId: string, platformId?: string | null): Promise<LibraryAnalyticsResponseDto> {
+    const library = await this.findLibraryByOwner(ownerUserId, platformId ?? undefined);
     if (!library) throw new NotFoundException('User belum punya Library');
 
     const [statsRows, activityRows, topBookRows, dailyRows, topicRows] = await Promise.all([

@@ -136,9 +136,15 @@ export class BooksService {
    * BooksService) untuk scoping `bookId` di route nested
    * `/books/:bookId/chapters`. User yang belum punya Library (belum
    * onboarding) tidak boleh membuat/melihat Book sama sekali.
+   *
+   * Kalau `platformId` disediakan, Library harus juga milik Platform itu
+   * (mencegah library bocor ke Platform lain).
    */
-  async getLibraryForOwner(ownerUserId: string): Promise<Library> {
-    const library = await this.librariesService.findLibraryByOwner(ownerUserId);
+  async getLibraryForOwner(ownerUserId: string, platformId?: string | null): Promise<Library> {
+    const library = await this.librariesService.findLibraryByOwner(
+      ownerUserId,
+      platformId ?? undefined,
+    );
     if (!library) {
       throw new NotFoundException(
         'Anda belum memiliki Library — buat Library terlebih dahulu sebelum menambah Book',
@@ -147,8 +153,8 @@ export class BooksService {
     return library;
   }
 
-  async create(ownerUserId: string, dto: CreateBookDto): Promise<Book> {
-    const library = await this.getLibraryForOwner(ownerUserId);
+  async create(ownerUserId: string, dto: CreateBookDto, platformId?: string | null): Promise<Book> {
+    const library = await this.getLibraryForOwner(ownerUserId, platformId);
 
     const existingSlug = await this.bookRepo.findOne({ where: { slug: dto.slug } });
     if (existingSlug) {
@@ -195,8 +201,8 @@ export class BooksService {
     return this.findOneForOwner(ownerUserId, saved.id);
   }
 
-  async findAllForOwner(ownerUserId: string): Promise<Book[]> {
-    const library = await this.getLibraryForOwner(ownerUserId);
+  async findAllForOwner(ownerUserId: string, platformId?: string | null): Promise<Book[]> {
+    const library = await this.getLibraryForOwner(ownerUserId, platformId);
     return this.bookRepo.find({
       where: { library_id: library.id },
       relations: ['genre', 'category'],
@@ -209,8 +215,8 @@ export class BooksService {
    * login (sengaja tidak dibedakan supaya tidak bocorkan keberadaan Book
    * orang lain).
    */
-  async findOneForOwner(ownerUserId: string, bookId: string): Promise<Book> {
-    const library = await this.getLibraryForOwner(ownerUserId);
+  async findOneForOwner(ownerUserId: string, bookId: string, platformId?: string | null): Promise<Book> {
+    const library = await this.getLibraryForOwner(ownerUserId, platformId);
     const book = await this.bookRepo.findOne({
       where: { id: bookId, library_id: library.id },
       relations: ['genre', 'category'],
@@ -221,8 +227,8 @@ export class BooksService {
     return book;
   }
 
-  async update(ownerUserId: string, bookId: string, dto: UpdateBookDto): Promise<Book> {
-    const book = await this.findOneForOwner(ownerUserId, bookId);
+  async update(ownerUserId: string, bookId: string, dto: UpdateBookDto, platformId?: string | null): Promise<Book> {
+    const book = await this.findOneForOwner(ownerUserId, bookId, platformId);
     const wasPublished = !!book.published_at;
 
     if (dto.judul !== undefined) book.judul = dto.judul;
@@ -289,8 +295,8 @@ export class BooksService {
     return this.findOneForOwner(ownerUserId, saved.id);
   }
 
-  async remove(ownerUserId: string, bookId: string): Promise<void> {
-    const book = await this.findOneForOwner(ownerUserId, bookId);
+  async remove(ownerUserId: string, bookId: string, platformId?: string | null): Promise<void> {
+    const book = await this.findOneForOwner(ownerUserId, bookId, platformId);
     await this.bookRepo.remove(book);
   }
 
