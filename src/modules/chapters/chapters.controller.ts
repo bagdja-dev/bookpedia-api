@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
+import { JwtAuthGuard, CurrentUser, PlatformId, type AuthUser } from '../../common/auth';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -19,23 +19,28 @@ export class ChaptersController {
   @ApiOperation({
     summary: 'Tambah Chapter baru ke Book',
     description:
-      'bookId di URL harus Book milik Library user login (404 kalau bukan). order_index di-auto-assign MAX(order_index)+1 (mulai dari 1 kalau belum ada Chapter). status selalu mulai "draft", content_version mulai 1.',
+      'bookId di URL harus Book milik Library user login DI PLATFORM INI (404 kalau bukan). order_index di-auto-assign MAX(order_index)+1 (mulai dari 1 kalau belum ada Chapter). status selalu mulai "draft", content_version mulai 1.',
   })
   @ApiOkResponse({ type: ChapterResponseDto, description: 'Chapter berhasil dibuat' })
   async create(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Body() dto: CreateChapterDto,
   ): Promise<ChapterResponseDto> {
-    const chapter = await this.chaptersService.create(user.userId, bookId, dto);
+    const chapter = await this.chaptersService.create(user.userId, bookId, dto, platformId);
     return this.chaptersService.toResponseDto(chapter);
   }
 
   @Get()
   @ApiOperation({ summary: 'Daftar Chapter milik Book, urut order_index ASC' })
   @ApiOkResponse({ type: ChapterResponseDto, isArray: true, description: 'Daftar Chapter urut order_index ASC' })
-  async findAll(@CurrentUser() user: AuthUser, @Param('bookId') bookId: string): Promise<ChapterResponseDto[]> {
-    const chapters = await this.chaptersService.findAllForBook(user.userId, bookId);
+  async findAll(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+    @Param('bookId') bookId: string,
+  ): Promise<ChapterResponseDto[]> {
+    const chapters = await this.chaptersService.findAllForBook(user.userId, bookId, platformId);
     return Promise.all(chapters.map((chapter) => this.chaptersService.toResponseDto(chapter)));
   }
 
@@ -48,10 +53,11 @@ export class ChaptersController {
   @ApiOkResponse({ type: ChapterResponseDto, isArray: true, description: 'Daftar Chapter terbaru urut order_index ASC' })
   async reorder(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Body() dto: ReorderChaptersDto,
   ): Promise<ChapterResponseDto[]> {
-    const chapters = await this.chaptersService.reorder(user.userId, bookId, dto);
+    const chapters = await this.chaptersService.reorder(user.userId, bookId, dto, platformId);
     return Promise.all(chapters.map((chapter) => this.chaptersService.toResponseDto(chapter)));
   }
 
@@ -63,10 +69,11 @@ export class ChaptersController {
   @ApiOkResponse({ type: ChapterResponseDto, description: 'Detail Chapter' })
   async findOne(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Param('chapterId') chapterId: string,
   ): Promise<ChapterResponseDto> {
-    const chapter = await this.chaptersService.findOneForBook(user.userId, bookId, chapterId);
+    const chapter = await this.chaptersService.findOneForBook(user.userId, bookId, chapterId, platformId);
     return this.chaptersService.toResponseDto(chapter);
   }
 
@@ -79,11 +86,12 @@ export class ChaptersController {
   @ApiOkResponse({ type: ChapterResponseDto, description: 'Chapter terbaru setelah diupdate' })
   async update(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Param('chapterId') chapterId: string,
     @Body() dto: UpdateChapterDto,
   ): Promise<ChapterResponseDto> {
-    const chapter = await this.chaptersService.update(user.userId, bookId, chapterId, dto);
+    const chapter = await this.chaptersService.update(user.userId, bookId, chapterId, dto, platformId);
     return this.chaptersService.toResponseDto(chapter);
   }
 
@@ -97,9 +105,10 @@ export class ChaptersController {
   @ApiNoContentResponse({ description: 'Chapter berhasil dihapus' })
   async remove(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Param('chapterId') chapterId: string,
   ): Promise<void> {
-    await this.chaptersService.remove(user.userId, bookId, chapterId);
+    await this.chaptersService.remove(user.userId, bookId, chapterId, platformId);
   }
 }

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 
@@ -28,29 +28,36 @@ export class LibrariesService {
    * helper service method di Fase 0, belum perlu guard generik terpisah
    * (lihat execution-plan.md Fase 0, poin "Ownership guard dasar").
    *
-   * Kalau `platformId` disediakan, Library harus juga milik Platform itu
-   * (mencegah library bocor ke Platform lain saat user login lintas
-   * Platform). Kalau `platformId` null/undefined, tidak filter platform_id
-   * (backward-compatible untuk legacy caller tanpa konteks Platform).
+   * `platformId` WAJIB (fail-closed, revisi 27 Okt 2026): sebelumnya
+   * opsional dengan fallback "tanpa filter platform_id" — itu menyebabkan
+   * Library Platform lain ikut tampil di Studio (bug: masuk Studio `bizact`
+   * menampilkan Library `novello`) begitu header Platform tidak sampai ke
+   * API. Sekarang tanpa Platform tidak ada lookup sama sekali; lebih baik
+   * 400/404 daripada menampilkan data tenant lain.
    */
-  async findLibraryByOwner(
-    ownerUserId: string,
-    platformId?: string | null,
-  ): Promise<Library | null> {
-    const where: Record<string, unknown> = { owner_user_id: ownerUserId };
-    if (platformId) {
-      where.platform_id = platformId;
-    }
-    return this.libraryRepo.findOne({ where });
+  async findLibraryByOwner(ownerUserId: string, platformId: string): Promise<Library | null> {
+    return this.libraryRepo.findOne({
+      where: { owner_user_id: ownerUserId, platform_id: platformId },
+    });
   }
 
-  async create(ownerUserId: string, dto: CreateLibraryDto): Promise<Library> {
+  async create(ownerUserId: string, dto: CreateLibraryDto, platformId: string): Promise<Library> {
     // Fase 4 (§4.1, 10 Sep 2026; koreksi §4.2, 11 Sep 2026): platformSlug
     // sekarang wajib dari client, resolusi via body eksplisit (BUKAN Host
     // header) — lihat plan/bookpedia/execution-plan.md §4.1/§4.2 (keputusan
     // resolusi Platform). Slug, bukan UUID — lihat doc-comment
     // CreateLibraryDto.platformSlug untuk alasan lengkap.
     const platform = await this.platformsService.getActivePlatformBySlugOrThrow(dto.platformSlug);
+
+    // Pertahanan lintas-Platform: body `platformSlug` TIDAK boleh berbeda dari
+    // Platform yang sedang diakses (hasil resolve Host di bookpedia-app).
+    // Tanpa cek ini, client bisa sengaja membuat Library di Platform lain
+    // lewat payload walau sedang berada di Studio Platform ini.
+    if (platform.id !== platformId) {
+      throw new BadRequestException(
+        'Platform pada payload tidak sama dengan Platform yang sedang diakses.',
+      );
+    }
 
     // lockStudio (gantinya platform_config.lockStudio lama, sekarang
     // platforms.lock_studio milik Platform ini): kalau true, TIDAK ADA
@@ -65,20 +72,23 @@ export class LibrariesService {
       );
     }
 
-    // MVP: satu Library = satu penulis (solo), lihat overview.md §3 & §4.1 —
-    // user yang sudah punya Library tidak boleh membuat lagi.
-    const existingForOwner = await this.findLibraryByOwner(ownerUserId);
+    // MVP: satu Library = satu penulis (solo) PER PLATFORM — user yang sudah
+    // punya Library di Platform INI tidak boleh membuat lagi, tapi user yang
+    // sama boleh punya Library di Platform lain (Studio-nya terpisah).
+    const existingForOwner = await this.findLibraryByOwner(ownerUserId, platform.id);
     if (existingForOwner) {
-      throw new ConflictException('User already owns a Library');
+      throw new ConflictException('User already owns a Library on this platform');
     }
 
-    // Cek slug GLOBAL (bukan per-platform) — constraint UNIQUE(slug) lama di
-    // DB masih hidup sampai §4.4 (lihat migration 20260910010000), jadi slug
-    // masih harus unik lintas-Platform untuk sekarang walau index composite
-    // baru sudah ada.
-    const existingSlug = await this.libraryRepo.findOne({ where: { slug: dto.slug } });
+    // Slug cukup unik per-Platform (`idx_libraries_platform_slug`). Constraint
+    // UNIQUE(slug) global lama sudah di-drop lewat migration
+    // 20261027000000_drop_legacy_global_slug_unique.sql — dua Platform boleh
+    // punya Library dengan slug yang sama.
+    const existingSlug = await this.libraryRepo.findOne({
+      where: { slug: dto.slug, platform_id: platform.id },
+    });
     if (existingSlug) {
-      throw new ConflictException('A library with this slug already exists');
+      throw new ConflictException('A library with this slug already exists on this platform');
     }
 
     const library = this.libraryRepo.create({
@@ -93,8 +103,8 @@ export class LibrariesService {
     return this.libraryRepo.save(library);
   }
 
-  async update(ownerUserId: string, dto: UpdateLibraryDto, platformId?: string | null): Promise<Library> {
-    const library = await this.findLibraryByOwner(ownerUserId, platformId ?? undefined);
+  async update(ownerUserId: string, dto: UpdateLibraryDto, platformId: string): Promise<Library> {
+    const library = await this.findLibraryByOwner(ownerUserId, platformId);
     if (!library) {
       throw new NotFoundException('User belum punya Library');
     }
@@ -114,8 +124,8 @@ export class LibrariesService {
     return this.libraryRepo.save(library);
   }
 
-  async getAnalytics(ownerUserId: string, platformId?: string | null): Promise<LibraryAnalyticsResponseDto> {
-    const library = await this.findLibraryByOwner(ownerUserId, platformId ?? undefined);
+  async getAnalytics(ownerUserId: string, platformId: string): Promise<LibraryAnalyticsResponseDto> {
+    const library = await this.findLibraryByOwner(ownerUserId, platformId);
     if (!library) throw new NotFoundException('User belum punya Library');
 
     const [statsRows, activityRows, topBookRows, dailyRows, topicRows] = await Promise.all([

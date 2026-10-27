@@ -9,10 +9,11 @@ import { PlatformsService } from '../../modules/platforms/platforms.service';
  * entity, dan pasang `request.platformId` sehingga service (mis.
  * LibrariesService.findLibraryByOwner) bisa scope data per-Platform.
  *
- * Kalau header tidak ada (mis. panggilan langsung tanpa konteks Platform,
- * atau legacy client), `request.platformId` = null dan scoping data di-serah-
- * kan ke service (backward-compatible: findLibraryByOwner tidak filter
- * platform_id kalau platformId null).
+ * Kalau header tidak ada, `request.platformId` = null dan endpoint Studio
+ * yang memakai `@PlatformId()` akan MENOLAK request (400, fail-closed).
+ * Ini disengaja: sebelumnya `null` diteruskan ke service dan
+ * `findLibraryByOwner()` jatuh ke lookup tanpa filter `platform_id`,
+ * sehingga Studio Platform B bisa menampilkan Library milik Platform A.
  *
  * Kalau header ada TAPI slug tidak valid / Platform tidak aktif → 404
  * (jangan diam-diam fallback ke default, supaya tidak ada data yang bocor

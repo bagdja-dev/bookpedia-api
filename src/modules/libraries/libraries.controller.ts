@@ -1,8 +1,8 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 
-import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
+import { JwtAuthGuard, CurrentUser, PlatformId, type AuthUser } from '../../common/auth';
 import { LibrariesService } from './libraries.service';
 import { CreateLibraryDto } from './dto/create-library.dto';
 import { UpdateLibraryDto } from './dto/update-library.dto';
@@ -17,13 +17,14 @@ export class LibrariesController {
   constructor(private readonly librariesService: LibrariesService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Buat Library baru untuk user login (onboarding penulis, satu Library per user di MVP)' })
+  @ApiOperation({ summary: 'Buat Library baru untuk user login (onboarding penulis, satu Library per user PER PLATFORM di MVP)' })
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library berhasil dibuat' })
   async create(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Body() dto: CreateLibraryDto,
   ): Promise<LibraryResponseDto> {
-    const library = await this.librariesService.create(user.userId, dto);
+    const library = await this.librariesService.create(user.userId, dto, platformId);
     return this.librariesService.toResponseDto(library);
   }
 
@@ -37,21 +38,21 @@ export class LibrariesController {
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library milik user, atau null kalau belum onboarding' })
   async findMine(
     @CurrentUser() user: AuthUser,
-    @Req() req: Request,
+    @PlatformId() platformId: string,
     @Res() res: Response,
   ): Promise<void> {
-    const library = await this.librariesService.findLibraryByOwner(
-      user.userId,
-      (req as any).platformId ?? undefined,
-    );
+    const library = await this.librariesService.findLibraryByOwner(user.userId, platformId);
     res.status(HttpStatus.OK).json(library ? this.librariesService.toResponseDto(library) : null);
   }
 
   @Get('me/analytics')
   @ApiOperation({ summary: 'Statistik agregat Library milik user login' })
   @ApiOkResponse({ type: LibraryAnalyticsResponseDto })
-  async analytics(@CurrentUser() user: AuthUser, @Req() req: Request): Promise<LibraryAnalyticsResponseDto> {
-    return this.librariesService.getAnalytics(user.userId, (req as any).platformId ?? undefined);
+  async analytics(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+  ): Promise<LibraryAnalyticsResponseDto> {
+    return this.librariesService.getAnalytics(user.userId, platformId);
   }
 
   @Patch('me')
@@ -62,10 +63,10 @@ export class LibrariesController {
   @ApiOkResponse({ type: LibraryResponseDto, description: 'Library terbaru setelah diupdate' })
   async updateMine(
     @CurrentUser() user: AuthUser,
-    @Req() req: Request,
+    @PlatformId() platformId: string,
     @Body() dto: UpdateLibraryDto,
   ): Promise<LibraryResponseDto> {
-    const library = await this.librariesService.update(user.userId, dto, (req as any).platformId ?? undefined);
+    const library = await this.librariesService.update(user.userId, dto, platformId);
     return this.librariesService.toResponseDto(library);
   }
 }

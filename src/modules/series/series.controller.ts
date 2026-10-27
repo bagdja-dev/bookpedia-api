@@ -8,13 +8,11 @@ import {
   Param,
   Post,
   Put,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
 
-import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
+import { JwtAuthGuard, CurrentUser, PlatformId, type AuthUser } from '../../common/auth';
 import { CreateSeriesDto } from './dto/create-series.dto';
 import { UpdateSeriesDto } from './dto/update-series.dto';
 import { SeriesDetailDto } from './dto/series-detail.dto';
@@ -38,22 +36,33 @@ export class SeriesController {
   @Get()
   @ApiOperation({ summary: 'Daftar semua series yang berlaku di platform Studio user' })
   @ApiOkResponse({ type: SeriesSummaryDto, isArray: true })
-  async list(@CurrentUser() user: AuthUser, @Req() req: Request): Promise<SeriesSummaryDto[]> {
-    return this.seriesService.listForOwner(user.userId, (req as any).platformId ?? undefined);
+  async list(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+  ): Promise<SeriesSummaryDto[]> {
+    return this.seriesService.listForOwner(user.userId, platformId);
   }
 
   @Post()
   @ApiOperation({ summary: 'Buat series baru di platform Studio' })
   @ApiOkResponse({ type: SeriesDetailDto })
-  async create(@CurrentUser() user: AuthUser, @Req() req: Request, @Body() dto: CreateSeriesDto): Promise<SeriesDetailDto> {
-    return this.seriesService.createForOwner(user.userId, dto, (req as any).platformId ?? undefined);
+  async create(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+    @Body() dto: CreateSeriesDto,
+  ): Promise<SeriesDetailDto> {
+    return this.seriesService.createForOwner(user.userId, dto, platformId);
   }
 
   @Get(':seriesId')
   @ApiOperation({ summary: 'Ambil detail series dan daftar Book yang masuk ke series tersebut' })
   @ApiOkResponse({ type: SeriesDetailDto })
-  async getOne(@CurrentUser() user: AuthUser, @Req() req: Request, @Param('seriesId') seriesId: string): Promise<SeriesDetailDto> {
-    return this.seriesService.getForOwner(user.userId, seriesId, (req as any).platformId ?? undefined);
+  async getOne(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+    @Param('seriesId') seriesId: string,
+  ): Promise<SeriesDetailDto> {
+    return this.seriesService.getForOwner(user.userId, seriesId, platformId);
   }
 
   @Put(':seriesId')
@@ -61,17 +70,21 @@ export class SeriesController {
   @ApiOkResponse({ type: SeriesDetailDto })
   async update(
     @CurrentUser() user: AuthUser,
-    @Req() req: Request,
+    @PlatformId() platformId: string,
     @Param('seriesId') seriesId: string,
     @Body() dto: UpdateSeriesDto,
   ): Promise<SeriesDetailDto> {
-    return this.seriesService.updateForOwner(user.userId, seriesId, dto, (req as any).platformId ?? undefined);
+    return this.seriesService.updateForOwner(user.userId, seriesId, dto, platformId);
   }
 
   @Delete(':seriesId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Hapus series' })
-  async remove(@CurrentUser() user: AuthUser, @Req() req: Request, @Param('seriesId') seriesId: string): Promise<void> {
-    await this.seriesService.removeForOwner(user.userId, seriesId, (req as any).platformId ?? undefined);
+  async remove(
+    @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
+    @Param('seriesId') seriesId: string,
+  ): Promise<void> {
+    await this.seriesService.removeForOwner(user.userId, seriesId, platformId);
   }
 }

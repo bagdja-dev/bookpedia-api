@@ -32,10 +32,11 @@ export class PromotionsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async listForOwner(ownerUserId: string, bookId: string): Promise<PromotedBookSummaryDto[]> {
-    // Ownership check — 404 kalau bookId bukan milik user login (pola sama
-    // ChaptersService nested route, reuse `BooksService.findOneForOwner`).
-    await this.booksService.findOneForOwner(ownerUserId, bookId);
+  async listForOwner(ownerUserId: string, bookId: string, platformId: string): Promise<PromotedBookSummaryDto[]> {
+    // Ownership check — 404 kalau bookId bukan milik user login di Platform
+    // ini (pola sama ChaptersService nested route, reuse
+    // `BooksService.findOneForOwner`).
+    await this.booksService.findOneForOwner(ownerUserId, bookId, platformId);
 
     const promotions = await this.promotionRepo.find({ where: { book_id: bookId }, order: { position: 'ASC' } });
     return this.toSummaryDtos(promotions);
@@ -50,8 +51,8 @@ export class PromotionsService {
    * BEBAS dari Library manapun di Platform itu (bukan cuma Library sendiri
    * — keputusan produk eksplisit).
    */
-  async replaceForOwner(ownerUserId: string, bookId: string, promotedBookIds: string[]): Promise<PromotedBookSummaryDto[]> {
-    const book = await this.booksService.findOneForOwner(ownerUserId, bookId);
+  async replaceForOwner(ownerUserId: string, bookId: string, promotedBookIds: string[], platformId: string): Promise<PromotedBookSummaryDto[]> {
+    const book = await this.booksService.findOneForOwner(ownerUserId, bookId, platformId);
 
     const uniqueIds = [...new Set(promotedBookIds)].filter((id) => id !== bookId);
     if (uniqueIds.length > MAX_PROMOTIONS) {
@@ -82,7 +83,7 @@ export class PromotionsService {
       }
     });
 
-    return this.listForOwner(ownerUserId, bookId);
+    return this.listForOwner(ownerUserId, bookId, platformId);
   }
 
   private async toSummaryDtos(promotions: BookPromotion[]): Promise<PromotedBookSummaryDto[]> {

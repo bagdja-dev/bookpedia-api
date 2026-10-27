@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard, CurrentUser, type AuthUser } from '../../common/auth';
+import { JwtAuthGuard, CurrentUser, PlatformId, type AuthUser } from '../../common/auth';
 import { PromotionsService } from './promotions.service';
 import { PromotedBookSummaryDto } from './dto/promoted-book-summary.dto';
 import { ReplacePromotionsDto } from './dto/replace-promotions.dto';
@@ -23,9 +23,10 @@ export class PromotionsController {
   @ApiOkResponse({ type: PromotedBookSummaryDto, isArray: true })
   async list(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
   ): Promise<PromotedBookSummaryDto[]> {
-    return this.promotionsService.listForOwner(user.userId, bookId);
+    return this.promotionsService.listForOwner(user.userId, bookId, platformId);
   }
 
   @Put()
@@ -37,9 +38,10 @@ export class PromotionsController {
   @ApiOkResponse({ type: PromotedBookSummaryDto, isArray: true })
   async replace(
     @CurrentUser() user: AuthUser,
+    @PlatformId() platformId: string,
     @Param('bookId') bookId: string,
     @Body() dto: ReplacePromotionsDto,
   ): Promise<PromotedBookSummaryDto[]> {
-    return this.promotionsService.replaceForOwner(user.userId, bookId, dto.promotedBookIds);
+    return this.promotionsService.replaceForOwner(user.userId, bookId, dto.promotedBookIds, platformId);
   }
 }

@@ -28,7 +28,7 @@ export class SeriesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async listForOwner(ownerUserId: string, platformId?: string | null): Promise<Array<{ id: string; nama: string; bookCount: number; createdAt: string; updatedAt: string }>> {
+  async listForOwner(ownerUserId: string, platformId: string): Promise<Array<{ id: string; nama: string; bookCount: number; createdAt: string; updatedAt: string }>> {
     const { platformId: libPlatformId, libraryId } = await this.getOwnerScope(ownerUserId, platformId);
     const series = await this.seriesRepo.find({
       where: { platform_id: libPlatformId, library_id: libraryId },
@@ -56,7 +56,7 @@ export class SeriesService {
     }));
   }
 
-  async createForOwner(ownerUserId: string, dto: CreateSeriesDto, platformId?: string | null): Promise<SeriesDetailDto> {
+  async createForOwner(ownerUserId: string, dto: CreateSeriesDto, platformId: string): Promise<SeriesDetailDto> {
     const { platformId: libPlatformId, libraryId } = await this.getOwnerScope(ownerUserId, platformId);
     const nama = dto.nama.trim();
 
@@ -74,7 +74,7 @@ export class SeriesService {
     return this.getForOwner(ownerUserId, saved.id, libPlatformId);
   }
 
-  async getForOwner(ownerUserId: string, seriesId: string, platformId?: string | null): Promise<SeriesDetailDto> {
+  async getForOwner(ownerUserId: string, seriesId: string, platformId: string): Promise<SeriesDetailDto> {
     const { platformId: libPlatformId, libraryId } = await this.getOwnerScope(ownerUserId, platformId);
     const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: libPlatformId, library_id: libraryId } });
     if (!series) {
@@ -99,7 +99,7 @@ export class SeriesService {
     };
   }
 
-  async updateForOwner(ownerUserId: string, seriesId: string, dto: UpdateSeriesDto, platformId?: string | null): Promise<SeriesDetailDto> {
+  async updateForOwner(ownerUserId: string, seriesId: string, dto: UpdateSeriesDto, platformId: string): Promise<SeriesDetailDto> {
     const { platformId: libPlatformId, libraryId } = await this.getOwnerScope(ownerUserId, platformId);
     const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: libPlatformId, library_id: libraryId } });
     if (!series) {
@@ -122,7 +122,7 @@ export class SeriesService {
     return this.getForOwner(ownerUserId, series.id, libPlatformId);
   }
 
-  async removeForOwner(ownerUserId: string, seriesId: string, platformId?: string | null): Promise<void> {
+  async removeForOwner(ownerUserId: string, seriesId: string, platformId: string): Promise<void> {
     const { platformId: libPlatformId, libraryId } = await this.getOwnerScope(ownerUserId, platformId);
     const series = await this.seriesRepo.findOne({ where: { id: seriesId, platform_id: libPlatformId, library_id: libraryId } });
     if (!series) {
@@ -134,9 +134,9 @@ export class SeriesService {
 
   private async getOwnerScope(
     ownerUserId: string,
-    platformId?: string | null,
+    platformId: string,
   ): Promise<{ platformId: string; libraryId: string }> {
-    const library = await this.librariesService.findLibraryByOwner(ownerUserId, platformId ?? undefined);
+    const library = await this.librariesService.findLibraryByOwner(ownerUserId, platformId);
     if (!library) {
       throw new NotFoundException('Anda belum memiliki Library untuk mengelola series.');
     }

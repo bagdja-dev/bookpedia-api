@@ -28,12 +28,12 @@ export class ChaptersService {
    * miliknya), supaya tidak ada jalur akses Chapter tanpa lewat Book yang
    * tervalidasi.
    */
-  private async getOwnedBook(ownerUserId: string, bookId: string) {
-    return this.booksService.findOneForOwner(ownerUserId, bookId);
+  private async getOwnedBook(ownerUserId: string, bookId: string, platformId: string) {
+    return this.booksService.findOneForOwner(ownerUserId, bookId, platformId);
   }
 
-  async create(ownerUserId: string, bookId: string, dto: CreateChapterDto): Promise<Chapter> {
-    const book = await this.getOwnedBook(ownerUserId, bookId);
+  async create(ownerUserId: string, bookId: string, dto: CreateChapterDto, platformId: string): Promise<Chapter> {
+    const book = await this.getOwnedBook(ownerUserId, bookId, platformId);
 
     const { maxOrder } = await this.chapterRepo
       .createQueryBuilder('chapter')
@@ -56,14 +56,14 @@ export class ChaptersService {
     return this.chapterRepo.save(chapter);
   }
 
-  async findAllForBook(ownerUserId: string, bookId: string): Promise<Chapter[]> {
-    const book = await this.getOwnedBook(ownerUserId, bookId);
+  async findAllForBook(ownerUserId: string, bookId: string, platformId: string): Promise<Chapter[]> {
+    const book = await this.getOwnedBook(ownerUserId, bookId, platformId);
     return this.chapterRepo.find({ where: { book_id: book.id }, order: { order_index: 'ASC' } });
   }
 
   /** 404 kalau Chapter tidak ada ATAU bukan milik bookId (yang sudah tervalidasi milik user login). */
-  async findOneForBook(ownerUserId: string, bookId: string, chapterId: string): Promise<Chapter> {
-    const book = await this.getOwnedBook(ownerUserId, bookId);
+  async findOneForBook(ownerUserId: string, bookId: string, chapterId: string, platformId: string): Promise<Chapter> {
+    const book = await this.getOwnedBook(ownerUserId, bookId, platformId);
     const chapter = await this.chapterRepo.findOne({ where: { id: chapterId, book_id: book.id } });
     if (!chapter) {
       throw new NotFoundException('Chapter not found');
@@ -80,8 +80,8 @@ export class ChaptersService {
    * - status draft->published: published_at = now(). published->draft:
    *   published_at di-null-kan lagi. Status sama dengan saat ini: no-op.
    */
-  async update(ownerUserId: string, bookId: string, chapterId: string, dto: UpdateChapterDto): Promise<Chapter> {
-    const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId);
+  async update(ownerUserId: string, bookId: string, chapterId: string, dto: UpdateChapterDto, platformId: string): Promise<Chapter> {
+    const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId, platformId);
     const wasPublished = chapter.status === 'published';
 
     if (dto.judul !== undefined) {
@@ -104,7 +104,7 @@ export class ChaptersService {
 
     const saved = await this.chapterRepo.save(chapter);
     if (!wasPublished && saved.status === 'published') {
-      const book = await this.booksService.findOneForOwner(ownerUserId, bookId);
+      const book = await this.booksService.findOneForOwner(ownerUserId, bookId, platformId);
       void this.notificationsService.create({
         userId: ownerUserId,
         type: 'chapter.published',
@@ -130,8 +130,8 @@ export class ChaptersService {
    * membiarkan state antara di dalam transaction sementara "duplikat" saat
    * proses swap, constraint baru dicek final saat COMMIT.
    */
-  async reorder(ownerUserId: string, bookId: string, dto: ReorderChaptersDto): Promise<Chapter[]> {
-    const book = await this.getOwnedBook(ownerUserId, bookId);
+  async reorder(ownerUserId: string, bookId: string, dto: ReorderChaptersDto, platformId: string): Promise<Chapter[]> {
+    const book = await this.getOwnedBook(ownerUserId, bookId, platformId);
 
     const existingChapters = await this.chapterRepo.find({ where: { book_id: book.id } });
     const existingIds = new Set(existingChapters.map((c) => c.id));
@@ -158,8 +158,8 @@ export class ChaptersService {
    * `order_index` Chapter lain sisanya — gap boleh, list tetap urut benar
    * (ORDER BY order_index ASC), reorder existing tetap bisa jalan.
    */
-  async remove(ownerUserId: string, bookId: string, chapterId: string): Promise<void> {
-    const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId);
+  async remove(ownerUserId: string, bookId: string, chapterId: string, platformId: string): Promise<void> {
+    const chapter = await this.findOneForBook(ownerUserId, bookId, chapterId, platformId);
     await this.chapterRepo.remove(chapter);
   }
 

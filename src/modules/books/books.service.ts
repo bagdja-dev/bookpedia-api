@@ -137,14 +137,12 @@ export class BooksService {
    * `/books/:bookId/chapters`. User yang belum punya Library (belum
    * onboarding) tidak boleh membuat/melihat Book sama sekali.
    *
-   * Kalau `platformId` disediakan, Library harus juga milik Platform itu
-   * (mencegah library bocor ke Platform lain).
+   * `platformId` WAJIB (fail-closed, revisi 27 Okt 2026) — tanpa Platform
+   * tidak ada lookup Library sama sekali, supaya Studio satu Platform tidak
+   * pernah memakai Library Platform lain.
    */
-  async getLibraryForOwner(ownerUserId: string, platformId?: string | null): Promise<Library> {
-    const library = await this.librariesService.findLibraryByOwner(
-      ownerUserId,
-      platformId ?? undefined,
-    );
+  async getLibraryForOwner(ownerUserId: string, platformId: string): Promise<Library> {
+    const library = await this.librariesService.findLibraryByOwner(ownerUserId, platformId);
     if (!library) {
       throw new NotFoundException(
         'Anda belum memiliki Library — buat Library terlebih dahulu sebelum menambah Book',
@@ -153,12 +151,17 @@ export class BooksService {
     return library;
   }
 
-  async create(ownerUserId: string, dto: CreateBookDto, platformId?: string | null): Promise<Book> {
+  async create(ownerUserId: string, dto: CreateBookDto, platformId: string): Promise<Book> {
     const library = await this.getLibraryForOwner(ownerUserId, platformId);
 
-    const existingSlug = await this.bookRepo.findOne({ where: { slug: dto.slug } });
+    // Slug cukup unik per-Platform (`idx_books_platform_slug`). Constraint
+    // UNIQUE(slug) global lama sudah di-drop lewat migration
+    // 20261027000000_drop_legacy_global_slug_unique.sql.
+    const existingSlug = await this.bookRepo.findOne({
+      where: { slug: dto.slug, platform_id: library.platform_id },
+    });
     if (existingSlug) {
-      throw new ConflictException('A book with this slug already exists');
+      throw new ConflictException('A book with this slug already exists on this platform');
     }
 
     const genreId = await this.resolveGenreId(dto.genreId, library.platform_id);
@@ -198,10 +201,10 @@ export class BooksService {
     if (tagIds !== undefined) {
       await this.tagsService.replaceBookTags(saved.id, tagIds);
     }
-    return this.findOneForOwner(ownerUserId, saved.id);
+    return this.findOneForOwner(ownerUserId, saved.id, library.platform_id);
   }
 
-  async findAllForOwner(ownerUserId: string, platformId?: string | null): Promise<Book[]> {
+  async findAllForOwner(ownerUserId: string, platformId: string): Promise<Book[]> {
     const library = await this.getLibraryForOwner(ownerUserId, platformId);
     return this.bookRepo.find({
       where: { library_id: library.id },
@@ -215,7 +218,7 @@ export class BooksService {
    * login (sengaja tidak dibedakan supaya tidak bocorkan keberadaan Book
    * orang lain).
    */
-  async findOneForOwner(ownerUserId: string, bookId: string, platformId?: string | null): Promise<Book> {
+  async findOneForOwner(ownerUserId: string, bookId: string, platformId: string): Promise<Book> {
     const library = await this.getLibraryForOwner(ownerUserId, platformId);
     const book = await this.bookRepo.findOne({
       where: { id: bookId, library_id: library.id },
@@ -227,7 +230,7 @@ export class BooksService {
     return book;
   }
 
-  async update(ownerUserId: string, bookId: string, dto: UpdateBookDto, platformId?: string | null): Promise<Book> {
+  async update(ownerUserId: string, bookId: string, dto: UpdateBookDto, platformId: string): Promise<Book> {
     const book = await this.findOneForOwner(ownerUserId, bookId, platformId);
     const wasPublished = !!book.published_at;
 
@@ -292,10 +295,10 @@ export class BooksService {
     if (tagIds !== undefined) {
       await this.tagsService.replaceBookTags(saved.id, tagIds);
     }
-    return this.findOneForOwner(ownerUserId, saved.id);
+    return this.findOneForOwner(ownerUserId, saved.id, book.platform_id);
   }
 
-  async remove(ownerUserId: string, bookId: string, platformId?: string | null): Promise<void> {
+  async remove(ownerUserId: string, bookId: string, platformId: string): Promise<void> {
     const book = await this.findOneForOwner(ownerUserId, bookId, platformId);
     await this.bookRepo.remove(book);
   }

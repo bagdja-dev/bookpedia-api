@@ -541,6 +541,7 @@ export class PlatformsService {
         seo_prefix: dto.seoPrefix ?? null,
         seo_suffix: dto.seoSuffix ?? null,
         terms_and_conditions: dto.termsAndConditions ?? null,
+        privacy_policy: dto.privacyPolicy ?? null,
         contact_phone: dto.contactPhone?.trim() || null,
         contact_whatsapp: dto.contactWhatsapp?.trim() || null,
         contact_email: dto.contactEmail?.trim() || null,
@@ -628,6 +629,7 @@ export class PlatformsService {
     if (dto.seoPrefix !== undefined) platform.seo_prefix = dto.seoPrefix;
     if (dto.seoSuffix !== undefined) platform.seo_suffix = dto.seoSuffix;
     if (dto.termsAndConditions !== undefined) platform.terms_and_conditions = dto.termsAndConditions;
+    if (dto.privacyPolicy !== undefined) platform.privacy_policy = dto.privacyPolicy;
     if (dto.contactPhone !== undefined) platform.contact_phone = dto.contactPhone?.trim() || null;
     if (dto.contactWhatsapp !== undefined) platform.contact_whatsapp = dto.contactWhatsapp?.trim() || null;
     if (dto.contactEmail !== undefined) platform.contact_email = dto.contactEmail?.trim() || null;
@@ -695,6 +697,7 @@ export class PlatformsService {
       seoPrefix: platform.seo_prefix,
       seoSuffix: platform.seo_suffix,
       termsAndConditions: platform.terms_and_conditions,
+      privacyPolicy: platform.privacy_policy,
       contactPhone: platform.contact_phone ?? null,
       contactWhatsapp: platform.contact_whatsapp ?? null,
       contactEmail: platform.contact_email ?? null,

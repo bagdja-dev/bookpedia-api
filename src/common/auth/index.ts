@@ -3,5 +3,6 @@ export { JwtAuthGuard } from './jwt-auth.guard';
 export { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 export { type AuthUser } from './auth-user';
 export { CurrentUser } from './current-user.decorator';
+export { PlatformId } from './platform-id.decorator';
 export { PlatformAccessGuard } from './platform-access.guard';
 export { OwnerOnly, OWNER_ONLY_KEY } from './owner-only.decorator';

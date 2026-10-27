@@ -312,6 +312,10 @@ export class Platform {
   @Column({ type: 'text', nullable: true })
   terms_and_conditions: string | null;
 
+  /** Konten Kebijakan Privasi publik Platform. Ditampilkan di halaman /privacy-policy reader app. */
+  @Column({ type: 'text', nullable: true })
+  privacy_policy: string | null;
+
   /** Halaman Kontak (/contact) — nomor telepon. NULL = tidak ditampilkan. */
   @Column({ type: 'varchar', length: 30, nullable: true })
   contact_phone: string | null;

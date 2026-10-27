@@ -290,6 +290,11 @@ export class UpdatePlatformDto {
   @IsString()
   termsAndConditions?: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Konten Kebijakan Privasi publik. Ditampilkan di halaman /privacy-policy reader app. Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @IsString()
+  privacyPolicy?: string | null;
+
   @ApiPropertyOptional({ example: '+62 21 555 0123', nullable: true, description: 'Halaman Kontak — nomor telepon. Angka, spasi, tanda kurung, titik, tanda hubung, boleh diawali +. Kirim null untuk mengosongkan.' })
   @IsOptional()
   @Matches(/^\+?[0-9(][0-9\s().-]{5,28}$/, { message: 'contactPhone harus berupa nomor telepon (mis. +62 21 555 0123)' })
