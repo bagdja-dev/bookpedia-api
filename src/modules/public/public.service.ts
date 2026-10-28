@@ -85,7 +85,9 @@ export class PublicService {
   toLoginBrandingDto(platform: Platform): PlatformLoginBrandingDto {
     return {
       name: platform.nama || null,
-      logoUrl: platform.logo_url || null,
+      // Ikon (favicon) Platform, bukan logo panjang — slot logo di kartu
+      // login berbentuk persegi 60×60. Fallback ke logo kalau ikon kosong.
+      logoUrl: platform.favicon_url || platform.logo_url || null,
       backgroundUrl: platform.login_background_url || null,
     };
   }
