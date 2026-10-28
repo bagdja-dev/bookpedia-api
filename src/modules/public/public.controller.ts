@@ -5,6 +5,7 @@ import { CurrentUser, OptionalJwtAuthGuard, type AuthUser } from '../../common/a
 
 import { PublicService } from './public.service';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
+import { PlatformLoginBrandingDto } from './dto/platform-login-branding.dto';
 import { CatalogResponseDto } from './dto/catalog-response.dto';
 import { CatalogHomeResponseDto } from './dto/catalog-home-response.dto';
 import { LibraryProfileDto } from './dto/library-profile.dto';
@@ -66,6 +67,17 @@ export class PublicController {
   async getPlatformProfile(@Param('platformSlug') platformSlug: string): Promise<PlatformPublicProfileDto> {
     const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
     return this.publicService.toPublicProfileDto(platform);
+  }
+
+  @Get('platforms/:platformSlug/login-branding')
+  @ApiOperation({
+    summary: 'Branding halaman login.bagdja.com untuk Platform',
+    description: 'Dipanggil server-side oleh bagdja-login lewat `brandingUrl` client app Bookpedia (`.../public/platforms/{brand}/login-branding`) saat authorize membawa `&brand=<slug>`. 404 kalau Platform tidak ada/nonaktif — bagdja-login lalu fallback ke branding default client app.',
+  })
+  @ApiOkResponse({ type: PlatformLoginBrandingDto, description: 'Nama, logo, dan background login Platform; field null = pakai default.' })
+  async getLoginBranding(@Param('platformSlug') platformSlug: string): Promise<PlatformLoginBrandingDto> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.toLoginBrandingDto(platform);
   }
 
   @Get('platforms/:platformSlug/catalog')

@@ -84,6 +84,9 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense Platform ini.' })
   adsensePublisherId: string | null;
 
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/novello/login-bg.jpg', nullable: true, description: 'Background halaman login.bagdja.com untuk Platform ini.' })
+  loginBackgroundUrl: string | null;
+
   @ApiProperty({ type: [String], example: ['4A:C0:55:7E:...:CA:3D'], description: 'TWA Digital Asset Links — SHA-256 sertifikat penanda tangan, format AA:BB:...' })
   androidSha256CertFingerprints: string[];
 

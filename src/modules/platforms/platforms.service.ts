@@ -608,6 +608,7 @@ export class PlatformsService {
     if (dto.androidPackageName !== undefined) platform.android_package_name = dto.androidPackageName;
     if (dto.playStoreUrl !== undefined) platform.play_store_url = dto.playStoreUrl;
     if (dto.adsensePublisherId !== undefined) platform.adsense_publisher_id = dto.adsensePublisherId?.trim() || null;
+    if (dto.loginBackgroundUrl !== undefined) platform.login_background_url = dto.loginBackgroundUrl?.trim() || null;
     if (dto.androidSha256CertFingerprints !== undefined) {
       platform.android_sha256_cert_fingerprints = normalizeSha256Fingerprints(dto.androidSha256CertFingerprints);
     }
@@ -678,6 +679,7 @@ export class PlatformsService {
       androidPackageName: platform.android_package_name,
       playStoreUrl: platform.play_store_url,
       adsensePublisherId: platform.adsense_publisher_id,
+      loginBackgroundUrl: platform.login_background_url,
       androidSha256CertFingerprints: platform.android_sha256_cert_fingerprints ?? [],
       enableRating: platform.enable_rating,
       ratingMode: platform.rating_mode,

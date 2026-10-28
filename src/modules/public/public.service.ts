@@ -23,6 +23,7 @@ import { BookDetailDto } from './dto/book-detail.dto';
 import { ChapterDetailDto } from './dto/chapter-detail.dto';
 import { PlatformResolveResponseDto } from './dto/platform-resolve-response.dto';
 import { PlatformPublicProfileDto } from './dto/platform-public-profile.dto';
+import { PlatformLoginBrandingDto } from './dto/platform-login-branding.dto';
 import { UserProfileStatsDto } from './dto/user-profile-stats.dto';
 import { TagResponseDto } from '../tags/dto/tag-response.dto';
 import { TagsService } from '../tags/tags.service';
@@ -78,6 +79,15 @@ export class PublicService {
       throw new NotFoundException('Platform not found or inactive');
     }
     return platform;
+  }
+
+  /** Branding login.bagdja.com untuk Platform — lihat `PlatformLoginBrandingDto`. */
+  toLoginBrandingDto(platform: Platform): PlatformLoginBrandingDto {
+    return {
+      name: platform.nama || null,
+      logoUrl: platform.logo_url || null,
+      backgroundUrl: platform.login_background_url || null,
+    };
   }
 
   async getRealtimeWsToken(): Promise<{ access_token: string; expires_in: number; channels: string[] }> {

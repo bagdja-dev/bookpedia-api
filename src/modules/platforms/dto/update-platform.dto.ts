@@ -182,6 +182,16 @@ export class UpdatePlatformDto {
   playStoreUrl?: string | null;
 
   @ApiPropertyOptional({
+    example: 'https://cdn.example.com/platform/novello/login-bg.jpg',
+    nullable: true,
+    description: 'URL HTTPS background halaman login.bagdja.com untuk Platform ini. Kirim null untuk mengosongkan (kembali ke default).',
+  })
+  @IsOptional()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @MaxLength(2048)
+  loginBackgroundUrl?: string | null;
+
+  @ApiPropertyOptional({
     type: [String],
     example: ['4A:C0:55:7E:8C:7B:9E:BF:EE:37:30:5C:4D:3C:4E:AC:59:E6:19:D7:F2:EC:DA:E0:FC:51:01:F7:69:9F:CA:3D'],
     description: 'TWA Digital Asset Links — SHA-256 sertifikat penanda tangan (release/upload key, Play App Signing, debug key). Boleh dengan atau tanpa titik dua; disimpan uppercase format AA:BB:... Maks 10.',

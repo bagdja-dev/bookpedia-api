@@ -230,6 +230,10 @@ export class Platform {
   @Column({ type: 'varchar', length: 32, nullable: true })
   adsense_publisher_id: string | null;
 
+  /** Background halaman login.bagdja.com saat login dari Platform ini (via `&brand=<slug>`). NULL = default client app/Bagdja. */
+  @Column({ type: 'text', nullable: true })
+  login_background_url: string | null;
+
   /** SHA-256 sertifikat penanda tangan app TWA, format `AA:BB:...` (32 byte). */
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   android_sha256_cert_fingerprints: string[];
