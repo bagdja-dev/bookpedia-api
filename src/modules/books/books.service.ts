@@ -423,6 +423,7 @@ export class BooksService {
             nama: book.disclaimerTemplate.nama,
             content: book.disclaimerTemplate.content,
             isActive: book.disclaimerTemplate.is_active,
+            isDefault: book.disclaimerTemplate.is_default,
             createdAt: book.disclaimerTemplate.created_at,
             updatedAt: book.disclaimerTemplate.updated_at,
           }

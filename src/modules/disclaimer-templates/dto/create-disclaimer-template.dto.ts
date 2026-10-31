@@ -17,4 +17,9 @@ export class CreateDisclaimerTemplateDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: false, description: 'Template default Platform (tampil kalau Book tidak memilih template sendiri)' })
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean;
 }

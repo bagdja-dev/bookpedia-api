@@ -9,6 +9,10 @@
 -- Kolom `books.disclaimer_template_id` nullable + ON DELETE SET NULL —
 -- Book tanpa template tetap valid, dan menghapus template tidak boleh
 -- menghapus Book yang memakainya.
+--
+-- Kolom `is_default` menandai template default Platform — tampil di halaman
+-- detail Book kalau Book tidak memilih template disclaimer sendiri.
+-- Hanya satu template default per Platform.
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS disclaimer_templates (
@@ -17,6 +21,7 @@ CREATE TABLE IF NOT EXISTS disclaimer_templates (
   nama VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT true,
+  is_default BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

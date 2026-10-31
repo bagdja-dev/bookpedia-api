@@ -1054,6 +1054,12 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
+    // Fallback ke template default Platform kalau Book tidak memilih
+    // template disclaimer sendiri.
+    const defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
+      where: { platform_id: platform.id, is_default: true, is_active: true },
+    });
+
     const chapters = await this.chapterRepo.find({
       where: { book_id: book.id, status: 'published' },
       order: { order_index: 'ASC' },
@@ -1105,10 +1111,22 @@ export class PublicService {
             nama: book.disclaimerTemplate.nama,
             content: book.disclaimerTemplate.content,
             isActive: book.disclaimerTemplate.is_active,
+            isDefault: book.disclaimerTemplate.is_default,
             createdAt: book.disclaimerTemplate.created_at,
             updatedAt: book.disclaimerTemplate.updated_at,
           }
-        : null,
+        : defaultDisclaimerTemplate
+          ? {
+              id: defaultDisclaimerTemplate.id,
+              platformId: defaultDisclaimerTemplate.platform_id,
+              nama: defaultDisclaimerTemplate.nama,
+              content: defaultDisclaimerTemplate.content,
+              isActive: defaultDisclaimerTemplate.is_active,
+              isDefault: defaultDisclaimerTemplate.is_default,
+              createdAt: defaultDisclaimerTemplate.created_at,
+              updatedAt: defaultDisclaimerTemplate.updated_at,
+            }
+          : null,
       library: {
         id: library?.id ?? '',
         nama: library?.nama ?? '',
