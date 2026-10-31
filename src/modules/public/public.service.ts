@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { DisclaimerTemplate } from '../../entities/disclaimer-template.entity';
 import { BookPromotion } from '../../entities/book-promotion.entity';
 import { BookSeries } from '../../entities/book-series.entity';
 import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
@@ -68,6 +69,8 @@ export class PublicService {
     private readonly seriesRepo: Repository<Series>,
     @InjectRepository(HomepageSectionBook)
     private readonly homepageSectionBookRepo: Repository<HomepageSectionBook>,
+    @InjectRepository(DisclaimerTemplate)
+    private readonly disclaimerTemplateRepo: Repository<DisclaimerTemplate>,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
     private readonly chatService: ChatServiceClient,
@@ -1045,7 +1048,7 @@ export class PublicService {
   async getBookBySlug(platform: Platform, bookSlug: string): Promise<BookDetailDto> {
     const book = await this.bookRepo.findOne({
       where: { slug: bookSlug, platform_id: platform.id },
-      relations: ['genre', 'category'],
+      relations: ['genre', 'category', 'disclaimerTemplate'],
     });
     if (!book || !book.published_at) {
       throw new NotFoundException('Book not found');
@@ -1095,6 +1098,17 @@ export class PublicService {
       seoOgType: book.seo_og_type,
       seoPrefix: book.seo_prefix,
       seoSuffix: book.seo_suffix,
+      disclaimerTemplate: book.disclaimerTemplate
+        ? {
+            id: book.disclaimerTemplate.id,
+            platformId: book.disclaimerTemplate.platform_id,
+            nama: book.disclaimerTemplate.nama,
+            content: book.disclaimerTemplate.content,
+            isActive: book.disclaimerTemplate.is_active,
+            createdAt: book.disclaimerTemplate.created_at,
+            updatedAt: book.disclaimerTemplate.updated_at,
+          }
+        : null,
       library: {
         id: library?.id ?? '',
         nama: library?.nama ?? '',
@@ -1122,6 +1136,19 @@ export class PublicService {
       uniqueReaderCount,
       commentCount,
     };
+  }
+
+  /**
+   * Daftar template disclaimer aktif milik satu Platform — dipakai dropdown
+   * pilihan penulis di form Book Studio. Tanpa auth (publik).
+   */
+  async getActiveDisclaimerTemplates(platform: Platform): Promise<{ id: string; nama: string }[]> {
+    const templates = await this.disclaimerTemplateRepo.find({
+      where: { platform_id: platform.id, is_active: true },
+      order: { nama: 'ASC' },
+      select: ['id', 'nama'],
+    });
+    return templates;
   }
 
   /**
