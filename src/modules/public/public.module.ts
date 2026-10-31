@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Book } from '../../entities/book.entity';
+import { DisclaimerTemplate } from '../../entities/disclaimer-template.entity';
 import { AuthModule } from '../../common/auth';
 import { HomepageSectionBook } from '../../entities/homepage-section-book.entity';
 import { BookPromotion } from '../../entities/book-promotion.entity';
@@ -16,7 +17,7 @@ import { PublicController } from './public.controller';
 import { PublicService } from './public.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Book, Chapter, Library, ReadingProgress, BookPromotion, BookSeries, Series, HomepageSectionBook]), PlatformsModule, TagsModule, AuthModule],
+  imports: [TypeOrmModule.forFeature([Book, Chapter, Library, ReadingProgress, BookPromotion, BookSeries, Series, HomepageSectionBook, DisclaimerTemplate]), PlatformsModule, TagsModule, AuthModule],
   controllers: [PublicController],
   providers: [PublicService],
 })
