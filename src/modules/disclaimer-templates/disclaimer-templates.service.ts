@@ -48,7 +48,7 @@ export class DisclaimerTemplatesService {
       platform_id: platformId,
       nama: dto.nama,
       content: dto.content,
-      is_active: dto.is_active ?? true,
+      is_active: dto.isActive ?? true,
     });
     const saved = await this.templateRepo.save(template);
     return this.toResponseDto(saved);
@@ -63,7 +63,7 @@ export class DisclaimerTemplatesService {
       template.nama = dto.nama;
     }
     if (dto.content !== undefined) template.content = dto.content;
-    if (dto.is_active !== undefined) template.is_active = dto.is_active;
+    if (dto.isActive !== undefined) template.is_active = dto.isActive;
 
     await this.templateRepo.save(template);
     return this.toResponseDto(template);
