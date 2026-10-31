@@ -4,6 +4,7 @@ import type { BookStatus, BookType } from '../../../entities/book.entity';
 import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
 import { TagResponseDto } from '../../tags/dto/tag-response.dto';
+import { DisclaimerTemplateResponseDto } from '../../disclaimer-templates/dto/disclaimer-template-response.dto';
 
 export class SeriesSummaryDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -145,6 +146,9 @@ export class BookDetailDto {
 
   @ApiPropertyOptional({ nullable: true })
   seoSuffix: string | null;
+
+  @ApiPropertyOptional({ type: DisclaimerTemplateResponseDto, nullable: true, description: 'Template disclaimer yang dipilih Book ini (jika ada).' })
+  disclaimerTemplate: DisclaimerTemplateResponseDto | null;
 
   @ApiProperty({ type: LibraryDetailSummaryDto })
   library: LibraryDetailSummaryDto;

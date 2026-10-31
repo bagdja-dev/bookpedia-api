@@ -11,6 +11,7 @@ import { GenresService } from '../genres/genres.service';
 import { CategoriesService } from '../categories/categories.service';
 import { PlatformsService } from '../platforms/platforms.service';
 import { TagsService } from '../tags/tags.service';
+import { DisclaimerTemplatesService } from '../disclaimer-templates/disclaimer-templates.service';
 import { assertValidBookMaxFreeChapters } from '../../common/utils/free-chapters.util';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -29,6 +30,7 @@ export class BooksService {
     private readonly categoriesService: CategoriesService,
     private readonly platformsService: PlatformsService,
     private readonly tagsService: TagsService,
+    private readonly disclaimerTemplatesService: DisclaimerTemplatesService,
     private readonly chatService: ChatServiceClient,
     private readonly notificationsService: NotificationsService,
   ) {}
@@ -130,6 +132,32 @@ export class BooksService {
   }
 
   /**
+   * Validasi `disclaimerTemplateId` (kalau dikirim) — WAJIB berasal dari
+   * `disclaimer_templates` milik `platformId` yang sama dengan Book ini dan
+   * `is_active = true` (hanya template aktif yang boleh dipilih penulis).
+   * `null`/`undefined` diteruskan apa adanya.
+   */
+  private async resolveDisclaimerTemplateId(
+    disclaimerTemplateId: string | null | undefined,
+    platformId: string | null,
+  ): Promise<string | null | undefined> {
+    if (disclaimerTemplateId === undefined || disclaimerTemplateId === null) {
+      return disclaimerTemplateId;
+    }
+    const template = await this.disclaimerTemplatesService.findById(disclaimerTemplateId);
+    if (!template) {
+      throw new BadRequestException(`disclaimerTemplateId "${disclaimerTemplateId}" tidak ditemukan`);
+    }
+    if (template.platform_id !== platformId) {
+      throw new BadRequestException(`disclaimerTemplateId "${disclaimerTemplateId}" bukan milik Platform yang sama dengan Book ini`);
+    }
+    if (!template.is_active) {
+      throw new BadRequestException(`disclaimerTemplateId "${disclaimerTemplateId}" tidak aktif — tidak bisa dipilih Book`);
+    }
+    return disclaimerTemplateId;
+  }
+
+  /**
    * Resolve Library milik user login (entity penuh, bukan cuma id — supaya
    * `platform_id`-nya tersedia untuk denormalisasi ke Book) — dipakai semua
    * operasi Book di bawah ini, dan dipakai ulang oleh ChaptersService (via
@@ -166,6 +194,7 @@ export class BooksService {
 
     const genreId = await this.resolveGenreId(dto.genreId, library.platform_id);
     const categoryId = await this.resolveCategoryId(dto.categoryId, library.platform_id);
+    const disclaimerTemplateId = await this.resolveDisclaimerTemplateId(dto.disclaimerTemplateId, library.platform_id);
 
     const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(library.platform_id);
     assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
@@ -182,6 +211,7 @@ export class BooksService {
       sinopsis: dto.sinopsis ?? null,
       genre_id: genreId ?? null,
       category_id: categoryId ?? null,
+      disclaimer_template_id: disclaimerTemplateId ?? null,
       cover_url: dto.coverUrl ?? null,
       seo_h1: dto.seoH1 ?? null,
       seo_title: dto.seoTitle ?? null,
@@ -208,7 +238,7 @@ export class BooksService {
     const library = await this.getLibraryForOwner(ownerUserId, platformId);
     return this.bookRepo.find({
       where: { library_id: library.id },
-      relations: ['genre', 'category'],
+      relations: ['genre', 'category', 'disclaimerTemplate'],
       order: { created_at: 'DESC' },
     });
   }
@@ -222,7 +252,7 @@ export class BooksService {
     const library = await this.getLibraryForOwner(ownerUserId, platformId);
     const book = await this.bookRepo.findOne({
       where: { id: bookId, library_id: library.id },
-      relations: ['genre', 'category'],
+      relations: ['genre', 'category', 'disclaimerTemplate'],
     });
     if (!book) {
       throw new NotFoundException('Book not found');
@@ -254,6 +284,11 @@ export class BooksService {
       // `category_id` mentah diubah, TypeORM save() memprioritaskan objek
       // relasi lama kalau tidak di-undefined-kan.
       book.category = undefined;
+    }
+    if (dto.disclaimerTemplateId !== undefined) {
+      // `disclaimerTemplate` tidak ada dalam relations `findOneForOwner`,
+      // jadi cukup set FK mentah langsung — tidak perlu `book.disclaimerTemplate = undefined`.
+      book.disclaimer_template_id = await this.resolveDisclaimerTemplateId(dto.disclaimerTemplateId, book.platform_id);
     }
     if (dto.coverUrl !== undefined) book.cover_url = dto.coverUrl;
     if (dto.seoH1 !== undefined) book.seo_h1 = dto.seoH1;
@@ -381,6 +416,17 @@ export class BooksService {
       seoOgType: book.seo_og_type,
       seoPrefix: book.seo_prefix,
       seoSuffix: book.seo_suffix,
+      disclaimerTemplate: book.disclaimerTemplate
+        ? {
+            id: book.disclaimerTemplate.id,
+            platformId: book.disclaimerTemplate.platform_id,
+            nama: book.disclaimerTemplate.nama,
+            content: book.disclaimerTemplate.content,
+            isActive: book.disclaimerTemplate.is_active,
+            createdAt: book.disclaimerTemplate.created_at,
+            updatedAt: book.disclaimerTemplate.updated_at,
+          }
+        : null,
       viewCount: book.view_count,
       commentCount,
       ratingAverage: Number(book.rating_average),

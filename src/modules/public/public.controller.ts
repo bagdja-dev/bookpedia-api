@@ -158,6 +158,19 @@ export class PublicController {
     return this.publicService.getBookBySlug(platform, bookSlug);
   }
 
+  @Get('platforms/:platformSlug/disclaimer-templates/active')
+  @ApiOperation({
+    summary: 'Daftar template disclaimer aktif milik satu Platform (tanpa auth)',
+    description: 'Dipakai dropdown pilihan penulis di form Book Studio. Hanya template dengan is_active = true.',
+  })
+  @ApiOkResponse({ description: 'Daftar template disclaimer aktif (id + nama)' })
+  async getActiveDisclaimerTemplates(
+    @Param('platformSlug') platformSlug: string,
+  ): Promise<{ id: string; nama: string }[]> {
+    const platform = await this.publicService.resolvePlatformBySlugOrThrow(platformSlug);
+    return this.publicService.getActiveDisclaimerTemplates(platform);
+  }
+
   @Get('platforms/:platformSlug/books/:bookSlug/similar')
   @ApiOperation({
     summary: 'Dua grup Book "Cerita Serupa"/"Cerita Lainnya" (random) untuk 1 Book — section SEO di bagian bawah halaman detail Book',

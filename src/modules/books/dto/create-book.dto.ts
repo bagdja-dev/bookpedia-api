@@ -130,4 +130,12 @@ export class CreateBookDto {
   @IsOptional()
   @IsString()
   seoSuffix?: string;
+
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: 'ID template disclaimer dari GET /platforms/:platformId/disclaimer-templates/active — Book yang memilih template ini akan menampilkan disclaimer di halaman detail (di bawah sinopsis, di atas tombol aksi). Kirim null untuk tidak menampilkan disclaimer.',
+  })
+  @IsOptional()
+  @IsUUID()
+  disclaimerTemplateId?: string;
 }

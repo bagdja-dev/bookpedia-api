@@ -4,6 +4,7 @@ import type { BookStatus, BookType } from '../../../entities/book.entity';
 import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
 import { TagResponseDto } from '../../tags/dto/tag-response.dto';
+import { DisclaimerTemplateResponseDto } from '../../disclaimer-templates/dto/disclaimer-template-response.dto';
 
 export class BookResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -82,6 +83,9 @@ export class BookResponseDto {
 
   @ApiPropertyOptional({ example: 'Bahasa Indonesia', nullable: true, description: 'Suffix SEO Book.' })
   seoSuffix: string | null;
+
+  @ApiPropertyOptional({ type: DisclaimerTemplateResponseDto, nullable: true, description: 'Template disclaimer yang dipilih Book ini (jika ada).' })
+  disclaimerTemplate: DisclaimerTemplateResponseDto | null;
 
   @ApiProperty({ example: 1234, description: 'Fase 7 — total dibaca (SUM view_count semua Chapter Book ini), info read-only untuk penulis pantau performa.' })
   viewCount: number;

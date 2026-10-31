@@ -134,4 +134,13 @@ export class UpdateBookDto {
   @IsOptional()
   @IsString()
   seoSuffix?: string | null;
+
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    nullable: true,
+    description: 'ID template disclaimer dari GET /platforms/:platformId/disclaimer-templates/active. Kirim null untuk menghapus disclaimer Book ini.',
+  })
+  @IsOptional()
+  @IsUUID()
+  disclaimerTemplateId?: string | null;
 }

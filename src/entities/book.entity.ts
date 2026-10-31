@@ -12,6 +12,7 @@ import {
 import { Genre } from './genre.entity';
 import { Category } from './category.entity';
 import { Platform } from './platform.entity';
+import { DisclaimerTemplate } from './disclaimer-template.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
 export type BookType = 'original' | 'translation' | 'adaptation';
@@ -82,6 +83,19 @@ export class Book {
   @ManyToOne(() => Category, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'category_id' })
   category?: Category | null;
+
+  /**
+   * Template disclaimer yang dipilih penulis untuk Book ini — ditampilkan di
+   * halaman detail Book (di bawah sinopsis, di atas tombol aksi). Nullable =
+   * Book tidak menampilkan disclaimer sama sekali.
+   */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  disclaimer_template_id: string | null;
+
+  @ManyToOne(() => DisclaimerTemplate, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'disclaimer_template_id' })
+  disclaimerTemplate?: DisclaimerTemplate | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   cover_url: string | null;
