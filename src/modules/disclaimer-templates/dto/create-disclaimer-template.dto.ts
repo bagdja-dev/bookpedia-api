@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateDisclaimerTemplateDto {
   @ApiProperty({ example: 'Disclaimer Cerita Dewasa', description: 'Nama template disclaimer' })
@@ -15,6 +15,6 @@ export class CreateDisclaimerTemplateDto {
 
   @ApiPropertyOptional({ example: true, description: 'Template aktif/tidak (tidak aktif = tidak bisa dipilih penulis)' })
   @IsOptional()
-  @IsString()
-  is_active?: boolean;
+  @IsBoolean()
+  isActive?: boolean;
 }
