@@ -70,6 +70,24 @@ export class CreateBookDto {
   originalAuthor?: string;
 
   @ApiPropertyOptional({
+    example: 'The Wind in the Willows',
+    description: 'Judul karya asli — relevan kalau bookType bukan "original" (terjemahan/adaptasi). Bebas dikosongkan.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  originalTitle?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/original-work',
+    description: 'Tautan ke karya asli / sumber — relevan kalau bookType bukan "original" (terjemahan/adaptasi). Bebas dikosongkan.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  originalLink?: string;
+
+  @ApiPropertyOptional({
     example: null,
     nullable: true,
     description:

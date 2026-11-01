@@ -74,6 +74,26 @@ export class UpdateBookDto {
   originalAuthor?: string | null;
 
   @ApiPropertyOptional({
+    example: 'The Wind in the Willows',
+    description: 'Judul karya asli. Kirim string kosong untuk mengosongkan.',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  originalTitle?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/original-work',
+    description: 'Tautan ke karya asli / sumber. Kirim string kosong untuk mengosongkan.',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  originalLink?: string | null;
+
+  @ApiPropertyOptional({
     example: null,
     nullable: true,
     description:

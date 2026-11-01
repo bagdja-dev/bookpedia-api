@@ -1096,6 +1096,8 @@ export class PublicService {
       status: book.status,
       bookType: book.book_type,
       originalAuthor: book.original_author,
+      originalTitle: book.original_title,
+      originalLink: book.original_link,
       seoTitle: book.seo_title,
       seoDescription: book.seo_description,
       seoH1: book.seo_h1,

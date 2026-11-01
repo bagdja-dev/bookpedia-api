@@ -139,6 +139,20 @@ export class Book {
   original_author: string | null;
 
   /**
+   * Judul karya asli — relevan kalau `book_type` bukan 'original' (terjemahan/
+   * adaptasi). Tampil di halaman detail Book sebagai "Judul Asli".
+   */
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  original_title: string | null;
+
+  /**
+   * Tautan ke karya asli (sumber) — relevan kalau `book_type` bukan 'original'.
+   * Tampil di halaman detail Book sebagai "Tautan Raw".
+   */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  original_link: string | null;
+
+  /**
    * Saklar publikasi level Book — terpisah dari `status` (label progres
    * narasi) dan dari `chapters.status` per-chapter. `null` = belum
    * dipublish. Book tampil di `/public/*` HANYA kalau kolom ini terisi

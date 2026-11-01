@@ -123,6 +123,12 @@ export class BookDetailDto {
   @ApiPropertyOptional({ example: null, nullable: true, description: 'Nama penulis asli, relevan kalau bookType bukan "original".' })
   originalAuthor: string | null;
 
+  @ApiPropertyOptional({ example: null, nullable: true, description: 'Judul karya asli, relevan kalau bookType bukan "original".' })
+  originalTitle: string | null;
+
+  @ApiPropertyOptional({ example: null, nullable: true, description: 'Tautan ke karya asli / sumber, relevan kalau bookType bukan "original".' })
+  originalLink: string | null;
+
   @ApiPropertyOptional({ nullable: true })
   seoTitle: string | null;
 
