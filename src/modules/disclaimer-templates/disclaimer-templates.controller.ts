@@ -15,6 +15,7 @@ import { DisclaimerTemplateResponseDto, DeletedResponseDto } from './dto/disclai
  * Guard: JwtAuthGuard + OwnerOnly (mutasi). Akses data di-scoping lewat
  * platformId/libraryId dari URL path.
  */
+@Controller()
 @ApiTags('Disclaimer Templates')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
