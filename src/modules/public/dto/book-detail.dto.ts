@@ -5,6 +5,7 @@ import { GenreResponseDto } from '../../genres/dto/genre-response.dto';
 import { CategorySummaryDto } from '../../categories/dto/category-summary.dto';
 import { TagResponseDto } from '../../tags/dto/tag-response.dto';
 import { DisclaimerTemplateResponseDto } from '../../disclaimer-templates/dto/disclaimer-template-response.dto';
+import { BookOriginalLinkDto } from '../../books/dto/book-original-link.dto';
 
 export class SeriesSummaryDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
@@ -126,7 +127,10 @@ export class BookDetailDto {
   @ApiPropertyOptional({ example: null, nullable: true, description: 'Judul karya asli, relevan kalau bookType bukan "original".' })
   originalTitle: string | null;
 
-  @ApiPropertyOptional({ example: null, nullable: true, description: 'Tautan ke karya asli / sumber, relevan kalau bookType bukan "original".' })
+  @ApiProperty({ type: [BookOriginalLinkDto], description: 'Tautan karya asli beserta label.' })
+  originalLinks: BookOriginalLinkDto[];
+
+  @ApiPropertyOptional({ example: null, nullable: true, description: 'Tautan pertama untuk kompatibilitas klien lama.' })
   originalLink: string | null;
 
   @ApiPropertyOptional({ nullable: true })
