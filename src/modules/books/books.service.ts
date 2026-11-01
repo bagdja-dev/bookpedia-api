@@ -426,6 +426,7 @@ export class BooksService {
         ? {
             id: book.disclaimerTemplate.id,
             platformId: book.disclaimerTemplate.platform_id,
+            libraryId: book.disclaimerTemplate.library_id,
             nama: book.disclaimerTemplate.nama,
             content: book.disclaimerTemplate.content,
             isActive: book.disclaimerTemplate.is_active,
