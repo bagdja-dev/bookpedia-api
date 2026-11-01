@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 import { DisclaimerTemplate } from '../../entities/disclaimer-template.entity';
 import { CreateDisclaimerTemplateDto } from './dto/create-disclaimer-template.dto';
@@ -49,8 +49,19 @@ export class DisclaimerTemplatesService {
       nama: dto.nama,
       content: dto.content,
       is_active: dto.isActive ?? true,
+      is_default: dto.isDefault ?? false,
     });
     const saved = await this.templateRepo.save(template);
+
+    // Hanya satu template default per Platform — kalau baru dibuat sebagai
+    // default, matikan default pada template lain di Platform yang sama.
+    if (saved.is_default) {
+      await this.templateRepo.update(
+        { platform_id: platformId, id: Not(saved.id) },
+        { is_default: false },
+      );
+    }
+
     return this.toResponseDto(saved);
   }
 
@@ -64,8 +75,19 @@ export class DisclaimerTemplatesService {
     }
     if (dto.content !== undefined) template.content = dto.content;
     if (dto.isActive !== undefined) template.is_active = dto.isActive;
+    if (dto.isDefault !== undefined) template.is_default = dto.isDefault;
 
     await this.templateRepo.save(template);
+
+    // Hanya satu template default per Platform — kalau di-set sebagai default,
+    // matikan default pada template lain di Platform yang sama.
+    if (template.is_default) {
+      await this.templateRepo.update(
+        { platform_id: template.platform_id, id: Not(template.id) },
+        { is_default: false },
+      );
+    }
+
     return this.toResponseDto(template);
   }
 
@@ -82,6 +104,7 @@ export class DisclaimerTemplatesService {
       nama: template.nama,
       content: template.content,
       isActive: template.is_active,
+      isDefault: template.is_default,
       createdAt: template.created_at,
       updatedAt: template.updated_at,
     };

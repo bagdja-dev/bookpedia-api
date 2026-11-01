@@ -213,6 +213,9 @@ export class BooksService {
       category_id: categoryId ?? null,
       disclaimer_template_id: disclaimerTemplateId ?? null,
       cover_url: dto.coverUrl ?? null,
+      original_author: dto.originalAuthor ?? null,
+      original_title: dto.originalTitle ?? null,
+      original_link: dto.originalLink ?? null,
       seo_h1: dto.seoH1 ?? null,
       seo_title: dto.seoTitle ?? null,
       seo_description: dto.seoDescription ?? null,
@@ -223,7 +226,6 @@ export class BooksService {
       seo_suffix: dto.seoSuffix ?? null,
       status: 'draft',
       book_type: dto.bookType ?? 'original',
-      original_author: dto.originalAuthor ?? null,
       max_free_chapters: dto.maxFreeChapters ?? null,
     });
 
@@ -305,6 +307,8 @@ export class BooksService {
     }
     if (dto.bookType !== undefined) book.book_type = dto.bookType;
     if (dto.originalAuthor !== undefined) book.original_author = dto.originalAuthor || null;
+    if (dto.originalTitle !== undefined) book.original_title = dto.originalTitle || null;
+    if (dto.originalLink !== undefined) book.original_link = dto.originalLink || null;
     if (dto.maxFreeChapters !== undefined) {
       const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(book.platform_id);
       assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
@@ -406,6 +410,8 @@ export class BooksService {
       status: book.status,
       bookType: book.book_type,
       originalAuthor: book.original_author,
+      originalTitle: book.original_title,
+      originalLink: book.original_link,
       publishedAt: book.published_at,
       maxFreeChapters: book.max_free_chapters,
       seoTitle: book.seo_title,
@@ -423,6 +429,7 @@ export class BooksService {
             nama: book.disclaimerTemplate.nama,
             content: book.disclaimerTemplate.content,
             isActive: book.disclaimerTemplate.is_active,
+            isDefault: book.disclaimerTemplate.is_default,
             createdAt: book.disclaimerTemplate.created_at,
             updatedAt: book.disclaimerTemplate.updated_at,
           }

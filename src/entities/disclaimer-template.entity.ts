@@ -40,6 +40,13 @@ export class DisclaimerTemplate {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
+  /**
+   * Template default Platform — ditampilkan di halaman detail Book kalau Book
+   * tidak memilih template disclaimer sendiri. Hanya satu per Platform.
+   */
+  @Column({ type: 'boolean', default: false })
+  is_default: boolean;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

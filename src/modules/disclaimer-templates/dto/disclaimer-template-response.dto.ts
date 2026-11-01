@@ -16,6 +16,9 @@ export class DisclaimerTemplateResponseDto {
   @ApiProperty({ example: true })
   isActive: boolean;
 
+  @ApiProperty({ example: false })
+  isDefault: boolean;
+
   @ApiProperty()
   createdAt: Date;
 
