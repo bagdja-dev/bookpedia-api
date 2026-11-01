@@ -16,6 +16,10 @@ import { DisclaimerTemplate } from './disclaimer-template.entity';
 
 export type BookStatus = 'draft' | 'ongoing' | 'completed';
 export type BookType = 'original' | 'translation' | 'adaptation';
+export interface BookOriginalLink {
+  label: string;
+  link: string;
+}
 
 /**
  * Satu Book = satu karya (novel/cerita berseri) milik satu Library
@@ -147,10 +151,9 @@ export class Book {
 
   /**
    * Tautan ke karya asli (sumber) — relevan kalau `book_type` bukan 'original'.
-   * Tampil di halaman detail Book sebagai "Tautan Raw".
    */
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  original_link: string | null;
+  @Column({ type: 'jsonb', nullable: true })
+  original_links: BookOriginalLink[] | null;
 
   /**
    * Saklar publikasi level Book — terpisah dari `status` (label progres

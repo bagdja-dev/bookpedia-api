@@ -47,6 +47,16 @@ export class BooksService {
     return platform?.max_free_chapters ?? 0;
   }
 
+  private resolveOriginalLinks(
+    links: { label: string; link: string }[] | null | undefined,
+    legacyLink?: string | null,
+  ): Book['original_links'] {
+    if (links !== undefined && links !== null) {
+      return links.length > 0 ? links : null;
+    }
+    return legacyLink?.trim() ? [{ label: 'Karya Asli', link: legacyLink.trim() }] : null;
+  }
+
   /**
    * Nilai `max_tags_per_book` Platform saat ini (Fase 6, §12.2 overview.md).
    * `platformId` null (Book/Library lama sebelum backfill) dianggap tanpa
@@ -215,7 +225,7 @@ export class BooksService {
       cover_url: dto.coverUrl ?? null,
       original_author: dto.originalAuthor ?? null,
       original_title: dto.originalTitle ?? null,
-      original_link: dto.originalLink ?? null,
+      original_links: this.resolveOriginalLinks(dto.originalLinks, dto.originalLink),
       seo_h1: dto.seoH1 ?? null,
       seo_title: dto.seoTitle ?? null,
       seo_description: dto.seoDescription ?? null,
@@ -308,7 +318,11 @@ export class BooksService {
     if (dto.bookType !== undefined) book.book_type = dto.bookType;
     if (dto.originalAuthor !== undefined) book.original_author = dto.originalAuthor || null;
     if (dto.originalTitle !== undefined) book.original_title = dto.originalTitle || null;
-    if (dto.originalLink !== undefined) book.original_link = dto.originalLink || null;
+    if (dto.originalLinks !== undefined) {
+      book.original_links = this.resolveOriginalLinks(dto.originalLinks);
+    } else if (dto.originalLink !== undefined) {
+      book.original_links = this.resolveOriginalLinks(undefined, dto.originalLink);
+    }
     if (dto.maxFreeChapters !== undefined) {
       const platformMaxFreeChapters = await this.getPlatformMaxFreeChapters(book.platform_id);
       assertValidBookMaxFreeChapters(platformMaxFreeChapters, dto.maxFreeChapters);
@@ -411,7 +425,8 @@ export class BooksService {
       bookType: book.book_type,
       originalAuthor: book.original_author,
       originalTitle: book.original_title,
-      originalLink: book.original_link,
+      originalLinks: book.original_links ?? [],
+      originalLink: book.original_links?.[0]?.link ?? null,
       publishedAt: book.published_at,
       maxFreeChapters: book.max_free_chapters,
       seoTitle: book.seo_title,

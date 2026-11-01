@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, ValidateNested } from 'class-validator';
 
 import type { BookStatus, BookType } from '../../../entities/book.entity';
+import { BookOriginalLinkDto } from './book-original-link.dto';
 
 export class UpdateBookDto {
   @ApiPropertyOptional({ example: 'Kisah di Ujung Senja (Revisi)' })
@@ -83,11 +85,14 @@ export class UpdateBookDto {
   @MaxLength(255)
   originalTitle?: string | null;
 
-  @ApiPropertyOptional({
-    example: 'https://example.com/original-work',
-    description: 'Tautan ke karya asli / sumber. Kirim string kosong untuk mengosongkan.',
-    nullable: true,
-  })
+  @ApiPropertyOptional({ type: BookOriginalLinkDto, isArray: true, description: 'Tautan ke karya asli/sumber beserta label yang ditampilkan. Kirim [] untuk menghapus semuanya.' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BookOriginalLinkDto)
+  originalLinks?: BookOriginalLinkDto[] | null;
+
+  @ApiPropertyOptional({ example: 'https://example.com/original-work', description: 'Kompatibilitas untuk klien lama; gunakan originalLinks untuk beberapa tautan.', nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(500)
