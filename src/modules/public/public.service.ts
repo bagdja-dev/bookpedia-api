@@ -1054,11 +1054,20 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    // Fallback ke template default Platform kalau Book tidak memilih
-    // template disclaimer sendiri.
-    const defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
-      where: { platform_id: platform.id, is_default: true, is_active: true },
-    });
+    const library = await this.libraryRepo.findOne({ where: { id: book.library_id } });
+
+    // Fallback: Book template -> Library default -> Platform default
+    let defaultDisclaimerTemplate = book.disclaimerTemplate;
+    if (!defaultDisclaimerTemplate && library) {
+      defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
+        where: { library_id: library.id, is_active: true, is_default: true },
+      });
+    }
+    if (!defaultDisclaimerTemplate) {
+      defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
+        where: { platform_id: platform.id, is_active: true, is_default: true },
+      });
+    }
 
     const chapters = await this.chapterRepo.find({
       where: { book_id: book.id, status: 'published' },
@@ -1069,8 +1078,7 @@ export class PublicService {
       throw new NotFoundException('Book not found');
     }
 
-    const [library, tags, chapterCommentCounts, libraryStats, series, uniqueReaderCount] = await Promise.all([
-      this.libraryRepo.findOne({ where: { id: book.library_id } }),
+    const [tags, chapterCommentCounts, libraryStats, series, uniqueReaderCount] = await Promise.all([
       this.tagsService.findTagsForBook(book.id),
       this.getCommentCountsForChapters(chapters),
       this.getLibraryAggregateStats(book.library_id),
@@ -1110,6 +1118,7 @@ export class PublicService {
         ? {
             id: book.disclaimerTemplate.id,
             platformId: book.disclaimerTemplate.platform_id,
+            libraryId: book.disclaimerTemplate.library_id,
             nama: book.disclaimerTemplate.nama,
             content: book.disclaimerTemplate.content,
             isActive: book.disclaimerTemplate.is_active,
@@ -1121,6 +1130,7 @@ export class PublicService {
           ? {
               id: defaultDisclaimerTemplate.id,
               platformId: defaultDisclaimerTemplate.platform_id,
+              libraryId: defaultDisclaimerTemplate.library_id,
               nama: defaultDisclaimerTemplate.nama,
               content: defaultDisclaimerTemplate.content,
               isActive: defaultDisclaimerTemplate.is_active,

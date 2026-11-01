@@ -4,8 +4,11 @@ export class DisclaimerTemplateResponseDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   id: string;
 
-  @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Platform pemilik template ini' })
-  platformId: string;
+  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Platform pemilik template (jika level Platform)', nullable: true })
+  platformId: string | null;
+
+  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'ID Library/Studio pemilik template (jika level Studio)', nullable: true })
+  libraryId: string | null;
 
   @ApiProperty({ example: 'Disclaimer Cerita Dewasa' })
   nama: string;

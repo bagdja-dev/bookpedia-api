@@ -8,66 +8,148 @@ import { UpdateDisclaimerTemplateDto } from './dto/update-disclaimer-template.dt
 import { DisclaimerTemplateResponseDto, DeletedResponseDto } from './dto/disclaimer-template-response.dto';
 
 /**
- * CRUD Disclaimer Template ter-autentikasi di Studio — Owner/Staff mengelola
- * template disclaimer per-Platform. `platformId` diambil dari URL path
- * (`/platforms/:platformId/disclaimer-templates`), guard `PlatformAccessGuard`
- * memastikan user punya akses ke Platform tersebut (pola sama controllers
- * lainnya di Admin Studio).
+ * CRUD Disclaimer Template — dua level:
+ *  1. Platform (Admin): POST/GET/PATCH/DELETE /platforms/:platformId/disclaimer-templates
+ *  2. Library/Studio (Owner): POST/GET/PATCH/DELETE /libraries/:libraryId/disclaimer-templates
+ *
+ * Guard: JwtAuthGuard + OwnerOnly (mutasi). Akses data di-scoping lewat
+ * platformId/libraryId dari URL path.
  */
 @ApiTags('Disclaimer Templates')
-@Controller('platforms/:platformId/disclaimer-templates')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class DisclaimerTemplatesController {
   constructor(private readonly disclaimerTemplatesService: DisclaimerTemplatesService) {}
 
-  @Post()
+  /* ================= Platform level ================= */
+
+  @Post('platforms/:platformId/disclaimer-templates')
   @OwnerOnly()
-  @ApiOperation({ summary: 'Buat template disclaimer baru (Owner only)' })
+  @ApiOperation({ summary: 'Buat template disclaimer level Platform (Admin/Owner only)' })
   @ApiOkResponse({ type: DisclaimerTemplateResponseDto, description: 'Template disclaimer berhasil dibuat' })
-  async create(
+  async createByPlatform(
     @Param('platformId') platformId: string,
     @Body() dto: CreateDisclaimerTemplateDto,
   ): Promise<DisclaimerTemplateResponseDto> {
-    return this.disclaimerTemplatesService.create(platformId, dto);
+    return this.disclaimerTemplatesService.createByPlatform(platformId, dto);
   }
 
-  @Get()
-  @ApiOperation({ summary: 'List template disclaimer milik satu Platform (Owner atau Staff terdaftar)' })
+  @Get('platforms/:platformId/disclaimer-templates')
+  @ApiOperation({ summary: 'List template disclaimer level Platform' })
   @ApiOkResponse({ type: DisclaimerTemplateResponseDto, isArray: true })
-  async findAll(@Param('platformId') platformId: string): Promise<DisclaimerTemplateResponseDto[]> {
+  async findAllByPlatform(
+    @Param('platformId') platformId: string,
+  ): Promise<DisclaimerTemplateResponseDto[]> {
     const templates = await this.disclaimerTemplatesService.findAllByPlatform(platformId);
     return templates.map((t) => this.disclaimerTemplatesService.toResponseDto(t));
   }
 
-  @Get('active')
-  @ApiOperation({ summary: 'List template disclaimer aktif (dipakai dropdown pilihan penulis di form Book)' })
+  @Get('platforms/:platformId/disclaimer-templates/active')
+  @ApiOperation({ summary: 'List template disclaimer aktif level Platform (dropdown form Book)' })
   @ApiOkResponse({ type: DisclaimerTemplateResponseDto, isArray: true })
-  async findActive(@Param('platformId') platformId: string): Promise<DisclaimerTemplateResponseDto[]> {
+  async findActiveByPlatform(
+    @Param('platformId') platformId: string,
+  ): Promise<DisclaimerTemplateResponseDto[]> {
     const templates = await this.disclaimerTemplatesService.findActiveByPlatform(platformId);
     return templates.map((t) => this.disclaimerTemplatesService.toResponseDto(t));
   }
 
-  @Patch(':id')
-  @OwnerOnly()
-  @ApiOperation({ summary: 'Update template disclaimer (Owner only)' })
+  @Get('platforms/:platformId/disclaimer-templates/default')
+  @ApiOperation({ summary: 'Template default level Platform' })
   @ApiOkResponse({ type: DisclaimerTemplateResponseDto })
-  async update(
+  async findDefaultByPlatform(
+    @Param('platformId') platformId: string,
+  ): Promise<DisclaimerTemplateResponseDto | null> {
+    const template = await this.disclaimerTemplatesService.findDefaultByPlatform(platformId);
+    return template ? this.disclaimerTemplatesService.toResponseDto(template) : null;
+  }
+
+  @Patch('platforms/:platformId/disclaimer-templates/:id')
+  @OwnerOnly()
+  @ApiOperation({ summary: 'Update template disclaimer level Platform (Owner only)' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto })
+  async updateByPlatform(
     @Param('platformId') platformId: string,
     @Param('id') id: string,
     @Body() dto: UpdateDisclaimerTemplateDto,
   ): Promise<DisclaimerTemplateResponseDto> {
-    return this.disclaimerTemplatesService.update(platformId, id, dto);
+    return this.disclaimerTemplatesService.updateByPlatform(platformId, id, dto);
   }
 
-  @Delete(':id')
+  @Delete('platforms/:platformId/disclaimer-templates/:id')
   @OwnerOnly()
-  @ApiOperation({ summary: 'Hapus template disclaimer (Owner only) — Book yang memakainya jadi tanpa disclaimer' })
+  @ApiOperation({ summary: 'Hapus template disclaimer level Platform (Owner only)' })
   @ApiOkResponse({ type: DeletedResponseDto })
-  async remove(
+  async removeByPlatform(
     @Param('platformId') platformId: string,
     @Param('id') id: string,
   ): Promise<DeletedResponseDto> {
-    return this.disclaimerTemplatesService.remove(platformId, id);
+    return this.disclaimerTemplatesService.removeByPlatform(platformId, id);
+  }
+
+  /* ================= Library/Studio level ================= */
+
+  @Post('libraries/:libraryId/disclaimer-templates')
+  @OwnerOnly()
+  @ApiOperation({ summary: 'Buat template disclaimer level Studio/Library (Owner only)' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto, description: 'Template disclaimer berhasil dibuat' })
+  async createByLibrary(
+    @Param('libraryId') libraryId: string,
+    @Body() dto: CreateDisclaimerTemplateDto,
+  ): Promise<DisclaimerTemplateResponseDto> {
+    return this.disclaimerTemplatesService.createByLibrary(libraryId, dto);
+  }
+
+  @Get('libraries/:libraryId/disclaimer-templates')
+  @ApiOperation({ summary: 'List template disclaimer level Studio/Library' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto, isArray: true })
+  async findAllByLibrary(
+    @Param('libraryId') libraryId: string,
+  ): Promise<DisclaimerTemplateResponseDto[]> {
+    const templates = await this.disclaimerTemplatesService.findAllByLibrary(libraryId);
+    return templates.map((t) => this.disclaimerTemplatesService.toResponseDto(t));
+  }
+
+  @Get('libraries/:libraryId/disclaimer-templates/active')
+  @ApiOperation({ summary: 'List template disclaimer aktif level Studio (dropdown form Book)' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto, isArray: true })
+  async findActiveByLibrary(
+    @Param('libraryId') libraryId: string,
+  ): Promise<DisclaimerTemplateResponseDto[]> {
+    const templates = await this.disclaimerTemplatesService.findActiveByLibrary(libraryId);
+    return templates.map((t) => this.disclaimerTemplatesService.toResponseDto(t));
+  }
+
+  @Get('libraries/:libraryId/disclaimer-templates/default')
+  @ApiOperation({ summary: 'Template default level Studio/Library' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto })
+  async findDefaultByLibrary(
+    @Param('libraryId') libraryId: string,
+  ): Promise<DisclaimerTemplateResponseDto | null> {
+    const template = await this.disclaimerTemplatesService.findDefaultByLibrary(libraryId);
+    return template ? this.disclaimerTemplatesService.toResponseDto(template) : null;
+  }
+
+  @Patch('libraries/:libraryId/disclaimer-templates/:id')
+  @OwnerOnly()
+  @ApiOperation({ summary: 'Update template disclaimer level Studio/Library (Owner only)' })
+  @ApiOkResponse({ type: DisclaimerTemplateResponseDto })
+  async updateByLibrary(
+    @Param('libraryId') libraryId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateDisclaimerTemplateDto,
+  ): Promise<DisclaimerTemplateResponseDto> {
+    return this.disclaimerTemplatesService.updateByLibrary(libraryId, id, dto);
+  }
+
+  @Delete('libraries/:libraryId/disclaimer-templates/:id')
+  @OwnerOnly()
+  @ApiOperation({ summary: 'Hapus template disclaimer level Studio/Library (Owner only)' })
+  @ApiOkResponse({ type: DeletedResponseDto })
+  async removeByLibrary(
+    @Param('libraryId') libraryId: string,
+    @Param('id') id: string,
+  ): Promise<DeletedResponseDto> {
+    return this.disclaimerTemplatesService.removeByLibrary(libraryId, id);
   }
 }
