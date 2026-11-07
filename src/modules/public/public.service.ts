@@ -167,6 +167,7 @@ export class PublicService {
       seoDefaultOgType: platform.seo_default_og_type,
       seoPrefix: platform.seo_prefix,
       seoSuffix: platform.seo_suffix,
+      aboutContent: platform.about_content,
       termsAndConditions: platform.terms_and_conditions,
       privacyPolicy: platform.privacy_policy,
       contactPhone: platform.contact_phone ?? null,

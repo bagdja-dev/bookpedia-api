@@ -31,6 +31,9 @@ export class PlatformPublicProfileDto {
   @ApiPropertyOptional({ example: 'Baca & Tulis Cerita', nullable: true, description: 'Akhiran judul situs pada metadata SEO.' })
   seoSiteTitleSuffix: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Konten halaman Tentang publik Platform ini.' })
+  aboutContent: string | null;
+
   @ApiPropertyOptional({ nullable: true })
   logoUrl: string | null;
 
