@@ -99,15 +99,15 @@ export class PlatformBuildsController {
   @Get('jobs/:jobId')
   @OwnerOnly()
   @ApiOperation({ summary: 'Detail a build job' })
-  async getJob(@Param('jobId') jobId: string) {
-    return this.platformBuildsService.getJob(jobId);
+  async getJob(@Param('jobId') jobId: string, @Query('platformId') platformId: string) {
+    return this.platformBuildsService.getJob(jobId, platformId);
   }
 
   @Get('jobs/:jobId/status')
   @OwnerOnly()
   @ApiOperation({ summary: 'Refresh status and get current temporary artifact/log links' })
-  async getJobStatus(@Param('jobId') jobId: string) {
-    return this.platformBuildsService.getJobStatus(jobId);
+  async getJobStatus(@Param('jobId') jobId: string, @Query('platformId') platformId: string) {
+    return this.platformBuildsService.getJobStatus(jobId, platformId);
   }
 
 }

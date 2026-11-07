@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsEmail, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
@@ -26,6 +26,10 @@ export class CreatePlatformDto {
   })
   slug: string;
 
+  @ApiProperty({ description: 'UUID organisasi milik user yang menjadi tenant pemilik Platform.' })
+  @IsUUID()
+  ownerOrgId: string;
+
   @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
   @IsOptional()
   @IsString()
@@ -37,6 +41,12 @@ export class CreatePlatformDto {
   @IsString()
   @MaxLength(255)
   motto?: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca & Tulis Cerita', nullable: true, description: 'Akhiran judul situs pada metadata SEO.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  seoSiteTitleSuffix?: string | null;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/logo.png' })
   @IsOptional()
@@ -58,7 +68,7 @@ export class CreatePlatformDto {
   @IsString()
   notificationSoundUrl?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: {
       bg: '#fbf6ee',
       surface: '#fffdf8',
@@ -70,10 +80,11 @@ export class CreatePlatformDto {
       mustard: '#d79a2c',
       olive: '#6b7a4c',
     },
-    description: 'Palet warna Platform (hex #rrggbb). Umum: bg, surface, foreground, muted, border, terracotta (aksen/link), terracottaForeground, mustard, olive. Spesifik (opsional, kosong = ikut umum): headerBg, headerText, headerBorder, cardBg, cardBorder, cardTitle, cardText, cardChipBg, footerBg, footerText, buttonBg, buttonText, statusOngoing, statusCompleted, statusDraft, ratingStar, readingBg, readingText.',
+    description: 'Palet warna Platform (hex #rrggbb). Jika tidak dikirim, API memakai palet default. Umum: bg, surface, foreground, muted, border, terracotta (aksen/link), terracottaForeground, mustard, olive. Spesifik (opsional, kosong = ikut umum): headerBg, headerText, headerBorder, cardBg, cardBorder, cardTitle, cardText, cardChipBg, footerBg, footerText, buttonBg, buttonText, statusOngoing, statusCompleted, statusDraft, ratingStar, readingBg, readingText.',
   })
+  @IsOptional()
   @IsObject()
-  colors: Record<string, string>;
+  colors?: Record<string, string>;
 
   @ApiPropertyOptional({ example: false, description: 'Kalau true, POST /libraries ditutup untuk Platform ini. Default false.' })
   @IsOptional()
@@ -120,6 +131,11 @@ export class CreatePlatformDto {
   @IsOptional()
   @IsBoolean()
   showBookStatus?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Tampilkan disclaimer pada halaman detail Book publik. Default true.' })
+  @IsOptional()
+  @IsBoolean()
+  enableDisclaimer?: boolean;
 
   @ApiPropertyOptional({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book. Default 5.' })
   @IsOptional()

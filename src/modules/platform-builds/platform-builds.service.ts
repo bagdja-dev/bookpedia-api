@@ -175,12 +175,15 @@ export class PlatformBuildsService {
     }));
   }
 
-  async getJob(jobId: string) {
-    return this.getJobStatus(jobId);
+  async getJob(jobId: string, expectedPlatformId: string) {
+    return this.getJobStatus(jobId, expectedPlatformId);
   }
 
-  async getJobStatus(jobId: string) {
+  async getJobStatus(jobId: string, expectedPlatformId: string) {
     const status = await this.buildQueueService.getStatus(jobId);
+    if (!status.platformId || status.platformId !== expectedPlatformId) {
+      throw new NotFoundException('Build job not found for this platform');
+    }
     if (status.platformId && status.status === 'success' && status.signingCertSha256) {
       const platform = await this.platformRepo.findOne({ where: { id: status.platformId } });
       if (platform) await this.syncAndroidAssetLinks(platform, [status]);
@@ -339,7 +342,7 @@ export class PlatformBuildsService {
     });
 
     if (!dispatchResult.externalJobId) throw new BadRequestException('TWA Builder returned no job ID');
-    return this.getJobStatus(dispatchResult.externalJobId);
+    return this.getJobStatus(dispatchResult.externalJobId, platform.id);
   }
 
   async getKeystoreProfiles(): Promise<PlatformKeystoreProfileResponseDto[]> {

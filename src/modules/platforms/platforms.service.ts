@@ -15,7 +15,7 @@ import { PlatformUserActivityResponseDto } from './dto/platform-user-activity.dt
 import { PlatformUserReadingResponseDto } from './dto/platform-user-reading.dto';
 import { PlatformAnalyticsResponseDto } from './dto/platform-analytics.dto';
 import { resolveReadingTypography } from '../../common/utils/reading-typography.util';
-import { sanitizePlatformColors } from '../../common/utils/platform-colors.util';
+import { DEFAULT_PLATFORM_COLORS, sanitizePlatformColors } from '../../common/utils/platform-colors.util';
 
 /**
  * Genre default yang di-copy ke Platform baru (§4.1, 10 Sep 2026) — sama
@@ -76,21 +76,22 @@ export class PlatformsService {
   ) {}
 
   /**
-   * Owner (org tunggal pemilik client_app Bookpedia) lihat SEMUA Platform,
-   * org-wide. Staff cuma lihat Platform yang dia punya row aktif di
-   * `platform_staff`. Dipanggil controller dengan `isOwner` dari
-   * `request.platformAccess` (di-set PlatformAccessGuard).
+   * Platform hanya terlihat oleh Owner organisasi tenant-nya atau staff aktif
+   * yang terdaftar secara eksplisit di Platform tersebut.
    */
-  async findMine(userId: string, isOwner: boolean): Promise<Platform[]> {
-    if (isOwner) {
-      return this.platformRepo.find({ order: { created_at: 'ASC' } });
-    }
-
+  async findMine(userId: string, ownedOrganizationIds: string[]): Promise<Platform[]> {
     const staffRows = await this.platformStaffRepo.find({ where: { user_id: userId, is_active: true } });
     const platformIds = staffRows.map((row) => row.platform_id);
-    if (platformIds.length === 0) return [];
+    if (ownedOrganizationIds.length === 0 && platformIds.length === 0) return [];
 
-    return this.platformRepo.find({ where: { id: In(platformIds) }, order: { created_at: 'ASC' } });
+    const ownedPlatforms = ownedOrganizationIds.length
+      ? await this.platformRepo.find({ where: { owner_org_id: In(ownedOrganizationIds) } })
+      : [];
+    const staffPlatforms = platformIds.length
+      ? await this.platformRepo.find({ where: { id: In(platformIds) } })
+      : [];
+    const platformsById = new Map([...ownedPlatforms, ...staffPlatforms].map((platform) => [platform.id, platform]));
+    return [...platformsById.values()].sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
   }
 
   async findById(id: string): Promise<Platform | null> {
@@ -509,12 +510,21 @@ export class PlatformsService {
       const platform = platformRepo.create({
         nama: dto.nama,
         slug: dto.slug,
+        owner_org_id: dto.ownerOrgId,
+        owner_wallet_id: null,
         tagline: dto.tagline?.trim() || null,
         motto: dto.motto?.trim() || null,
+        seo_site_title_suffix:
+          dto.seoSiteTitleSuffix === undefined
+            ? 'Baca & Tulis Cerita'
+            : dto.seoSiteTitleSuffix?.trim() || null,
         logo_url: dto.logoUrl ?? null,
         favicon_url: dto.faviconUrl ?? null,
         notification_sound_url: dto.notificationSoundUrl ?? null,
-        colors: sanitizePlatformColors(dto.colors),
+        colors: {
+          ...DEFAULT_PLATFORM_COLORS,
+          ...sanitizePlatformColors(dto.colors ?? {}),
+        },
         lock_studio: dto.lockStudio ?? false,
         studio_edit_mode: dto.studioEditMode ?? 'auto',
         renderer_key: dto.rendererKey ?? 'reader',
@@ -522,6 +532,7 @@ export class PlatformsService {
         ad_slots: dto.adSlots ?? defaultPlatformAdSlots(),
         max_free_chapters: dto.maxFreeChapters ?? 0,
         show_book_status: dto.showBookStatus ?? true,
+        enable_disclaimer: dto.enableDisclaimer ?? true,
         max_tags_per_book: dto.maxTagsPerBook ?? 5,
         enable_rating: dto.enableRating ?? true,
         rating_mode: dto.ratingMode ?? 'book',
@@ -568,6 +579,9 @@ export class PlatformsService {
     if (dto.nama !== undefined) platform.nama = dto.nama;
     if (dto.tagline !== undefined) platform.tagline = dto.tagline?.trim() || null;
     if (dto.motto !== undefined) platform.motto = dto.motto?.trim() || null;
+    if (dto.seoSiteTitleSuffix !== undefined) {
+      platform.seo_site_title_suffix = dto.seoSiteTitleSuffix?.trim() || null;
+    }
     if (dto.slug !== undefined && dto.slug !== platform.slug) {
       const existingSlug = await this.platformRepo.findOne({ where: { slug: dto.slug } });
       if (existingSlug) {
@@ -598,6 +612,7 @@ export class PlatformsService {
     }
     if (dto.maxFreeChapters !== undefined) platform.max_free_chapters = dto.maxFreeChapters;
     if (dto.showBookStatus !== undefined) platform.show_book_status = dto.showBookStatus;
+    if (dto.enableDisclaimer !== undefined) platform.enable_disclaimer = dto.enableDisclaimer;
     if (dto.maxTagsPerBook !== undefined) platform.max_tags_per_book = dto.maxTagsPerBook;
     if (dto.searchConsoleVerificationFilename !== undefined) {
       platform.search_console_verification_filename = dto.searchConsoleVerificationFilename;
@@ -650,13 +665,16 @@ export class PlatformsService {
     return saved;
   }
 
-  toResponseDto(platform: Platform): PlatformResponseDto {
+  toResponseDto(platform: Platform, ownerOrgName: string | null = null): PlatformResponseDto {
     return {
       id: platform.id,
       nama: platform.nama,
       slug: platform.slug,
+      ownerOrgId: platform.owner_org_id,
+      ownerOrgName,
       tagline: platform.tagline,
       motto: platform.motto,
+      seoSiteTitleSuffix: platform.seo_site_title_suffix,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
       notificationSoundUrl: platform.notification_sound_url,
@@ -673,6 +691,7 @@ export class PlatformsService {
       updatedAt: platform.updated_at,
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,
+      enableDisclaimer: platform.enable_disclaimer ?? true,
       maxTagsPerBook: platform.max_tags_per_book,
       searchConsoleVerificationFilename: platform.search_console_verification_filename,
       searchConsoleVerificationContent: platform.search_console_verification_content,

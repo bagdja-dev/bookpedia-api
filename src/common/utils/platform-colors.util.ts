@@ -5,6 +5,18 @@ export const BASE_COLOR_KEYS = [
   'bg', 'surface', 'foreground', 'muted', 'border', 'terracotta', 'terracottaForeground', 'mustard', 'olive',
 ] as const;
 
+export const DEFAULT_PLATFORM_COLORS: Record<string, string> = {
+  bg: '#fbf6ee',
+  surface: '#fffdf8',
+  foreground: '#2c2114',
+  muted: '#7a6c57',
+  border: '#e6d9c3',
+  terracotta: '#c1502e',
+  terracottaForeground: '#fdf8f0',
+  mustard: '#d79a2c',
+  olive: '#6b7a4c',
+};
+
 /**
  * Warna spesifik per bagian — opsional; kosong = mengikuti palet umum (reader memakai
  * `var(--spesifik, var(--umum))`), jadi Platform lama tidak berubah tampilannya.

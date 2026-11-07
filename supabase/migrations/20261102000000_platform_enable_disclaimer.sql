@@ -1,0 +1,2 @@
+ALTER TABLE platforms
+    ADD COLUMN IF NOT EXISTS enable_disclaimer BOOLEAN NOT NULL DEFAULT true;
