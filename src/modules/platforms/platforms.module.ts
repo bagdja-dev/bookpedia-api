@@ -9,11 +9,12 @@ import { AuthModule } from '../../common/auth';
 import { ChatServiceModule } from '../../common/chat-service/chat-service.module';
 import { PlatformsController } from './platforms.controller';
 import { PlatformsService } from './platforms.service';
+import { PlatformOwnerWalletService } from './platform-owner-wallet.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Platform, PlatformStaff, Genre, HomepageSectionBook]), AuthModule, ChatServiceModule],
   controllers: [PlatformsController],
-  providers: [PlatformsService],
+  providers: [PlatformsService, PlatformOwnerWalletService],
   // Diexport supaya LibrariesModule bisa reuse untuk resolve+validasi
   // platformId saat create Library.
   exports: [PlatformsService],

@@ -32,6 +32,12 @@ export class UpdatePlatformDto {
   @MaxLength(255)
   motto?: string | null;
 
+  @ApiPropertyOptional({ example: 'Baca & Tulis Cerita', nullable: true, description: 'Akhiran judul situs pada metadata SEO; kirim null atau string kosong untuk menghilangkan.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  seoSiteTitleSuffix?: string | null;
+
   @ApiPropertyOptional({
     example: 'teknobuku',
     description: 'Slug unik Platform, lowercase-kebab-case. Mengubah ini mengubah subdomain publik {slug}.bookpedia.bagdja.com yang sedang aktif.',
@@ -124,6 +130,11 @@ export class UpdatePlatformDto {
   @IsOptional()
   @IsBoolean()
   showBookStatus?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: 'Tampilkan atau sembunyikan disclaimer pada halaman detail Book publik Platform ini.' })
+  @IsOptional()
+  @IsBoolean()
+  enableDisclaimer?: boolean;
 
   @ApiPropertyOptional({ example: 'ca-pub-2126630801090914', nullable: true, description: 'ID publisher Google AdSense Platform ini; kirim null untuk menghapus meta tag.' })
   @IsOptional()

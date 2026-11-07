@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard, OwnerOnly } from '../../common/auth';
+import { JwtAuthGuard, OwnerOnly, PlatformAccessGuard } from '../../common/auth';
 import { DisclaimerTemplatesService } from './disclaimer-templates.service';
 import { CreateDisclaimerTemplateDto } from './dto/create-disclaimer-template.dto';
 import { UpdateDisclaimerTemplateDto } from './dto/update-disclaimer-template.dto';
@@ -17,7 +17,7 @@ import { DisclaimerTemplateResponseDto, DeletedResponseDto } from './dto/disclai
  */
 @Controller()
 @ApiTags('Disclaimer Templates')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PlatformAccessGuard)
 @ApiBearerAuth()
 export class DisclaimerTemplatesController {
   constructor(private readonly disclaimerTemplatesService: DisclaimerTemplatesService) {}

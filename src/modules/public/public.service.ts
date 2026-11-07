@@ -120,6 +120,7 @@ export class PublicService {
       slug: platform.slug,
       tagline: platform.tagline,
       motto: platform.motto,
+      seoSiteTitleSuffix: platform.seo_site_title_suffix,
       logoUrl: platform.logo_url,
       faviconUrl: platform.favicon_url,
       notificationSoundUrl: platform.notification_sound_url,
@@ -128,6 +129,18 @@ export class PublicService {
       studioEditMode: platform.studio_edit_mode,
       rendererKey: platform.renderer_key,
       adSlots: platform.ad_slots ?? defaultPlatformAdSlots(),
+      donation:
+        platform.donation_settings?.enabled && platform.owner_wallet_id
+          ? {
+              title: platform.donation_settings.title,
+              description: platform.donation_settings.description,
+              buttonLabel: platform.donation_settings.buttonLabel,
+              locations: [...platform.donation_settings.locations],
+              options: platform.donation_settings.options
+                .filter((option) => option.isActive)
+                .map(({ isActive: _isActive, icon: _legacyIcon, ...option }) => option),
+            }
+          : null,
       maxFreeChapters: platform.max_free_chapters,
       showBookStatus: platform.show_book_status,
       maxTagsPerBook: platform.max_tags_per_book,
@@ -1056,18 +1069,24 @@ export class PublicService {
 
     const library = await this.libraryRepo.findOne({ where: { id: book.library_id } });
 
-    // Fallback: Book template -> Library default -> Platform default
-    let defaultDisclaimerTemplate = book.disclaimerTemplate;
-    if (!defaultDisclaimerTemplate && library) {
+    // Fallback: Book template -> Library default -> Platform default.
+    // Keep saved templates intact when the Platform hides disclaimers.
+    let defaultDisclaimerTemplate = platform.enable_disclaimer === false
+      ? null
+      : book.disclaimerTemplate;
+    if (platform.enable_disclaimer !== false && !defaultDisclaimerTemplate && library) {
       defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
         where: { library_id: library.id, is_active: true, is_default: true },
       });
     }
-    if (!defaultDisclaimerTemplate) {
+    if (platform.enable_disclaimer !== false && !defaultDisclaimerTemplate) {
       defaultDisclaimerTemplate = await this.disclaimerTemplateRepo.findOne({
         where: { platform_id: platform.id, is_active: true, is_default: true },
       });
     }
+    const disclaimerTemplate = platform.enable_disclaimer === false
+      ? null
+      : book.disclaimerTemplate ?? defaultDisclaimerTemplate;
 
     const chapters = await this.chapterRepo.find({
       where: { book_id: book.id, status: 'published' },
@@ -1115,31 +1134,19 @@ export class PublicService {
       seoOgType: book.seo_og_type,
       seoPrefix: book.seo_prefix,
       seoSuffix: book.seo_suffix,
-      disclaimerTemplate: book.disclaimerTemplate
+      disclaimerTemplate: disclaimerTemplate
         ? {
-            id: book.disclaimerTemplate.id,
-            platformId: book.disclaimerTemplate.platform_id,
-            libraryId: book.disclaimerTemplate.library_id,
-            nama: book.disclaimerTemplate.nama,
-            content: book.disclaimerTemplate.content,
-            isActive: book.disclaimerTemplate.is_active,
-            isDefault: book.disclaimerTemplate.is_default,
-            createdAt: book.disclaimerTemplate.created_at,
-            updatedAt: book.disclaimerTemplate.updated_at,
+            id: disclaimerTemplate.id,
+            platformId: disclaimerTemplate.platform_id,
+            libraryId: disclaimerTemplate.library_id,
+            nama: disclaimerTemplate.nama,
+            content: disclaimerTemplate.content,
+            isActive: disclaimerTemplate.is_active,
+            isDefault: disclaimerTemplate.is_default,
+            createdAt: disclaimerTemplate.created_at,
+            updatedAt: disclaimerTemplate.updated_at,
           }
-        : defaultDisclaimerTemplate
-          ? {
-              id: defaultDisclaimerTemplate.id,
-              platformId: defaultDisclaimerTemplate.platform_id,
-              libraryId: defaultDisclaimerTemplate.library_id,
-              nama: defaultDisclaimerTemplate.nama,
-              content: defaultDisclaimerTemplate.content,
-              isActive: defaultDisclaimerTemplate.is_active,
-              isDefault: defaultDisclaimerTemplate.is_default,
-              createdAt: defaultDisclaimerTemplate.created_at,
-              updatedAt: defaultDisclaimerTemplate.updated_at,
-            }
-          : null,
+        : null,
       library: {
         id: library?.id ?? '',
         nama: library?.nama ?? '',

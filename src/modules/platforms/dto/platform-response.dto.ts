@@ -15,11 +15,20 @@ export class PlatformResponseDto {
   @ApiProperty({ example: 'teknobuku' })
   slug: string;
 
+  @ApiPropertyOptional({ nullable: true, description: 'UUID organisasi pemilik Platform; null sampai backfill data lama selesai.' })
+  ownerOrgId: string | null;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Nama organisasi pemilik jika tersedia bagi pengguna yang sedang login.' })
+  ownerOrgName: string | null;
+
   @ApiPropertyOptional({ example: 'Baca dan tulis cerita favoritmu', nullable: true })
   tagline: string | null;
 
   @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
   motto: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca & Tulis Cerita', nullable: true, description: 'Akhiran judul situs pada metadata SEO.' })
+  seoSiteTitleSuffix: string | null;
 
   @ApiPropertyOptional({ example: 'https://cdn.example.com/platform/teknobuku/logo.png', nullable: true })
   logoUrl: string | null;
@@ -65,6 +74,9 @@ export class PlatformResponseDto {
 
   @ApiProperty({ example: true, description: 'Tampilkan badge status cerita di halaman publik. Tidak mempengaruhi Studio.' })
   showBookStatus: boolean;
+
+  @ApiProperty({ example: true, description: 'Tampilkan disclaimer pada halaman detail Book publik Platform ini.' })
+  enableDisclaimer: boolean;
 
   @ApiProperty({ example: 5, description: 'Fase 6 — batas jumlah Tag yang boleh dilekatkan ke satu Book.' })
   maxTagsPerBook: number;

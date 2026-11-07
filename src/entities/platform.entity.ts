@@ -1,12 +1,7 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 import type { ReadingTypography } from '../common/utils/reading-typography.util';
+import type { PlatformDonationSettings } from '../modules/donations/donation.types';
 
 export type RatingMode = 'book' | 'chapter';
 export type StudioEditMode = 'auto' | 'manual';
@@ -30,12 +25,7 @@ export interface PlatformAdSlots {
 }
 
 export function defaultPlatformAdSlots(): PlatformAdSlots {
-  return {
-    borderColor: '#f97316',
-    homepage: { enabled: false, script: '' },
-    bookDetail: { enabled: false, script: '' },
-    chapterReader: { enabled: false, script: '' },
-  };
+  return { borderColor: '#f97316', homepage: { enabled: false, script: '' }, bookDetail: { enabled: false, script: '' }, chapterReader: { enabled: false, script: '' } };
 }
 
 export interface CatalogSectionSortRule {
@@ -90,13 +80,9 @@ export interface CatalogSectionConfig {
 
 /**
  * Tenant baru di ATAS Library — 1 row = 1 "toko"/target pasar (mis. Platform
- * "novela" utk novel, "teknobuku" utk buku non-fiksi/teknologi). SENGAJA
- * TANPA kolom kepemilikan (owner_user_id/organization_id) — identik `markets`
- * di bagdja-auction-market: satu org tunggal (client_app_id Bookpedia) otomatis
- * Owner org-wide atas SEMUA row di tabel ini, diverifikasi runtime lewat
- * PlatformAccessGuard (GET /auth/client/{clientAppId}/validate-ownership ke
- * bagdja-auth), BUKAN disimpan sebagai kolom — lihat plan/bookpedia/overview.md
- * §9.3 untuk alasan lengkap.
+ * "novela" utk novel, "teknobuku" utk buku non-fiksi/teknologi). Hak akses
+ * admin tetap diverifikasi oleh PlatformAccessGuard; `owner_org_id` adalah tenant
+ * pemilik Platform dan `owner_wallet_id` wallet organisasi penerima dananya.
  */
 @Entity('platforms')
 export class Platform {
@@ -109,11 +95,25 @@ export class Platform {
   @Column({ type: 'varchar', unique: true })
   slug: string;
 
+  /** UUID organisasi bagdja-auth pemilik Platform; nullable hanya untuk backfill data lama. */
+  @Column({ type: 'uuid', nullable: true })
+  owner_org_id: string | null;
+
+  /** Wallet organisasi penerima dana Platform; nullable sampai wallet owner ditautkan. */
+  @Column({ type: 'uuid', nullable: true })
+  owner_wallet_id: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  donation_settings: PlatformDonationSettings | null;
+
   @Column({ type: 'varchar', length: 255, nullable: true })
   tagline: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   motto: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, default: 'Baca & Tulis Cerita' })
+  seo_site_title_suffix: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   logo_url: string | null;
@@ -151,10 +151,17 @@ export class Platform {
   @Column({ type: 'varchar', default: 'reader' })
   renderer_key: string;
 
-  @Column({ type: 'jsonb', default: () => `'[{"key":"top","type":"top","title":"Top / Hot","enabled":true,"layout":"slider","limit":10},{"key":"new-updated","type":"new_updated","title":"New Updated","enabled":true,"layout":"slider","limit":10}]'` })
+  @Column({
+    type: 'jsonb',
+    default: () =>
+      `'[{"key":"top","type":"top","title":"Top / Hot","enabled":true,"layout":"slider","limit":10},{"key":"new-updated","type":"new_updated","title":"New Updated","enabled":true,"layout":"slider","limit":10}]'`,
+  })
   homepage_sections: CatalogSectionConfig[];
 
-  @Column({ type: 'jsonb', default: () => "'{\"borderColor\":\"#f97316\",\"homepage\":{\"enabled\":false,\"script\":\"\"},\"bookDetail\":{\"enabled\":false,\"script\":\"\"},\"chapterReader\":{\"enabled\":false,\"script\":\"\"}}'::jsonb" })
+  @Column({
+    type: 'jsonb',
+    default: () => '\'{"borderColor":"#f97316","homepage":{"enabled":false,"script":""},"bookDetail":{"enabled":false,"script":""},"chapterReader":{"enabled":false,"script":""}}\'::jsonb',
+  })
   ad_slots: PlatformAdSlots;
 
   /**
@@ -197,6 +204,10 @@ export class Platform {
    */
   @Column({ type: 'boolean', default: true })
   show_book_status: boolean;
+
+  /** Tampilkan atau sembunyikan disclaimer pada halaman detail Book publik Platform ini. */
+  @Column({ type: 'boolean', default: true })
+  enable_disclaimer: boolean;
 
   /** Fase 6 (16 Sep 2026) — batas jumlah Tag yang boleh dilekatkan ke satu Book, divalidasi di `BooksService`. */
   @Column({ type: 'int', default: 5 })

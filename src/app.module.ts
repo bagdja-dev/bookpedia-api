@@ -33,6 +33,7 @@ import { CollectionsModule } from './modules/collections/collections.module';
 import { PlatformBuildsModule } from './modules/platform-builds/platform-builds.module';
 import { HomepageSectionsModule } from './modules/homepage-sections/homepage-sections.module';
 import { DisclaimerTemplatesModule } from './modules/disclaimer-templates/disclaimer-templates.module';
+import { DonationsModule } from './modules/donations/donations.module';
 import { PlatformContextMiddleware } from './common/middleware/platform-context.middleware';
 
 @Module({
@@ -115,6 +116,7 @@ import { PlatformContextMiddleware } from './common/middleware/platform-context.
     PlatformBuildsModule,
     HomepageSectionsModule,
     DisclaimerTemplatesModule,
+    DonationsModule,
   ],
   providers: [PlatformContextMiddleware],
 })

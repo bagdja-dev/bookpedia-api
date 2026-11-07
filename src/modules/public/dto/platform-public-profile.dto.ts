@@ -3,6 +3,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { RatingMode, StudioEditMode } from '../../../entities/platform.entity';
 import { ReadingTypographyDto } from '../../platforms/dto/reading-typography.dto';
 import { PlatformAdSlotsDto } from '../../platforms/dto/platform-ad-slots.dto';
+import type { PlatformDonationSettings } from '../../donations/donation.types';
+
+type PublicDonationSettings = Omit<PlatformDonationSettings, 'enabled' | 'options'> & {
+  options: Array<Omit<PlatformDonationSettings['options'][number], 'isActive'>>;
+};
 
 /**
  * Profil Platform yang aman diekspos publik tanpa auth — pengganti langsung
@@ -22,6 +27,9 @@ export class PlatformPublicProfileDto {
 
   @ApiPropertyOptional({ example: 'Setiap cerita punya tempat untuk pulang', nullable: true })
   motto: string | null;
+
+  @ApiPropertyOptional({ example: 'Baca & Tulis Cerita', nullable: true, description: 'Akhiran judul situs pada metadata SEO.' })
+  seoSiteTitleSuffix: string | null;
 
   @ApiPropertyOptional({ nullable: true })
   logoUrl: string | null;
@@ -46,6 +54,12 @@ export class PlatformPublicProfileDto {
 
   @ApiProperty({ type: PlatformAdSlotsDto, description: 'Pengaturan slot iklan publik.' })
   adSlots: PlatformAdSlotsDto;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Pengaturan donasi publik yang aman ditampilkan; null jika donasi nonaktif atau wallet penerima belum diatur.',
+  })
+  donation: PublicDonationSettings | null;
 
   @ApiProperty({
     example: 0,
