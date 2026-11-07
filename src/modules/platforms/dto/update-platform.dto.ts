@@ -306,6 +306,11 @@ export class UpdatePlatformDto {
   @IsString()
   seoSuffix?: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Konten halaman Tentang publik. Kirim null untuk mengosongkan.' })
+  @IsOptional()
+  @IsString()
+  aboutContent?: string | null;
+
   @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik. Kirim null untuk mengosongkan.' })
   @IsOptional()
   @IsString()

@@ -153,6 +153,9 @@ export class PlatformResponseDto {
   @ApiPropertyOptional({ example: 'Bahasa Indonesia', nullable: true, description: 'Suffix SEO global Platform.' })
   seoSuffix: string | null;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Konten halaman Tentang publik Platform ini.' })
+  aboutContent: string | null;
+
   @ApiPropertyOptional({ nullable: true, description: 'Konten Terms & Conditions publik Platform ini.' })
   termsAndConditions: string | null;
 

@@ -236,6 +236,11 @@ export class CreatePlatformDto {
   @IsString()
   seoSuffix?: string;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Konten halaman Tentang publik Platform ini.' })
+  @IsOptional()
+  @IsString()
+  aboutContent?: string | null;
+
   @ApiPropertyOptional({ description: 'Konten Terms & Conditions publik untuk Platform ini.' })
   @IsOptional()
   @IsString()
