@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,6 +17,7 @@ import {
   type AuthUser,
 } from '../../common/auth';
 import { CreateDonationDto, DonationSettingsDto } from './dto/donation-settings.dto';
+import { DonationListResponseDto } from './dto/donation-list.dto';
 import { DonationsService } from './donations.service';
 
 @ApiTags('Platform Donations')
@@ -36,6 +38,20 @@ export class PlatformDonationSettingsController {
   updateSettings(@Param('id') platformId: string, @Body() dto: DonationSettingsDto) {
     return this.donationsService.updateSettings(platformId, dto);
   }
+
+  @Get(':id/donations')
+  @ApiOperation({ summary: 'List donations received by a Platform' })
+  getDonations(
+    @Param('id') platformId: string,
+    @Query('page') pageParam?: string,
+    @Query('limit') limitParam?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ): Promise<DonationListResponseDto> {
+    const page = Math.max(1, Number.parseInt(pageParam ?? '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, Number.parseInt(limitParam ?? '25', 10) || 25));
+    return this.donationsService.listDonations(platformId, page, limit, search?.trim() ?? '', status);
+  }
 }
 
 @ApiTags('Public Donations')
@@ -52,7 +68,7 @@ export class PublicDonationsController {
     @Body() dto: CreateDonationDto,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.donationsService.createDonation(platformSlug, user.userId, dto);
+    return this.donationsService.createDonation(platformSlug, user, dto);
   }
 
   @Get('donations/status/:statusToken')

@@ -18,6 +18,15 @@ export class Donation {
   platform_id: string;
 
   @Column({ type: 'uuid', nullable: true })
+  donor_user_id: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  donor_name: string | null;
+
+  @Column({ type: 'varchar', length: 320, nullable: true })
+  donor_email: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
   payment_request_id: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'INITIALIZING' })
