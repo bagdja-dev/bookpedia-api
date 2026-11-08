@@ -11,8 +11,10 @@ import { Repository } from 'typeorm';
 
 import { Donation } from '../../entities/donation.entity';
 import { Platform } from '../../entities/platform.entity';
+import type { AuthUser } from '../../common/auth';
 import { AuthProfileService } from '../user/auth-profile.service';
 import { CreateDonationDto, DonationSettingsDto } from './dto/donation-settings.dto';
+import { DonationListResponseDto } from './dto/donation-list.dto';
 import {
   DEFAULT_PLATFORM_DONATION_SETTINGS,
   DONATION_LOCATIONS,
@@ -79,7 +81,7 @@ export class DonationsService {
 
   async createDonation(
     platformSlug: string,
-    userId: string,
+    user: AuthUser,
     dto: CreateDonationDto,
   ) {
     const platform = await this.platformRepo.findOne({
@@ -109,6 +111,9 @@ export class DonationsService {
     const statusToken = randomBytes(32).toString('hex');
     const donation = this.donationRepo.create({
       platform_id: platform.id,
+      donor_user_id: user.userId,
+      donor_name: user.username?.trim() || null,
+      donor_email: user.email?.trim() || null,
       payment_request_id: null,
       status: 'INITIALIZING',
       amount,
@@ -138,7 +143,7 @@ export class DonationsService {
               platformId: platform.id,
               donationId: savedDonation.id,
             },
-            userId,
+            userId: user.userId,
             payeeWalletId: platform.owner_wallet_id,
             successRedirectUrl: returnUrl,
             failureRedirectUrl: returnUrl,
@@ -195,6 +200,74 @@ export class DonationsService {
     donation.paid_at = paymentStatus.paid_at ? new Date(paymentStatus.paid_at) : null;
     await this.donationRepo.save(donation);
     return { status, paidAt: donation.paid_at?.toISOString() ?? null };
+  }
+
+  async listDonations(
+    platformId: string,
+    page: number,
+    limit: number,
+    search: string,
+    status?: string,
+  ): Promise<DonationListResponseDto> {
+    const validStatuses = ['INITIALIZING', 'PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED'];
+    const normalizedStatus = status?.trim().toUpperCase();
+    if (normalizedStatus && !validStatuses.includes(normalizedStatus)) {
+      throw new BadRequestException('Filter status donasi tidak valid.');
+    }
+
+    const query = this.donationRepo.createQueryBuilder('donation')
+      .where('donation.platform_id = :platformId', { platformId });
+    if (normalizedStatus) {
+      query.andWhere('donation.status = :status', { status: normalizedStatus });
+    }
+    if (search) {
+      query.andWhere(
+        '(donation.donor_name ILIKE :search OR donation.donor_email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [donations, total] = await query
+      .orderBy('donation.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const rawSummary = await this.donationRepo.createQueryBuilder('donation')
+      .select("COUNT(*) FILTER (WHERE donation.status = 'PAID')", 'paidCount')
+      .addSelect("COALESCE(SUM(donation.amount) FILTER (WHERE donation.status = 'PAID'), 0)", 'paidAmount')
+      .addSelect("COUNT(DISTINCT donation.donor_user_id) FILTER (WHERE donation.status = 'PAID')", 'uniqueDonorCount')
+      .addSelect("COUNT(*) FILTER (WHERE donation.status IN ('INITIALIZING', 'PENDING'))", 'pendingCount')
+      .where('donation.platform_id = :platformId', { platformId })
+      .getRawOne<{
+        paidCount: string;
+        paidAmount: string;
+        uniqueDonorCount: string;
+        pendingCount: string;
+      }>();
+
+    return {
+      items: donations.map((donation) => ({
+        id: donation.id,
+        status: donation.status,
+        amount: donation.amount,
+        currency: donation.currency,
+        optionTitle: donation.option_title,
+        donorName: donation.donor_name,
+        donorEmail: donation.donor_email,
+        createdAt: donation.created_at,
+        paidAt: donation.paid_at,
+      })),
+      total,
+      page,
+      limit,
+      summary: {
+        paidCount: Number(rawSummary?.paidCount ?? 0),
+        paidAmount: Number(rawSummary?.paidAmount ?? 0),
+        uniqueDonorCount: Number(rawSummary?.uniqueDonorCount ?? 0),
+        pendingCount: Number(rawSummary?.pendingCount ?? 0),
+      },
+    };
   }
 
   private async findPlatform(platformId: string): Promise<Platform> {

@@ -1,7 +1,5 @@
 node_modules/
 dist/
-.env
-.env.local
 *.log
 .DS_Store
 .yalc/
@@ -10,3 +8,4 @@ sample-keystores/*.jks
 
 # graphify knowledge graph — generated locally, not committed
 graphify-out/
+config.bat
